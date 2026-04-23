@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "strict": true,
+    "noImplicitAny": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "miniprogram/*"
+      ]
+    },
+    "types": [
+      "miniprogram-api-typings"
+    ]
+  },
+  "include": [
+    "miniprogram/**/*.ts"
+  ]
+}

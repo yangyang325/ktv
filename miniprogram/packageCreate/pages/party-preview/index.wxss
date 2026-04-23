@@ -1,0 +1,40 @@
+.preview-page {
+  padding: 24rpx;
+}
+
+.preview-card {
+  padding: 32rpx;
+  border-radius: 28rpx;
+  background: #fffdf8;
+  box-shadow: var(--shadow-soft);
+}
+
+.preview-card__title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.preview-card__content {
+  display: block;
+  margin-top: 20rpx;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.preview-page__primary,
+.preview-page__secondary {
+  margin-top: 20rpx;
+  border-radius: 999rpx;
+}
+
+.preview-page__primary {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.preview-page__secondary {
+  background: #ffffff;
+  color: var(--brand-dark);
+}

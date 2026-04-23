@@ -1,0 +1,12 @@
+<view class="page home-page">
+  <view class="hero">
+    <text class="hero__title">{{heroTitle}}</text>
+    <text class="hero__desc">{{heroDesc}}</text>
+  </view>
+  <view class="section">
+    <view class="section__header">
+      <text class="section__title">正在招募</text>
+    </view>
+    <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
+  </view>
+</view>

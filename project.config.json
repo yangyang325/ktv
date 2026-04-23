@@ -1,0 +1,18 @@
+{
+  "appid": "wxba0b343df4fbf94d",
+  "projectname": "ktv",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "srcMiniprogramRoot": "miniprogram/",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false,
+    "urlCheck": false,
+    "coverView": true,
+    "checkInvalidKey": true,
+    "uploadWithSourceMap": true
+  },
+  "condition": {}
+}

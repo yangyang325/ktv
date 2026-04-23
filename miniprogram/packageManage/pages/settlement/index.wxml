@@ -1,0 +1,6 @@
+<view class="page manage-page">
+  <view class="manage-card">
+    <text class="manage-card__title">{{title}}</text>
+    <text class="manage-card__desc">{{description}}</text>
+  </view>
+</view>

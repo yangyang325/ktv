@@ -1,0 +1,9 @@
+<view class="card" bindtap="handleTap">
+  <view class="card__header">
+    <text class="card__title">{{party.title || 'K 局招募中'}}</text>
+    <text class="card__status">{{party.statusText || '招募中'}}</text>
+  </view>
+  <text class="card__meta">{{party.venueSummary || '深圳待定门店'}}</text>
+  <text class="card__meta">{{party.progressText || '0 / 0'}}</text>
+  <text class="card__price">{{party.priceText || '人均待计算'}}</text>
+</view>

@@ -1,0 +1,17 @@
+:root {
+  --page-bg: #f7efe4;
+  --surface-bg: #fffaf2;
+  --surface-strong: #fff3dc;
+  --brand: #c04f2f;
+  --brand-dark: #922f16;
+  --text-primary: #2d2016;
+  --text-secondary: #6f5b4c;
+  --text-muted: #9d8a78;
+  --border-color: #eadfce;
+  --success: #2f7a4a;
+  --warning: #bf7b22;
+  --danger: #b23a2a;
+  --radius-large: 28rpx;
+  --radius-medium: 20rpx;
+  --shadow-soft: 0 18rpx 40rpx rgba(94, 58, 24, 0.08);
+}

@@ -1,0 +1,62 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/my-parties/index",
+    "pages/launch/index",
+    "pages/profile/index",
+    "pages/party-detail/index",
+    "pages/common/webview/index"
+  ],
+  "subpackages": [
+    {
+      "root": "packageCreate",
+      "pages": [
+        "pages/venue-picker/index",
+        "pages/party-form/index",
+        "pages/party-preview/index"
+      ]
+    },
+    {
+      "root": "packageManage",
+      "pages": [
+        "pages/party-members/index",
+        "pages/settlement/index",
+        "pages/notifications/index"
+      ]
+    }
+  ],
+  "window": {
+    "navigationBarTitleText": "K 局",
+    "navigationBarBackgroundColor": "#fff7e8",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7efe4",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#7a6a58",
+    "selectedColor": "#c04f2f",
+    "backgroundColor": "#fffaf2",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/my-parties/index",
+        "text": "我的局"
+      },
+      {
+        "pagePath": "pages/launch/index",
+        "text": "发起"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

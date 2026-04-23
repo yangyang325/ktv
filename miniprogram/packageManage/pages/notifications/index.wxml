@@ -1,0 +1,6 @@
+<view class="page manage-page">
+  <view class="manage-card">
+    <text class="manage-card__title">通知能力占位</text>
+    <text class="manage-card__item" wx:for="{{items}}" wx:key="*this">{{item}}</text>
+  </view>
+</view>

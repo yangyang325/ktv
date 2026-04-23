@@ -1,0 +1,13 @@
+@import "styles/variables.wxss";
+
+page {
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-size: 28rpx;
+  min-height: 100%;
+}
+
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+}

@@ -1,0 +1,13 @@
+{
+  "name": "ktv",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "tsx --test miniprogram/tests/*.test.js miniprogram/tests/*.test.ts"
+  },
+  "devDependencies": {
+    "miniprogram-api-typings": "^5.1.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,43 @@
+.form-page {
+  padding: 24rpx;
+}
+
+.form-card {
+  padding: 32rpx;
+  border-radius: 28rpx;
+  background: var(--surface-bg);
+}
+
+.form-card__venue {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.form-card__label {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: var(--text-secondary);
+}
+
+.form-card__input,
+.form-card__textarea {
+  width: 100%;
+  margin-top: 12rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.form-card__textarea {
+  min-height: 180rpx;
+}
+
+.form-card__submit {
+  margin-top: 32rpx;
+  border-radius: 999rpx;
+  background: var(--brand);
+  color: #ffffff;
+}

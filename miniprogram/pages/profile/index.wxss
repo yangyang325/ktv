@@ -1,0 +1,47 @@
+.profile-page {
+  padding: 24rpx;
+}
+
+.profile-card {
+  padding: 36rpx 32rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(180deg, #fff8ee 0%, #ffe9d0 100%);
+}
+
+.profile-card__name {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.profile-card__intro {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--text-secondary);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.stats__item {
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: var(--surface-bg);
+  text-align: center;
+}
+
+.stats__value {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.stats__label {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--text-secondary);
+}

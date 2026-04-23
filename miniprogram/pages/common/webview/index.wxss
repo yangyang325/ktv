@@ -1,0 +1,21 @@
+.webview-page {
+  padding: 24rpx;
+}
+
+.webview-card {
+  padding: 36rpx 32rpx;
+  border-radius: 28rpx;
+  background: var(--surface-bg);
+}
+
+.webview-card__title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.webview-card__desc {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--text-secondary);
+}

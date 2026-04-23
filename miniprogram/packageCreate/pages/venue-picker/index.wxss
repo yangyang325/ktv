@@ -1,0 +1,59 @@
+.picker-page {
+  padding: 24rpx;
+}
+
+.search-box {
+  padding: 8rpx;
+  border-radius: 999rpx;
+  background: var(--surface-bg);
+}
+
+.search-box__input {
+  height: 72rpx;
+  padding: 0 24rpx;
+}
+
+.filters {
+  margin-top: 20rpx;
+  white-space: nowrap;
+}
+
+.filters__item {
+  display: inline-flex;
+  margin-right: 16rpx;
+  padding: 14rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--surface-bg);
+}
+
+.filters__item--active {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.venue-list {
+  margin-top: 24rpx;
+}
+
+.venue-item {
+  padding: 28rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.venue-item + .venue-item {
+  margin-top: 16rpx;
+}
+
+.venue-item__name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.venue-item__meta {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--text-secondary);
+}

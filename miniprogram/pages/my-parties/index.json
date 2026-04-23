@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的局",
+  "usingComponents": {
+    "party-card": "/components/party-card/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

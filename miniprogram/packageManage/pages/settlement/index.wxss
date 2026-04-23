@@ -1,0 +1,21 @@
+.manage-page {
+  padding: 24rpx;
+}
+
+.manage-card {
+  padding: 32rpx;
+  border-radius: 28rpx;
+  background: var(--surface-bg);
+}
+
+.manage-card__title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.manage-card__desc {
+  display: block;
+  margin-top: 14rpx;
+  color: var(--text-secondary);
+}

@@ -1,0 +1,7 @@
+<view class="page manage-page">
+  <view class="manage-card">
+    <text class="manage-card__title">成员管理占位</text>
+    <text class="manage-card__desc">{{description}}</text>
+    <text class="manage-card__item" wx:for="{{members}}" wx:key="*this">{{item}}</text>
+  </view>
+</view>

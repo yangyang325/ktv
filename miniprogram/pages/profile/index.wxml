@@ -1,0 +1,12 @@
+<view class="page profile-page">
+  <view class="profile-card">
+    <text class="profile-card__name">{{profile.nickname}}</text>
+    <text class="profile-card__intro">{{profile.intro}}</text>
+  </view>
+  <view class="stats">
+    <view class="stats__item" wx:for="{{profile.stats}}" wx:key="label">
+      <text class="stats__value">{{item.value}}</text>
+      <text class="stats__label">{{item.label}}</text>
+    </view>
+  </view>
+</view>

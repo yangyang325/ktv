@@ -1,0 +1,16 @@
+<view class="page my-page">
+  <scroll-view class="tabs" scroll-x enhanced>
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tabs__item {{currentTab === item.key ? 'tabs__item--active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </view>
+  </scroll-view>
+  <view class="list">
+    <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
+  </view>
+</view>

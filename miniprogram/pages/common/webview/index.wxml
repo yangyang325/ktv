@@ -1,0 +1,6 @@
+<view class="page webview-page">
+  <view class="webview-card">
+    <text class="webview-card__title">{{title}}</text>
+    <text class="webview-card__desc">{{description}}</text>
+  </view>
+</view>

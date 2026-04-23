@@ -1,0 +1,30 @@
+<view class="page detail-page">
+  <view class="detail-card" wx:if="{{detail}}">
+    <text class="detail-card__title">{{detail.party.title}}</text>
+    <text class="detail-card__meta">{{detail.party.venueSummary}}</text>
+    <text class="detail-card__meta">{{detail.party.timeSummary}}</text>
+    <text class="detail-card__meta">{{detail.party.progressText}}</text>
+    <text class="detail-card__meta">{{detail.party.priceText}}</text>
+    <text class="detail-card__notes">{{detail.party.notes}}</text>
+  </view>
+
+  <view class="detail-section">
+    <text class="detail-section__title">正式报名</text>
+    <view class="chips">
+      <text class="chips__item" wx:for="{{detail.confirmedUsers}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="detail-section">
+    <text class="detail-section__title">候补名单</text>
+    <view class="chips">
+      <text class="chips__item chips__item--muted" wx:for="{{detail.waitlistUsers}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="actions__primary" bindtap="handleJoin">立即报名</button>
+    <button class="actions__secondary" bindtap="handleWaitlist">加入候补</button>
+    <button class="actions__ghost" bindtap="handleManageMembers">成员管理</button>
+  </view>
+</view>

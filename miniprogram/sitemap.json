@@ -1,0 +1,9 @@
+{
+  "desc": "K 局小程序索引配置",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

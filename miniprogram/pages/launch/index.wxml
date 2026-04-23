@@ -1,0 +1,8 @@
+<view class="page launch-page">
+  <view class="launch-card">
+    <text class="launch-card__title">三步发起一个新的 K 局</text>
+    <text class="launch-card__desc">选门店、填信息、生成接龙文案，适合直接在群里开唱。</text>
+    <button class="launch-card__primary" bindtap="handleCreateParty">选择 KTV 发起新局</button>
+    <button class="launch-card__secondary" bindtap="handleResumeDraft">继续未发布草稿</button>
+  </view>
+</view>

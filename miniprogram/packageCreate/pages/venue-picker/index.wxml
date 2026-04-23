@@ -1,0 +1,29 @@
+<view class="page picker-page">
+  <view class="search-box">
+    <input
+      class="search-box__input"
+      placeholder="搜索门店、区域或关键词"
+      value="{{searchKeyword}}"
+      bindinput="handleKeywordInput"
+    />
+  </view>
+
+  <scroll-view class="filters" scroll-x enhanced>
+    <view
+      wx:for="{{districtOptions}}"
+      wx:key="*this"
+      class="filters__item {{currentDistrict === item ? 'filters__item--active' : ''}}"
+      data-district="{{item}}"
+      bindtap="handleDistrictChange"
+    >
+      {{item}}
+    </view>
+  </scroll-view>
+
+  <view class="venue-list">
+    <view class="venue-item" wx:for="{{venueList}}" wx:key="venueId" data-venue-id="{{item.venueId}}" bindtap="handleChooseVenue">
+      <text class="venue-item__name">{{item.name}}</text>
+      <text class="venue-item__meta">{{item.district}} · {{item.address}}</text>
+    </view>
+  </view>
+</view>

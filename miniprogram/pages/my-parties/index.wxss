@@ -1,0 +1,27 @@
+.my-page {
+  padding: 24rpx;
+}
+
+.tabs {
+  white-space: nowrap;
+}
+
+.tabs__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  padding: 16rpx 28rpx;
+  border-radius: 999rpx;
+  background: var(--surface-bg);
+  color: var(--text-secondary);
+}
+
+.tabs__item--active {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.list {
+  margin-top: 24rpx;
+}

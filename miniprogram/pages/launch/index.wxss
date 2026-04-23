@@ -1,0 +1,37 @@
+.launch-page {
+  padding: 24rpx;
+}
+
+.launch-card {
+  padding: 40rpx 32rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(145deg, #ffd5b0 0%, #fff7eb 100%);
+}
+
+.launch-card__title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.launch-card__desc {
+  display: block;
+  margin: 16rpx 0 32rpx;
+  color: var(--text-secondary);
+}
+
+.launch-card__primary,
+.launch-card__secondary {
+  margin-top: 16rpx;
+  border-radius: 999rpx;
+}
+
+.launch-card__primary {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.launch-card__secondary {
+  background: #ffffff;
+  color: var(--brand-dark);
+}

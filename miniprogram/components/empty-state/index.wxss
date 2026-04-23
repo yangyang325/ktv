@@ -1,0 +1,18 @@
+.empty {
+  padding: 48rpx 32rpx;
+  border-radius: var(--radius-large);
+  background: var(--surface-bg);
+  text-align: center;
+}
+
+.empty__title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.empty__desc {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--text-secondary);
+}

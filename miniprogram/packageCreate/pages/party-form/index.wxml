@@ -1,0 +1,20 @@
+<view class="page form-page">
+  <view class="form-card">
+    <text class="form-card__venue">{{venueSummary}}</text>
+    <text class="form-card__label">局标题</text>
+    <input class="form-card__input" value="{{form.title}}" data-field="title" bindinput="handleFieldChange" />
+    <text class="form-card__label">日期</text>
+    <input class="form-card__input" value="{{form.date}}" data-field="date" bindinput="handleFieldChange" />
+    <text class="form-card__label">开始时间</text>
+    <input class="form-card__input" value="{{form.startTime}}" data-field="startTime" bindinput="handleFieldChange" />
+    <text class="form-card__label">时长（分钟）</text>
+    <input class="form-card__input" value="{{form.duration}}" data-field="duration" bindinput="handleFieldChange" />
+    <text class="form-card__label">包厢总费用（元）</text>
+    <input class="form-card__input" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
+    <text class="form-card__label">人数上限</text>
+    <input class="form-card__input" value="{{form.maxCapacity}}" data-field="maxCapacity" bindinput="handleFieldChange" />
+    <text class="form-card__label">备注</text>
+    <textarea class="form-card__textarea" value="{{form.notes}}" data-field="notes" bindinput="handleFieldChange"></textarea>
+    <button class="form-card__submit" bindtap="handlePreview">生成接龙文案</button>
+  </view>
+</view>

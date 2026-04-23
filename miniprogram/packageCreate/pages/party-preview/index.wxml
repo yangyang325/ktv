@@ -1,0 +1,8 @@
+<view class="page preview-page">
+  <view class="preview-card">
+    <text class="preview-card__title">微信群接龙文案预览</text>
+    <text class="preview-card__content">{{previewText}}</text>
+  </view>
+  <button class="preview-page__primary" bindtap="handleCopy">复制文案</button>
+  <button class="preview-page__secondary" bindtap="handlePublish">确认发布</button>
+</view>
