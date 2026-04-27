@@ -1,0 +1,128 @@
+.discover-page {
+  padding: 26rpx 22rpx 36rpx;
+}
+
+.discover-header {
+  padding-bottom: 18rpx;
+}
+
+.discover-header__top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-bottom: 26rpx;
+}
+
+.discover-header__city {
+  color: var(--brand);
+  font-size: 27rpx;
+  font-weight: 800;
+}
+
+.discover-header__title {
+  color: var(--text-primary);
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.discover-header__spacer {
+  height: 1rpx;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  height: 68rpx;
+  padding-left: 24rpx;
+  overflow: hidden;
+  border: 2rpx solid #d8d0ff;
+  border-radius: 26rpx;
+  background: #ffffff;
+  box-shadow: 0 10rpx 28rpx rgba(107, 76, 255, 0.12);
+}
+
+.search__icon {
+  color: var(--text-muted);
+  font-size: 30rpx;
+}
+
+.search__input {
+  min-width: 0;
+  flex: 1;
+  height: 68rpx;
+  padding: 0 16rpx;
+  color: var(--text-primary);
+  font-size: 26rpx;
+}
+
+.search__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 94rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #8e66ff, #5637f1);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.filters {
+  margin-top: 18rpx;
+  white-space: nowrap;
+}
+
+.filters__item {
+  display: inline-flex;
+  margin-right: 12rpx;
+  padding: 13rpx 22rpx;
+  border-radius: 18rpx;
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 24rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.discover-tabs {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  margin-top: 14rpx;
+  margin-bottom: 20rpx;
+}
+
+.discover-tabs__item {
+  position: relative;
+  color: var(--text-primary);
+  font-size: 31rpx;
+  font-weight: 800;
+}
+
+.discover-tabs__item--active {
+  color: var(--brand);
+}
+
+.discover-tabs__item--active::after {
+  position: absolute;
+  left: 8rpx;
+  right: 8rpx;
+  bottom: -10rpx;
+  height: 5rpx;
+  border-radius: 999rpx;
+  background: var(--brand);
+  content: "";
+}
+
+.discover-tabs__filter {
+  margin-left: auto;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 22rpx;
+}
+
+.discover-list {
+  display: block;
+}

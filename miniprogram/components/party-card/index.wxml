@@ -1,9 +1,30 @@
-<view class="card" bindtap="handleTap">
-  <view class="card__header">
-    <text class="card__title">{{party.title || 'K 局招募中'}}</text>
-    <text class="card__status">{{party.statusText || '招募中'}}</text>
+<view class="party-card" bindtap="handleTap">
+  <view class="party-card__cover">
+    <view class="party-card__cover-glow"></view>
+    <text class="party-card__status">{{party.statusText || '报名中'}}</text>
+    <text class="party-card__cover-title">KTV</text>
   </view>
-  <text class="card__meta">{{party.venueSummary || '深圳待定门店'}}</text>
-  <text class="card__meta">{{party.progressText || '0 / 0'}}</text>
-  <text class="card__price">{{party.priceText || '人均待计算'}}</text>
+  <view class="party-card__body">
+    <text class="party-card__title">{{party.title || '周末嗨唱局'}}</text>
+    <view class="party-card__tags">
+      <text class="party-card__tag" wx:for="{{party.tags}}" wx:key="*this">{{item}}</text>
+    </view>
+    <view class="party-card__meta">
+      <text class="party-card__meta-icon">◷</text>
+      <text>{{party.timeSummary || '今天 20:00-23:00'}}</text>
+    </view>
+    <view class="party-card__meta">
+      <text class="party-card__meta-icon">⌖</text>
+      <text>{{party.venueSummary || '星歌汇KTV'}}</text>
+    </view>
+    <view class="party-card__footer">
+      <view class="party-card__avatars">
+        <text class="party-card__avatar">小</text>
+        <text class="party-card__avatar party-card__avatar--blue">麦</text>
+        <text class="party-card__avatar party-card__avatar--pink">周</text>
+      </view>
+      <text class="party-card__count">{{party.progressText || '6/10人'}}</text>
+      <text class="party-card__price">{{party.priceText || '¥68/人'}}</text>
+    </view>
+  </view>
 </view>

@@ -1,20 +1,76 @@
 <view class="page form-page">
-  <view class="form-card">
-    <text class="form-card__venue">{{venueSummary}}</text>
-    <text class="form-card__label">局标题</text>
-    <input class="form-card__input" value="{{form.title}}" data-field="title" bindinput="handleFieldChange" />
-    <text class="form-card__label">日期</text>
-    <input class="form-card__input" value="{{form.date}}" data-field="date" bindinput="handleFieldChange" />
-    <text class="form-card__label">开始时间</text>
-    <input class="form-card__input" value="{{form.startTime}}" data-field="startTime" bindinput="handleFieldChange" />
-    <text class="form-card__label">时长（分钟）</text>
-    <input class="form-card__input" value="{{form.duration}}" data-field="duration" bindinput="handleFieldChange" />
-    <text class="form-card__label">包厢总费用（元）</text>
-    <input class="form-card__input" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
-    <text class="form-card__label">人数上限</text>
-    <input class="form-card__input" value="{{form.maxCapacity}}" data-field="maxCapacity" bindinput="handleFieldChange" />
-    <text class="form-card__label">备注</text>
-    <textarea class="form-card__textarea" value="{{form.notes}}" data-field="notes" bindinput="handleFieldChange"></textarea>
-    <button class="form-card__submit" bindtap="handlePreview">生成接龙文案</button>
+  <view class="form-header">
+    <text class="form-header__title">发起组局</text>
   </view>
+
+  <view class="title-card">
+    <view class="upload-box">
+      <text class="upload-box__plus">＋</text>
+      <text class="upload-box__text">上传封面</text>
+    </view>
+    <view class="title-card__body">
+      <input
+        class="title-card__input"
+        placeholder="给你的组局起个吸引人的标题吧～"
+        value="{{form.title}}"
+        data-field="title"
+        bindinput="handleFieldChange"
+      />
+      <text class="title-card__hint">请输入1字</text>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <text class="section-card__title">选择组局属性（可多选）</text>
+    <view class="tag-cloud">
+      <text class="tag-cloud__item" wx:for="{{tags}}" wx:key="*this">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="form-list">
+    <view class="form-row">
+      <text class="form-row__label">◷ 活动时间</text>
+      <input class="form-row__input" value="{{form.date}} {{form.startTime}}" disabled />
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">⌖ KTV场所</text>
+      <input class="form-row__input" value="{{venueSummary}}" disabled />
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">◈ 房间类型</text>
+      <view class="room-type">
+        <text class="room-type__item room-type__item--active">AA制</text>
+        <text class="room-type__item">我请客</text>
+      </view>
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">♙ 预计人数</text>
+      <input class="form-row__number" value="{{form.maxCapacity}}" data-field="maxCapacity" bindinput="handleFieldChange" />
+      <text class="form-row__muted">最多 10</text>
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">¥ 包厢费用</text>
+      <input class="form-row__number" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
+      <text class="form-row__muted">元</text>
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">⌁ 时长</text>
+      <input class="form-row__number" value="{{form.duration}}" data-field="duration" bindinput="handleFieldChange" />
+      <text class="form-row__muted">分钟</text>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <text class="section-card__title">活动介绍（选填）</text>
+    <textarea
+      class="intro-textarea"
+      value="{{form.notes}}"
+      data-field="notes"
+      bindinput="handleFieldChange"
+      maxlength="200"
+      placeholder="介绍一下本次活动的亮点，音乐偏好，特别要求等..."
+    ></textarea>
+  </view>
+
+  <button class="submit-button" bindtap="handlePreview">发布组局</button>
 </view>

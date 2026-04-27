@@ -13,7 +13,8 @@ Page({
       roomFee: "2400",
       maxCapacity: "12",
       notes: "欢迎新人，不限歌路。"
-    }
+    },
+    tags: ["流行", "粤语", "经典老歌", "90后", "80后", "友好局", "麦霸局", "气氛好"]
   },
 
   /**
@@ -54,7 +55,7 @@ Page({
       roomFee: Number(this.data.form.roomFee) * 100,
       maxCapacity: Number(this.data.form.maxCapacity),
       notes: this.data.form.notes,
-      tags: []
+      tags: this.data.tags.slice(0, 4)
     });
 
     if (!validation.valid) {
@@ -75,7 +76,7 @@ Page({
       roomFee: Number(this.data.form.roomFee) * 100,
       maxCapacity: Number(this.data.form.maxCapacity),
       notes: this.data.form.notes,
-      tags: []
+      tags: this.data.tags.slice(0, 4)
     });
 
     wx.navigateTo({

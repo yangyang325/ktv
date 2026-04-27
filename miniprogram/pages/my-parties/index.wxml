@@ -1,4 +1,7 @@
 <view class="page my-page">
+  <view class="my-header">
+    <text class="my-header__title">我的组局</text>
+  </view>
   <scroll-view class="tabs" scroll-x enhanced>
     <view
       wx:for="{{tabs}}"

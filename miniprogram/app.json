@@ -1,9 +1,11 @@
 {
   "pages": [
     "pages/home/index",
+    "pages/discover/index",
+    "pages/messages/index",
+    "pages/profile/index",
     "pages/my-parties/index",
     "pages/launch/index",
-    "pages/profile/index",
     "pages/party-detail/index",
     "pages/common/webview/index"
   ],
@@ -26,16 +28,16 @@
     }
   ],
   "window": {
-    "navigationBarTitleText": "K 局",
-    "navigationBarBackgroundColor": "#fff7e8",
+    "navigationBarTitleText": "KTV 组局",
+    "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f7efe4",
+    "backgroundColor": "#f6f7ff",
     "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "color": "#7a6a58",
-    "selectedColor": "#c04f2f",
-    "backgroundColor": "#fffaf2",
+    "color": "#8990a8",
+    "selectedColor": "#6b4cff",
+    "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
       {
@@ -43,12 +45,12 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/my-parties/index",
-        "text": "我的局"
+        "pagePath": "pages/discover/index",
+        "text": "发现"
       },
       {
-        "pagePath": "pages/launch/index",
-        "text": "发起"
+        "pagePath": "pages/messages/index",
+        "text": "消息"
       },
       {
         "pagePath": "pages/profile/index",

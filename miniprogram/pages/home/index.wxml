@@ -1,11 +1,40 @@
 <view class="page home-page">
   <view class="hero">
-    <text class="hero__title">{{heroTitle}}</text>
-    <text class="hero__desc">{{heroDesc}}</text>
+    <view class="hero__top">
+      <text class="hero__city">⌖ {{cityName}}⌄</text>
+      <view class="hero__capsule">
+        <text>•••</text>
+        <text>◎</text>
+      </view>
+    </view>
+    <text class="hero__title">KTV组局</text>
+    <text class="hero__desc">一起嗨唱，快乐翻倍！</text>
+    <view class="hero__points">
+      <text>认识新朋友</text>
+      <text>丰富业余生活</text>
+      <text>轻松组局</text>
+    </view>
+    <text class="hero__mic">♬</text>
   </view>
+
+  <view class="quick-panel">
+    <view
+      wx:for="{{actions}}"
+      wx:key="key"
+      class="quick-panel__item"
+      data-key="{{item.key}}"
+      bindtap="handleActionTap"
+    >
+      <text class="quick-panel__icon quick-panel__icon--{{item.key}}">{{item.icon}}</text>
+      <text class="quick-panel__title">{{item.title}}</text>
+      <text class="quick-panel__desc">{{item.desc}}</text>
+    </view>
+  </view>
+
   <view class="section">
     <view class="section__header">
-      <text class="section__title">正在招募</text>
+      <text class="section__title">热门推荐</text>
+      <text class="section__more">查看更多 ›</text>
     </view>
     <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
   </view>

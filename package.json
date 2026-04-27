@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "tsx --test miniprogram/tests/*.test.js miniprogram/tests/*.test.ts"
+    "test": "node scripts/run-tests.js"
   },
   "devDependencies": {
     "miniprogram-api-typings": "^5.1.3",

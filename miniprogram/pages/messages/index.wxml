@@ -1,0 +1,40 @@
+<view class="page messages-page">
+  <view class="messages-header">
+    <text class="messages-header__title">消息</text>
+    <view class="messages-header__icons">
+      <text>⌕</text>
+      <text>♙</text>
+    </view>
+  </view>
+
+  <view class="message-tabs">
+    <text
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="message-tabs__item {{activeTab === item.key ? 'message-tabs__item--active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </text>
+  </view>
+
+  <view class="conversation-list">
+    <view class="conversation" wx:for="{{conversations}}" wx:key="id">
+      <view class="conversation__avatar conversation__avatar--{{item.color}}">
+        <text>{{item.avatar}}</text>
+      </view>
+      <view class="conversation__body">
+        <view class="conversation__line">
+          <text class="conversation__name">{{item.name}}</text>
+          <text class="conversation__role" wx:if="{{item.role}}">{{item.role}}</text>
+          <text class="conversation__time">{{item.time}}</text>
+        </view>
+        <view class="conversation__line conversation__line--preview">
+          <text class="conversation__preview">{{item.preview}}</text>
+          <text class="conversation__badge" wx:if="{{item.unread}}">{{item.unread}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

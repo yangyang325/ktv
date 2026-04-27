@@ -1,17 +1,18 @@
 .launch-page {
-  padding: 24rpx;
+  padding: 32rpx 24rpx;
 }
 
 .launch-card {
-  padding: 40rpx 32rpx;
-  border-radius: 32rpx;
-  background: linear-gradient(145deg, #ffd5b0 0%, #fff7eb 100%);
+  padding: 44rpx 32rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #ffffff 0%, #f2efff 100%);
+  box-shadow: var(--shadow-soft);
 }
 
 .launch-card__title {
   display: block;
   font-size: 40rpx;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 .launch-card__desc {
@@ -23,15 +24,16 @@
 .launch-card__primary,
 .launch-card__secondary {
   margin-top: 16rpx;
-  border-radius: 999rpx;
+  border-radius: 18rpx;
+  font-weight: 900;
 }
 
 .launch-card__primary {
-  background: var(--brand);
+  background: linear-gradient(135deg, #8e66ff, #5237f2);
   color: #ffffff;
 }
 
 .launch-card__secondary {
   background: #ffffff;
-  color: var(--brand-dark);
+  color: var(--brand);
 }

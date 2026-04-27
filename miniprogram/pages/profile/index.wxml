@@ -1,12 +1,36 @@
 <view class="page profile-page">
-  <view class="profile-card">
-    <text class="profile-card__name">{{profile.nickname}}</text>
-    <text class="profile-card__intro">{{profile.intro}}</text>
+  <view class="profile-hero">
+    <view class="profile-hero__row">
+      <view class="profile-hero__avatar">麦</view>
+      <view class="profile-hero__info">
+        <text class="profile-hero__name">{{profile.nickname}} ⊙</text>
+        <text class="profile-hero__intro">{{profile.intro}}</text>
+      </view>
+      <button class="profile-hero__edit" bindtap="handleOpenMyParties">编辑资料 ›</button>
+    </view>
+    <view class="profile-hero__tags">
+      <text wx:for="{{profile.tags}}" wx:key="*this">{{item}}</text>
+    </view>
   </view>
-  <view class="stats">
+
+  <view class="stats-card">
     <view class="stats__item" wx:for="{{profile.stats}}" wx:key="label">
       <text class="stats__value">{{item.value}}</text>
       <text class="stats__label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <view class="shortcut-card">
+    <view class="shortcut-card__item" wx:for="{{shortcuts}}" wx:key="key">
+      <text class="shortcut-card__icon shortcut-card__icon--{{item.key}}">{{item.icon}}</text>
+      <text class="shortcut-card__label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <view class="menu-card">
+    <view class="menu-card__item" wx:for="{{menu}}" wx:key="*this">
+      <text>{{item}}</text>
+      <text>›</text>
     </view>
   </view>
 </view>

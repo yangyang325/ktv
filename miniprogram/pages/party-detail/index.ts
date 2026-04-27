@@ -6,7 +6,8 @@ Page({
     partyId: "",
     detail: null as Awaited<ReturnType<typeof getPartyDetail>> | null,
     confirmedUsers: [] as string[],
-    waitlistUsers: [] as string[]
+    waitlistUsers: [] as string[],
+    remainingCount: 0
   },
 
   /**
@@ -19,7 +20,8 @@ Page({
       partyId,
       detail,
       confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
-      waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname)
+      waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname),
+      remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0)
     });
   },
 
@@ -33,7 +35,8 @@ Page({
       this.setData({
         detail,
         confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
-        waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname)
+        waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname),
+        remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0)
       });
       wx.showToast({
         title: "报名成功",
@@ -56,7 +59,8 @@ Page({
     this.setData({
       detail,
       confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
-      waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname)
+      waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname),
+      remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0)
     });
     wx.showToast({
       title: `已成为候补第 ${waitEntry.waitlistNo} 位`,

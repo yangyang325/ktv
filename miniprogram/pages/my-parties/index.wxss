@@ -1,8 +1,22 @@
 .my-page {
-  padding: 24rpx;
+  padding: 30rpx 22rpx 36rpx;
+}
+
+.my-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22rpx;
+}
+
+.my-header__title {
+  color: var(--text-primary);
+  font-size: 36rpx;
+  font-weight: 900;
 }
 
 .tabs {
+  margin-bottom: 22rpx;
   white-space: nowrap;
 }
 
@@ -10,18 +24,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16rpx;
-  padding: 16rpx 28rpx;
-  border-radius: 999rpx;
-  background: var(--surface-bg);
+  margin-right: 12rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 18rpx;
+  background: #ffffff;
   color: var(--text-secondary);
+  font-size: 24rpx;
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
 }
 
 .tabs__item--active {
-  background: var(--brand);
-  color: #ffffff;
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
 .list {
-  margin-top: 24rpx;
+  display: block;
 }

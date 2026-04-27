@@ -20,3 +20,11 @@ test("核心工程配置文件存在", () => {
     assert.equal(fs.existsSync(path.join(root, filePath)), true, filePath);
   });
 });
+
+test("微信开发者工具启用 TypeScript 编译插件", () => {
+  const projectConfig = JSON.parse(
+    fs.readFileSync(path.join(root, "project.config.json"), "utf8")
+  );
+
+  assert.deepEqual(projectConfig.setting.useCompilerPlugins, ["typescript"]);
+});

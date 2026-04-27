@@ -1,0 +1,39 @@
+<view class="page discover-page">
+  <view class="discover-header">
+    <view class="discover-header__top">
+      <text class="discover-header__city">⌖ 成都市⌄</text>
+      <text class="discover-header__title">找局加入</text>
+      <text class="discover-header__spacer"></text>
+    </view>
+    <view class="search">
+      <text class="search__icon">⌕</text>
+      <input
+        class="search__input"
+        placeholder="搜索KTV、歌曲、关键词"
+        value="{{keyword}}"
+        bindinput="handleKeywordInput"
+      />
+      <text class="search__button">搜索</text>
+    </view>
+    <scroll-view class="filters" scroll-x enhanced>
+      <text class="filters__item" wx:for="{{filters}}" wx:key="*this">{{item}}⌄</text>
+    </scroll-view>
+  </view>
+
+  <view class="discover-tabs">
+    <text
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="discover-tabs__item {{activeTab === item.key ? 'discover-tabs__item--active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </text>
+    <text class="discover-tabs__filter">⊕ 距离 筛选›</text>
+  </view>
+
+  <view class="discover-list">
+    <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
+  </view>
+</view>
