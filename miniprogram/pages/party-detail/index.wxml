@@ -1,5 +1,11 @@
 <view class="page detail-page">
   <view class="detail-hero" wx:if="{{detail}}">
+    <image
+      wx:if="{{detail.party.coverImage}}"
+      class="detail-hero__image"
+      src="{{detail.party.coverImage}}"
+      mode="aspectFill"
+    />
     <text class="detail-hero__status">{{detail.party.statusText}}</text>
     <text class="detail-hero__title">KTV</text>
     <text class="detail-hero__pager">1/5</text>

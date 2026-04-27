@@ -26,8 +26,23 @@
     linear-gradient(145deg, #17122c 0%, #070918 100%);
 }
 
+.party-card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.party-card__cover::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(13, 10, 28, 0.04), rgba(9, 7, 18, 0.22));
+  content: "";
+}
+
 .party-card__cover-glow {
   position: absolute;
+  z-index: 1;
   left: 24rpx;
   right: 24rpx;
   bottom: 30rpx;
@@ -39,6 +54,7 @@
 
 .party-card__cover-title {
   position: absolute;
+  z-index: 1;
   left: 42rpx;
   bottom: 52rpx;
   color: #f4e8ff;
@@ -49,6 +65,7 @@
 
 .party-card__status {
   position: absolute;
+  z-index: 2;
   top: 12rpx;
   left: 12rpx;
   padding: 6rpx 12rpx;

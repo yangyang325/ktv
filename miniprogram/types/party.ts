@@ -17,6 +17,7 @@ export interface Party {
   isPublic: boolean;
   notes: string;
   tags: string[];
+  coverImage: string;
   createdAt: string;
   confirmedCount: number;
   waitlistCount: number;

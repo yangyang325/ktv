@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
+import path from "node:path";
 import {
   createPartyDraft,
   getMyPartyTabs,
@@ -15,6 +17,16 @@ test("首页列表返回可展示的局数据", async () => {
   assert.equal(Array.isArray(parties), true);
   assert.equal(parties.length > 0, true);
   assert.equal(typeof parties[0].estimatedPerPerson, "number");
+});
+
+test("首页局卡片使用项目内静态封面图", async () => {
+  const parties = await getPartyList();
+  const coverImage = parties[0].coverImage;
+  assert.equal(coverImage.startsWith("/assets/images/ktv/"), true);
+  assert.equal(
+    fs.existsSync(path.resolve(process.cwd(), "miniprogram", coverImage.slice(1))),
+    true
+  );
 });
 
 test("我的局聚合视图包含四个分组", async () => {
