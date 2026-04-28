@@ -1,7 +1,10 @@
 <view class="page discover-page">
   <view class="discover-header">
     <view class="discover-header__top">
-      <text class="discover-header__city">⌖ 成都市⌄</text>
+      <view class="discover-header__city">
+        <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
+        <text>成都市⌄</text>
+      </view>
       <text class="discover-header__title">找局加入</text>
       <text class="discover-header__spacer"></text>
     </view>

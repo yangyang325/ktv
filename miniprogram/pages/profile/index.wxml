@@ -22,7 +22,7 @@
 
   <view class="shortcut-card">
     <view class="shortcut-card__item" wx:for="{{shortcuts}}" wx:key="key">
-      <text class="shortcut-card__icon shortcut-card__icon--{{item.key}}">{{item.icon}}</text>
+      <image class="shortcut-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
       <text class="shortcut-card__label">{{item.label}}</text>
     </view>
   </view>

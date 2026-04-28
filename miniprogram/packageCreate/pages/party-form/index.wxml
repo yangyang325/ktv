@@ -29,11 +29,17 @@
 
   <view class="form-list">
     <view class="form-row">
-      <text class="form-row__label">◷ 活动时间</text>
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+        <text>活动时间</text>
+      </view>
       <input class="form-row__input" value="{{form.date}} {{form.startTime}}" disabled />
     </view>
     <view class="form-row">
-      <text class="form-row__label">⌖ KTV场所</text>
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
+        <text>KTV场所</text>
+      </view>
       <input class="form-row__input" value="{{venueSummary}}" disabled />
     </view>
     <view class="form-row">
@@ -44,12 +50,18 @@
       </view>
     </view>
     <view class="form-row">
-      <text class="form-row__label">♙ 预计人数</text>
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
+        <text>预计人数</text>
+      </view>
       <input class="form-row__number" value="{{form.maxCapacity}}" data-field="maxCapacity" bindinput="handleFieldChange" />
       <text class="form-row__muted">最多 10</text>
     </view>
     <view class="form-row">
-      <text class="form-row__label">¥ 包厢费用</text>
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/yen.svg" mode="aspectFit" />
+        <text>包厢费用</text>
+      </view>
       <input class="form-row__number" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
       <text class="form-row__muted">元</text>
     </view>

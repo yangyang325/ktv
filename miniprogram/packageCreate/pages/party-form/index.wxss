@@ -114,10 +114,18 @@
 }
 
 .form-row__label {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
   min-width: 180rpx;
   color: var(--text-primary);
   font-size: 27rpx;
   font-weight: 700;
+}
+
+.form-row__label image {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .form-row__input {

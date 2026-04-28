@@ -6,9 +6,7 @@
       src="{{party.coverImage}}"
       mode="aspectFill"
     />
-    <view class="party-card__cover-glow"></view>
-    <text class="party-card__status">{{party.statusText || '报名中'}}</text>
-    <text class="party-card__cover-title">KTV</text>
+    <text class="party-card__status party-card__status--{{party.statusText == '报名中' ? 'signup' : party.status}}">{{party.statusText || '报名中'}}</text>
   </view>
   <view class="party-card__body">
     <text class="party-card__title">{{party.title || '周末嗨唱局'}}</text>
@@ -16,11 +14,11 @@
       <text class="party-card__tag" wx:for="{{party.tags}}" wx:key="*this">{{item}}</text>
     </view>
     <view class="party-card__meta">
-      <text class="party-card__meta-icon">◷</text>
+      <image class="party-card__meta-icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
       <text>{{party.timeSummary || '今天 20:00-23:00'}}</text>
     </view>
     <view class="party-card__meta">
-      <text class="party-card__meta-icon">⌖</text>
+      <image class="party-card__meta-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
       <text>{{party.venueSummary || '星歌汇KTV'}}</text>
     </view>
     <view class="party-card__footer">
@@ -29,7 +27,10 @@
         <text class="party-card__avatar party-card__avatar--blue">麦</text>
         <text class="party-card__avatar party-card__avatar--pink">周</text>
       </view>
-      <text class="party-card__count">{{party.progressText || '6/10人'}}</text>
+      <view class="party-card__count">
+        <text class="party-card__count-current">{{progressCountText}}</text>
+        <text class="party-card__count-rest">{{progressRestText}}</text>
+      </view>
       <text class="party-card__price">{{party.priceText || '¥68/人'}}</text>
     </view>
   </view>

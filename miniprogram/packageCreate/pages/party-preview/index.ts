@@ -46,7 +46,7 @@ Page({
       isPublic: false,
       notes: draft.notes,
       tags: [],
-      coverImage: "/assets/images/ktv/ktv-room-05.png",
+      coverImage: "/assets/images/ktv/ktv-room-01.jpg",
       createdAt: new Date().toISOString(),
       confirmedCount: 1,
       waitlistCount: 0,

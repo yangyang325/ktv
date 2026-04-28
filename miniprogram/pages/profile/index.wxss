@@ -1,5 +1,5 @@
 .profile-page {
-  padding-bottom: 40rpx;
+  padding-bottom: 190rpx;
 }
 
 .profile-hero {
@@ -124,28 +124,9 @@
 }
 
 .shortcut-card__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 56rpx;
   height: 56rpx;
-  border-radius: 18rpx;
-  background: linear-gradient(135deg, #ff8aaa, #ff4c70);
-  color: #ffffff;
-  font-size: 30rpx;
-  font-weight: 900;
-}
-
-.shortcut-card__icon--notes {
-  background: linear-gradient(135deg, #5fc9ff, #5177ff);
-}
-
-.shortcut-card__icon--groups {
-  background: linear-gradient(135deg, #55df93, #23c272);
-}
-
-.shortcut-card__icon--reviews {
-  background: linear-gradient(135deg, #ffb75d, #ff8752);
+  filter: drop-shadow(0 8rpx 16rpx rgba(107, 76, 255, 0.12));
 }
 
 .shortcut-card__label {

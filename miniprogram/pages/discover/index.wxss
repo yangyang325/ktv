@@ -1,5 +1,5 @@
 .discover-page {
-  padding: 26rpx 22rpx 36rpx;
+  padding: 26rpx 22rpx 190rpx;
 }
 
 .discover-header {
@@ -14,9 +14,17 @@
 }
 
 .discover-header__city {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   color: var(--brand);
   font-size: 27rpx;
   font-weight: 800;
+}
+
+.discover-header__city image {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .discover-header__title {

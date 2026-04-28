@@ -11,10 +11,10 @@ Page({
       tags: ["快乐", "老歌星辰", "纯唱派", "互相陪唱"]
     },
     shortcuts: [
-      { key: "favorites", icon: "♥", label: "我的收藏" },
-      { key: "notes", icon: "▣", label: "随笔记录" },
-      { key: "groups", icon: "☻", label: "我的群聊" },
-      { key: "reviews", icon: "⋯", label: "我的评价" }
+      { key: "favorites", iconUrl: "/assets/images/ktv/quick-favorites.png", label: "我的收藏" },
+      { key: "notes", iconUrl: "/assets/images/ktv/tab-messages-active.png", label: "随笔记录" },
+      { key: "groups", iconUrl: "/assets/images/ktv/quick-create-party.png", label: "我的群聊" },
+      { key: "reviews", iconUrl: "/assets/images/ktv/more.svg", label: "我的评价" }
     ],
     menu: ["隐私设置", "帮助与反馈", "联系客服", "关于我们"]
   },

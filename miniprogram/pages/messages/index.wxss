@@ -1,5 +1,5 @@
 .messages-page {
-  padding: 30rpx 28rpx 36rpx;
+  padding: 30rpx 28rpx 190rpx;
 }
 
 .messages-header {
@@ -16,10 +16,16 @@
 
 .messages-header__icons {
   display: flex;
+  align-items: center;
   gap: 30rpx;
   color: var(--text-primary);
   font-size: 34rpx;
   font-weight: 800;
+}
+
+.messages-header__icons image {
+  width: 34rpx;
+  height: 34rpx;
 }
 
 .message-tabs {

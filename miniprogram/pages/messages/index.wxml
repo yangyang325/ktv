@@ -3,7 +3,7 @@
     <text class="messages-header__title">消息</text>
     <view class="messages-header__icons">
       <text>⌕</text>
-      <text>♙</text>
+      <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
     </view>
   </view>
 

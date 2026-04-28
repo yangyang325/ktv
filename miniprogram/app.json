@@ -35,6 +35,7 @@
     "backgroundTextStyle": "light"
   },
   "tabBar": {
+    "custom": true,
     "color": "#8990a8",
     "selectedColor": "#6b4cff",
     "backgroundColor": "#ffffff",
@@ -42,18 +43,26 @@
     "list": [
       {
         "pagePath": "pages/home/index",
+        "iconPath": "assets/images/ktv/tab-home.png",
+        "selectedIconPath": "assets/images/ktv/tab-home-active.png",
         "text": "首页"
       },
       {
         "pagePath": "pages/discover/index",
+        "iconPath": "assets/images/ktv/tab-discover.png",
+        "selectedIconPath": "assets/images/ktv/tab-discover-active.png",
         "text": "发现"
       },
       {
         "pagePath": "pages/messages/index",
+        "iconPath": "assets/images/ktv/tab-messages.png",
+        "selectedIconPath": "assets/images/ktv/tab-messages-active.png",
         "text": "消息"
       },
       {
         "pagePath": "pages/profile/index",
+        "iconPath": "assets/images/ktv/tab-profile.png",
+        "selectedIconPath": "assets/images/ktv/tab-profile-active.png",
         "text": "我的"
       }
     ]

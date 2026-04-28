@@ -1,8 +1,134 @@
 <view class="page launch-page">
-  <view class="launch-card">
-    <text class="launch-card__title">三步发起一个新的 K 局</text>
-    <text class="launch-card__desc">选门店、填信息、生成接龙文案，适合直接在群里开唱。</text>
-    <button class="launch-card__primary" bindtap="handleCreateParty">选择 KTV 发起新局</button>
-    <button class="launch-card__secondary" bindtap="handleResumeDraft">继续未发布草稿</button>
+  <view class="launch-nav">
+    <image class="launch-nav__back" src="/assets/images/ktv/back.svg" mode="aspectFit" bindtap="handleBack" />
+    <text class="launch-nav__title">发起组局</text>
+  </view>
+
+  <view class="cover-title">
+    <view class="cover-upload" bindtap="handleChooseCover">
+      <text class="cover-upload__plus">＋</text>
+      <text class="cover-upload__text">上传封面</text>
+    </view>
+
+    <view class="title-box">
+      <textarea
+        class="title-box__input"
+        placeholder="给你的组局起个吸引人的标题吧～"
+        maxlength="30"
+        value="{{form.title}}"
+        data-field="title"
+        bindinput="handleFieldChange"
+      ></textarea>
+      <view class="title-box__footer">
+        <text>请输入1字</text>
+        <text>{{titleLength}}/30</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="tag-section">
+    <view class="section-title">
+      <text>选择组局属性</text>
+      <text class="section-title__sub">（可多选）</text>
+    </view>
+    <view class="tag-cloud">
+      <text
+        wx:for="{{tags}}"
+        wx:key="*this"
+        class="tag-cloud__item {{selectedTags.indexOf(item) >= 0 ? 'tag-cloud__item--active' : ''}}"
+        data-tag="{{item}}"
+        bindtap="handleTagTap"
+      >{{item}}</text>
+    </view>
+  </view>
+
+  <view class="form-card">
+    <view class="form-row" bindtap="handlePickTime">
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+        <text>活动时间</text>
+      </view>
+      <view class="form-row__value">
+        <text>{{form.timeText}}</text>
+        <text class="form-row__arrow">›</text>
+      </view>
+    </view>
+
+    <view class="form-row" bindtap="handlePickVenue">
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
+        <text>KTV场所</text>
+      </view>
+      <view class="form-row__value">
+        <text>{{form.venueText}}</text>
+        <text class="form-row__arrow">›</text>
+      </view>
+    </view>
+
+    <view class="form-row">
+      <view class="form-row__label">
+        <text class="form-row__symbol">◉</text>
+        <text>房间类型</text>
+      </view>
+      <view class="room-segment">
+        <text
+          wx:for="{{roomTypes}}"
+          wx:key="value"
+          class="room-segment__item {{form.roomType === item.value ? 'room-segment__item--active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="handleRoomTypeTap"
+        >{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="form-row form-row--people">
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
+        <text>预计人数</text>
+      </view>
+      <view class="people-stepper">
+        <view class="people-stepper__group">
+          <text>最少 {{form.minPeople}} 人</text>
+          <view class="stepper-button" data-field="minPeople" data-step="-1" bindtap="handlePeopleStep">-</view>
+        </view>
+        <view class="people-stepper__group">
+          <text>最多 {{form.maxPeople}}</text>
+          <view class="stepper-button" data-field="maxPeople" data-step="1" bindtap="handlePeopleStep">+</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-row" bindtap="handlePickPreference">
+      <view class="form-row__label">
+        <text class="form-row__symbol">⚙</text>
+        <text>性别/年龄偏好</text>
+      </view>
+      <view class="form-row__value">
+        <text>{{form.preference}}</text>
+        <text class="form-row__arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="intro-section">
+    <view class="section-title">
+      <text>活动介绍</text>
+      <text class="section-title__sub">（选填）</text>
+    </view>
+    <view class="intro-box">
+      <textarea
+        class="intro-box__textarea"
+        placeholder="介绍一下本次活动的亮点，音乐偏好，特别要求等..."
+        maxlength="200"
+        value="{{form.notes}}"
+        data-field="notes"
+        bindinput="handleFieldChange"
+      ></textarea>
+      <text class="intro-box__count">{{notesLength}}/200</text>
+    </view>
+  </view>
+
+  <view class="launch-submit">
+    <button class="launch-submit__button" bindtap="handleCreateParty">发布组局</button>
   </view>
 </view>

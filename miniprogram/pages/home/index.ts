@@ -3,14 +3,45 @@ import { getPartyList } from "../../services/api/party";
 Page({
   data: {
     cityName: "成都市",
+    cityOptions: ["成都市", "重庆市", "深圳市", "广州市", "上海市"],
     partyList: [] as Awaited<ReturnType<typeof getPartyList>>,
     loading: true,
     actions: [
-      { key: "create", icon: "👥", title: "我要组局", desc: "发起KTV局" },
-      { key: "discover", icon: "⌕", title: "找局加入", desc: "发现好局" },
-      { key: "mine", icon: "▣", title: "我的组局", desc: "管理局" },
-      { key: "favorites", icon: "★", title: "我的收藏", desc: "收藏的局" }
+      {
+        key: "create",
+        iconUrl: "/assets/images/ktv/quick-create-party.png",
+        title: "我要组局",
+        desc: "发起KTV局"
+      },
+      {
+        key: "discover",
+        iconUrl: "/assets/images/ktv/quick-discover-party.png",
+        title: "找局加入",
+        desc: "发现好局"
+      },
+      {
+        key: "mine",
+        iconUrl: "/assets/images/ktv/quick-my-parties.png",
+        title: "我的组局",
+        desc: "管理局"
+      },
+      {
+        key: "favorites",
+        iconUrl: "/assets/images/ktv/quick-favorites.png",
+        title: "我的收藏",
+        desc: "收藏的局"
+      }
     ]
+  },
+
+  /**
+   * 页面加载时读取已选择城市。
+   */
+  onLoad() {
+    const cityName = wx.getStorageSync("selectedCityName");
+    if (cityName) {
+      this.setData({ cityName });
+    }
   },
 
   /**
@@ -21,6 +52,24 @@ Page({
     this.setData({
       partyList,
       loading: false
+    });
+  },
+
+  /**
+   * 打开城市选择面板。
+   */
+  handleCityTap() {
+    wx.showActionSheet({
+      itemList: this.data.cityOptions,
+      success: (result) => {
+        const cityName = this.data.cityOptions[result.tapIndex];
+        if (!cityName) {
+          return;
+        }
+
+        wx.setStorageSync("selectedCityName", cityName);
+        this.setData({ cityName });
+      }
     });
   },
 
