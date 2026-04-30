@@ -9,7 +9,7 @@ interface TabBarItem {
 interface SwitchTabEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
-      index?: number;
+      index?: number | string;
       path?: string;
     };
   };
@@ -84,8 +84,10 @@ Component({
      */
     switchTab(event: SwitchTabEvent) {
       const { index, path } = event.currentTarget.dataset;
-      if (typeof index === "number" && index !== this.data.selected) {
-        this.setData({ selected: index });
+      const selected = Number(index);
+
+      if (Number.isInteger(selected) && selected !== this.data.selected) {
+        this.setData({ selected });
       }
 
       if (!path) {

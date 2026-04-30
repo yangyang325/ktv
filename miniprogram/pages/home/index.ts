@@ -48,6 +48,8 @@ Page({
    * 页面展示时刷新局列表。
    */
   async onShow() {
+    this.getTabBar().setData({ selected: 0 });
+
     const partyList = await getPartyList();
     this.setData({
       partyList,

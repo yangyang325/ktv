@@ -1,40 +1,110 @@
 <view class="page messages-page">
-  <view class="messages-header">
-    <text class="messages-header__title">消息</text>
-    <view class="messages-header__icons">
-      <text>⌕</text>
-      <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
-    </view>
+  <view class="messages-page__halo messages-page__halo--left"></view>
+  <view class="messages-page__halo messages-page__halo--right"></view>
+
+  <view class="messages-nav">
+    <text class="messages-nav__title">消息</text>
   </view>
 
   <view class="message-tabs">
-    <text
+    <view
       wx:for="{{tabs}}"
       wx:key="key"
       class="message-tabs__item {{activeTab === item.key ? 'message-tabs__item--active' : ''}}"
       data-key="{{item.key}}"
       bindtap="handleTabChange"
     >
-      {{item.label}}
-    </text>
+      <text>{{item.label}}</text>
+      <view wx:if="{{item.hasDot}}" class="message-tabs__dot"></view>
+    </view>
   </view>
 
-  <view class="conversation-list">
+  <view class="message-search">
+    <view class="message-search__icon"></view>
+    <text class="message-search__placeholder">搜索聊天记录</text>
+  </view>
+
+  <view class="conversation-card">
     <view class="conversation" wx:for="{{conversations}}" wx:key="id">
-      <view class="conversation__avatar conversation__avatar--{{item.color}}">
-        <text>{{item.avatar}}</text>
+      <view class="conversation__avatar conversation__avatar--{{item.avatarType}}">
+        <block wx:if="{{item.avatarType === 'single'}}">
+          <view
+            wx:for="{{item.members}}"
+            wx:key="name"
+            wx:for-item="member"
+            class="portrait portrait--{{member.tone}} portrait--{{member.shirt}}"
+          >
+            <view class="portrait__hair"></view>
+            <view class="portrait__face"></view>
+            <view class="portrait__body"></view>
+          </view>
+          <view wx:if="{{item.online}}" class="conversation__online"></view>
+        </block>
+
+        <block wx:elif="{{item.avatarType === 'group'}}">
+          <view
+            wx:for="{{item.members}}"
+            wx:key="name"
+            wx:for-item="member"
+            wx:for-index="memberIndex"
+            class="portrait portrait--mini portrait--{{member.tone}} portrait--{{member.shirt}} portrait--slot-{{memberIndex}}"
+          >
+            <view class="portrait__hair"></view>
+            <view class="portrait__face"></view>
+            <view class="portrait__body"></view>
+          </view>
+        </block>
+
+        <block wx:elif="{{item.avatarType === 'notice'}}">
+          <view class="notice-bell">
+            <view class="notice-bell__cap"></view>
+            <view class="notice-bell__body"></view>
+            <view class="notice-bell__foot"></view>
+          </view>
+        </block>
+
+        <block wx:else>
+          <view class="activity-mail">
+            <view class="activity-mail__flap"></view>
+            <view class="activity-mail__check"></view>
+          </view>
+        </block>
       </view>
-      <view class="conversation__body">
-        <view class="conversation__line">
-          <text class="conversation__name">{{item.name}}</text>
-          <text class="conversation__role" wx:if="{{item.role}}">{{item.role}}</text>
+
+      <view class="conversation__content">
+        <view class="conversation__top">
+          <view class="conversation__title-wrap">
+            <text class="conversation__title">{{item.name}}</text>
+            <text wx:if="{{item.role}}" class="conversation__role conversation__role--{{item.roleType}}">{{item.role}}</text>
+          </view>
           <text class="conversation__time">{{item.time}}</text>
         </view>
-        <view class="conversation__line conversation__line--preview">
+        <view class="conversation__bottom">
           <text class="conversation__preview">{{item.preview}}</text>
-          <text class="conversation__badge" wx:if="{{item.unread}}">{{item.unread}}</text>
+          <text wx:if="{{item.unread}}" class="conversation__badge">{{item.unread}}</text>
         </view>
       </view>
     </view>
+  </view>
+
+  <view wx:if="{{showNoticeCard}}" class="notice-card">
+    <view class="notice-card__copy">
+      <text class="notice-card__title">开启消息通知</text>
+      <text class="notice-card__desc">不错过任何组局动态和活动信息</text>
+      <button class="notice-card__button" hover-class="notice-card__button--hover">去开启</button>
+    </view>
+    <view class="gift">
+      <view class="gift__shadow"></view>
+      <view class="gift__box"></view>
+      <view class="gift__lid"></view>
+      <view class="gift__ribbon gift__ribbon--vertical"></view>
+      <view class="gift__ribbon gift__ribbon--horizontal"></view>
+      <view class="gift__bow gift__bow--left"></view>
+      <view class="gift__bow gift__bow--right"></view>
+      <view class="gift__spark gift__spark--one"></view>
+      <view class="gift__spark gift__spark--two"></view>
+      <view class="gift__spark gift__spark--three"></view>
+    </view>
+    <view class="notice-card__close" bindtap="handleCloseNoticeCard">×</view>
   </view>
 </view>

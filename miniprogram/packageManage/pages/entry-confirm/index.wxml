@@ -1,0 +1,80 @@
+<view class="page entry-confirm-page">
+  <block wx:if="{{detail}}">
+    <view class="confirm-party-card">
+      <image class="confirm-party-card__cover" src="{{detail.party.coverImage}}" mode="aspectFill" />
+      <view class="confirm-party-card__body">
+        <text class="confirm-party-card__title">{{displayTitle}}</text>
+        <view class="confirm-party-card__tags">
+          <text class="confirm-party-card__tag" wx:for="{{displayTags}}" wx:key="*this">{{item}}</text>
+        </view>
+        <view class="confirm-party-card__meta">
+          <view class="confirm-meta-row confirm-meta-row--time">
+            <image class="confirm-meta-row__icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+            <text>{{detail.party.timeSummary}}（预计{{durationHourText}}小时）</text>
+          </view>
+          <view class="confirm-meta-row">
+            <image class="confirm-meta-row__icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
+            <text>{{detail.party.venueSummary}}</text>
+          </view>
+          <view class="confirm-meta-row">
+            <image class="confirm-meta-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
+            <text>已报名 {{capacityText}} · {{distanceText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="confirm-fee-card">
+      <view class="confirm-card-title">
+        <view class="confirm-card-title__icon confirm-card-title__icon--fee">￥</view>
+        <text>费用明细</text>
+      </view>
+      <text class="confirm-fee-card__price">AA制  {{detail.party.priceText}}</text>
+    </view>
+
+    <view class="confirm-section-card confirm-section-card--quota">
+      <view class="confirm-card-title">
+        <image class="confirm-card-title__image" src="/assets/images/ktv/confirm-users.svg" mode="aspectFit" />
+        <text>名额与备注</text>
+      </view>
+      <text class="confirm-section-card__side">{{capacityText}}</text>
+      <text class="confirm-section-card__desc">剩余{{remainingCount}}个小局，可适当放鸽</text>
+    </view>
+
+    <view class="confirm-section-card confirm-section-card--contact">
+      <view class="confirm-card-title">
+        <image class="confirm-card-title__image" src="/assets/images/ktv/confirm-phone.svg" mode="aspectFit" />
+        <text>联系方式</text>
+      </view>
+      <text class="confirm-section-card__desc">活动开始前，发起人将通过小程序消息联系您</text>
+      <view class="confirm-privacy">
+        <image class="confirm-privacy__shield" src="/assets/images/ktv/confirm-shield.svg" mode="aspectFit" />
+        <text>联系方式仅用于活动沟通，平台将严格保护隐私</text>
+      </view>
+    </view>
+
+    <view class="confirm-agreement" hover-class="none" bindtap="toggleAgreement">
+      <view class="confirm-agreement__check {{agreementChecked ? 'confirm-agreement__check--active' : ''}}"></view>
+      <view class="confirm-agreement__content">
+        <text class="confirm-agreement__text">我已阅读并同意</text>
+        <text class="confirm-agreement__link" catchtap="openAgreement">《组局活动参与协议》</text>
+      </view>
+    </view>
+
+    <view class="confirm-bottom-card">
+      <view class="confirm-total">
+        <text class="confirm-total__label">应付金额</text>
+        <view class="confirm-total__amount">
+          <text class="confirm-total__symbol">￥</text>
+          <text class="confirm-total__number">{{payAmount}}</text>
+        </view>
+      </view>
+      <button
+        class="confirm-submit"
+        hover-class="none"
+        disabled="{{submitting}}"
+        bindtap="handleConfirm"
+      >确认报名</button>
+    </view>
+  </block>
+</view>

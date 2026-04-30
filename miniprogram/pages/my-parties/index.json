@@ -1,7 +1,10 @@
 {
-  "navigationBarTitleText": "我的局",
+  "navigationStyle": "default",
+  "navigationBarTitleText": "我的组局",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f7f8ff",
   "usingComponents": {
-    "party-card": "/components/party-card/index",
     "empty-state": "/components/empty-state/index"
   }
 }

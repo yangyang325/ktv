@@ -23,11 +23,13 @@
       "pages": [
         "pages/party-members/index",
         "pages/settlement/index",
-        "pages/notifications/index"
+        "pages/notifications/index",
+        "pages/entry-confirm/index"
       ]
     }
   ],
   "window": {
+    "navigationStyle": "custom",
     "navigationBarTitleText": "KTV 组局",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
@@ -36,8 +38,8 @@
   },
   "tabBar": {
     "custom": true,
-    "color": "#8990a8",
-    "selectedColor": "#6b4cff",
+    "color": "#8a91a6",
+    "selectedColor": "#4e63ff",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [

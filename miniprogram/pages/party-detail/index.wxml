@@ -1,75 +1,91 @@
 <view class="page detail-page">
-  <view class="detail-hero" wx:if="{{detail}}">
-    <image
-      wx:if="{{detail.party.coverImage}}"
-      class="detail-hero__image"
-      src="{{detail.party.coverImage}}"
-      mode="aspectFill"
-    />
-    <text class="detail-hero__status">{{detail.party.statusText}}</text>
-    <text class="detail-hero__pager">1/5</text>
-  </view>
+  <block wx:if="{{detail}}">
+    <view class="detail-shell">
+      <view class="detail-hero">
+        <image
+          wx:if="{{detail.party.coverImage}}"
+          class="detail-hero__image"
+          src="{{detail.party.coverImage}}"
+          mode="aspectFill"
+        />
+        <text class="detail-hero__status">{{detail.party.statusText}}</text>
+        <text class="detail-hero__pager">1/5</text>
+      </view>
 
-  <view class="detail-card" wx:if="{{detail}}">
-    <text class="detail-card__title">{{detail.party.title}}</text>
-    <text class="detail-card__desc">一起唱歌放松，认识新朋友，开心最重要！</text>
-    <view class="detail-card__tags">
-      <text wx:for="{{detail.party.tags}}" wx:key="*this">{{item}}</text>
-    </view>
-    <view class="detail-row">
-      <image class="detail-row__icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
-      <view>
-        <text class="detail-row__main">{{detail.party.timeSummary}}</text>
-        <text class="detail-row__sub">预计 3 小时</text>
-      </view>
-    </view>
-    <view class="detail-row">
-      <image class="detail-row__icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
-      <view>
-        <text class="detail-row__main">{{detail.party.venueSummary}}</text>
-        <text class="detail-row__sub">成都市锦江区春熙路XX号群光广场8楼</text>
-      </view>
-      <text class="detail-row__pill">导航</text>
-    </view>
-    <view class="detail-row">
-      <image class="detail-row__icon" src="/assets/images/ktv/yen.svg" mode="aspectFit" />
-      <view>
-        <text class="detail-row__main">AA制 · 预计 {{detail.party.priceText}}</text>
-        <text class="detail-row__sub">预估包含：包厢费+酒水小吃</text>
-      </view>
-    </view>
-    <view class="detail-row">
-      <image class="detail-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
-      <view>
-        <text class="detail-row__main">{{detail.party.progressText}}</text>
-        <text class="detail-row__sub">还差 {{remainingCount}} 人，快来加入吧！</text>
-      </view>
-    </view>
-  </view>
+      <view class="detail-card">
+        <text class="detail-card__title">{{detail.party.title}}</text>
+        <text class="detail-card__desc">一起唱歌放松，认识新朋友，开心最重要！</text>
+        <view class="detail-card__tags">
+          <text
+            class="detail-card__tag detail-card__tag--{{item.tone}}"
+            wx:for="{{displayTags}}"
+            wx:key="label"
+          >{{item.label}}</text>
+        </view>
 
-  <view class="detail-section" wx:if="{{detail}}">
-    <text class="detail-section__title">发起人</text>
-    <view class="host">
-      <view class="host__avatar">麦</view>
-      <view class="host__body">
-        <text class="host__name">{{detail.host.nickname}} ⊙</text>
-        <text class="host__intro">喜欢唱歌，性格开朗好相处～</text>
+        <view class="detail-info">
+          <view class="detail-row">
+            <image class="detail-row__icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+            <view class="detail-row__body">
+              <text class="detail-row__main">{{detail.party.timeSummary}}（预计{{durationHourText}}小时）</text>
+            </view>
+          </view>
+          <view class="detail-row">
+            <image class="detail-row__icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
+            <view class="detail-row__body">
+              <text class="detail-row__main">{{detail.party.venueSummary}}</text>
+              <text class="detail-row__sub">成都市锦江区春熙路XX号群光广场8楼</text>
+            </view>
+            <button class="detail-row__nav" hover-class="none" bindtap="handleNavigate">
+              <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
+              <text>导航</text>
+            </button>
+          </view>
+          <view class="detail-row">
+            <image class="detail-row__icon" src="/assets/images/ktv/yen.svg" mode="aspectFit" />
+            <view class="detail-row__body">
+              <text class="detail-row__main">AA制 · 预计 {{detail.party.priceText}}</text>
+              <text class="detail-row__sub">预估包含：包厢费+酒水小吃</text>
+            </view>
+          </view>
+          <view class="detail-row">
+            <image class="detail-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
+            <view class="detail-row__body">
+              <text class="detail-row__main">{{detail.party.progressText}}</text>
+              <text class="detail-row__sub">还差 {{remainingCount}} 人，快来加入吧！</text>
+            </view>
+          </view>
+        </view>
       </view>
-      <text class="host__arrow">›</text>
     </view>
-  </view>
 
-  <view class="detail-section" wx:if="{{detail}}">
-    <text class="detail-section__title">活动介绍</text>
-    <text class="detail-section__text">{{detail.party.notes}}</text>
-  </view>
+    <view class="detail-section">
+      <text class="detail-section__title">发起人</text>
+      <view class="host">
+        <image class="host__avatar" src="/assets/images/ktv/profile-avatar.svg" mode="aspectFill" />
+        <view class="host__body">
+          <view class="host__name-line">
+            <text class="host__name">{{detail.host.nickname}}</text>
+            <text class="host__badge">●</text>
+          </view>
+          <text class="host__intro">喜欢唱歌，性格开朗好相处～</text>
+        </view>
+        <text class="host__arrow">›</text>
+      </view>
+    </view>
 
-  <view class="actions" wx:if="{{detail}}">
-    <button class="actions__favorite">
-      <image src="/assets/images/ktv/star.svg" mode="aspectFit" />
-      <text>收藏</text>
-    </button>
-    <button class="actions__secondary" bindtap="handleManageMembers">联系发起人</button>
-    <button class="actions__primary" bindtap="handleJoin">立即报名</button>
-  </view>
+    <view class="detail-section detail-section--intro">
+      <text class="detail-section__title">活动介绍</text>
+      <text class="detail-section__text">{{detail.party.notes}}</text>
+    </view>
+
+    <view class="actions">
+      <button class="actions__favorite" hover-class="none">
+        <image src="/assets/images/ktv/star.svg" mode="aspectFit" />
+        <text>收藏</text>
+      </button>
+      <button class="actions__secondary" hover-class="none" bindtap="handleContactHost">联系发起人</button>
+      <button class="actions__primary" hover-class="none" bindtap="handleJoin">立即报名</button>
+    </view>
+  </block>
 </view>

@@ -12,5 +12,6 @@ export const ROUTES = {
   partyPreview: "/packageCreate/pages/party-preview/index",
   partyMembers: "/packageManage/pages/party-members/index",
   settlement: "/packageManage/pages/settlement/index",
-  notifications: "/packageManage/pages/notifications/index"
+  notifications: "/packageManage/pages/notifications/index",
+  entryConfirm: "/packageManage/pages/entry-confirm/index"
 } as const;

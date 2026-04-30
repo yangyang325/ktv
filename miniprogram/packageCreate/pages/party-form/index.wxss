@@ -2,18 +2,6 @@
   padding: 28rpx 24rpx 120rpx;
 }
 
-.form-header {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 28rpx;
-}
-
-.form-header__title {
-  color: var(--text-primary);
-  font-size: 36rpx;
-  font-weight: 900;
-}
-
 .title-card,
 .section-card,
 .form-list {
@@ -179,16 +167,24 @@
 
 .submit-button {
   position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   left: 24rpx;
   right: 24rpx;
   bottom: 28rpx;
   height: 78rpx;
   margin: 0;
+  padding: 0;
   border-radius: 18rpx;
   background: linear-gradient(135deg, #8e66ff, #5237f2);
   color: #ffffff;
   font-size: 30rpx;
   font-weight: 900;
-  line-height: 78rpx;
+  line-height: 1;
   box-shadow: 0 18rpx 34rpx rgba(107, 76, 255, 0.24);
+}
+
+.submit-button::after {
+  border: 0;
 }

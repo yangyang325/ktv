@@ -1,19 +1,105 @@
-<view class="page my-page">
-  <view class="my-header">
-    <text class="my-header__title">我的组局</text>
-  </view>
-  <scroll-view class="tabs" scroll-x enhanced>
-    <view
-      wx:for="{{tabs}}"
-      wx:key="key"
-      class="tabs__item {{currentTab === item.key ? 'tabs__item--active' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="handleTabChange"
-    >
-      {{item.label}}
+<view class="page my-parties-page">
+  <view class="summary-card">
+    <image
+      class="summary-card__bg"
+      src="/assets/images/ktv/my-parties-summary-bg.png"
+      mode="aspectFill"
+    />
+    <view class="summary-card__content">
+      <text class="summary-card__title">管理你的发起与报名记录</text>
+      <view class="summary-stats">
+        <view class="summary-stats__item" wx:for="{{stats}}" wx:key="key">
+          <view class="summary-stats__icon summary-stats__icon--{{item.tone}}">{{item.icon}}</view>
+          <view class="summary-stats__copy">
+            <text class="summary-stats__label">{{item.label}}</text>
+            <text class="summary-stats__value summary-stats__value--{{item.tone}}">{{item.value}}</text>
+          </view>
+        </view>
+      </view>
     </view>
-  </scroll-view>
-  <view class="list">
-    <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
+  </view>
+
+  <view class="content-sheet">
+    <view class="party-tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="party-tabs__item {{currentTab === item.key ? 'party-tabs__item--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleTabChange"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="party-list" wx:if="{{partyList.length}}">
+      <view
+        wx:for="{{partyList}}"
+        wx:key="partyId"
+        class="my-party-card {{item.isFinished ? 'my-party-card--finished' : ''}}"
+        data-id="{{item.partyId}}"
+        bindtap="handleCardTap"
+      >
+        <view class="my-party-card__cover">
+          <image class="my-party-card__image" src="{{item.coverImage}}" mode="aspectFill" />
+          <text class="my-party-card__status my-party-card__status--{{item.statusTone}}">{{item.statusText}}</text>
+        </view>
+
+        <view class="my-party-card__body">
+          <text class="my-party-card__title">{{item.title}}</text>
+          <view class="my-party-card__tags">
+            <text class="my-party-card__tag" wx:for="{{item.displayTags}}" wx:key="*this">{{item}}</text>
+          </view>
+          <view class="my-party-card__meta">
+            <image class="my-party-card__meta-icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+            <text>{{item.timeSummary}}</text>
+          </view>
+          <view class="my-party-card__meta">
+            <image class="my-party-card__meta-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
+            <text>{{item.venueSummary}}</text>
+          </view>
+          <view class="my-party-card__footer">
+            <view class="my-party-card__avatars">
+              <text
+                wx:for="{{item.avatars}}"
+                wx:key="index"
+                class="my-party-card__avatar my-party-card__avatar--{{index}}"
+              >{{item}}</text>
+            </view>
+            <view class="my-party-card__count">
+              <text class="my-party-card__count-current">{{item.progressCountText}}</text>
+              <text class="my-party-card__count-rest">{{item.progressRestText}}</text>
+            </view>
+            <view class="my-party-card__role">
+              <text class="my-party-card__role-text my-party-card__role-text--{{item.roleTone}}">{{item.actionText}}</text>
+              <text class="my-party-card__arrow">›</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <empty-state wx:else title="{{emptyTitle}}" description="{{emptyDescription}}" />
+  </view>
+
+  <view class="create-fab" bindtap="handleCreateTap" hover-class="create-fab--hover">
+    <text class="create-fab__plus">＋</text>
+    <text class="create-fab__text">发起组局</text>
+  </view>
+
+  <view class="page-tabbar">
+    <view
+      wx:for="{{bottomNav}}"
+      wx:key="key"
+      class="page-tabbar__item {{item.active ? 'page-tabbar__item--active' : ''}}"
+      data-path="{{item.path}}"
+      bindtap="handleBottomNavTap"
+    >
+      <view class="page-tabbar__icon-wrap">
+        <image class="page-tabbar__icon" src="{{item.active ? item.activeIcon : item.icon}}" mode="aspectFit" />
+        <text wx:if="{{item.badge}}" class="page-tabbar__badge">{{item.badge}}</text>
+      </view>
+      <text class="page-tabbar__label">{{item.label}}</text>
+    </view>
   </view>
 </view>

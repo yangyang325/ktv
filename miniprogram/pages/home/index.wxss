@@ -136,16 +136,18 @@
 }
 
 .quick-panel__icon {
-  width: 82rpx;
-  height: 82rpx;
+  width: 112rpx;
+  height: 112rpx;
   filter: drop-shadow(0 12rpx 22rpx rgba(107, 76, 255, 0.18));
 }
 
 .quick-panel__title {
+  width: 112rpx;
   margin-top: 16rpx;
   color: #202333;
   font-size: 27rpx;
   font-weight: 800;
+  text-align: center;
   white-space: nowrap;
 }
 

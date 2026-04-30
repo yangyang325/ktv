@@ -1,13 +1,11 @@
 <view class="page discover-page">
-  <view class="discover-header">
-    <view class="discover-header__top">
-      <view class="discover-header__city">
-        <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
-        <text>成都市⌄</text>
-      </view>
-      <text class="discover-header__title">找局加入</text>
-      <text class="discover-header__spacer"></text>
+  <view class="discover-panel">
+    <view class="city-row" bindtap="handleCityTap">
+      <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
+      <text>{{cityName}}</text>
+      <text class="city-row__arrow">⌄</text>
     </view>
+
     <view class="search">
       <text class="search__icon">⌕</text>
       <input
@@ -15,28 +13,106 @@
         placeholder="搜索KTV、歌曲、关键词"
         value="{{keyword}}"
         bindinput="handleKeywordInput"
+        confirm-type="search"
+        bindconfirm="handleSearch"
       />
-      <text class="search__button">搜索</text>
+      <text class="search__button" bindtap="handleSearch">搜索</text>
     </view>
-    <scroll-view class="filters" scroll-x enhanced>
-      <text class="filters__item" wx:for="{{filters}}" wx:key="*this">{{item}}⌄</text>
+
+    <scroll-view class="quick-filters" scroll-x enhanced>
+      <view
+        wx:for="{{filters}}"
+        wx:key="key"
+        class="quick-filters__item"
+        data-key="{{item.key}}"
+        bindtap="handleFilterTap"
+      >
+        <text class="quick-filters__label">{{item.label}}</text>
+        <text class="quick-filters__arrow">{{item.suffix}}</text>
+      </view>
     </scroll-view>
   </view>
 
-  <view class="discover-tabs">
-    <text
-      wx:for="{{tabs}}"
-      wx:key="key"
-      class="discover-tabs__item {{activeTab === item.key ? 'discover-tabs__item--active' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="handleTabChange"
-    >
-      {{item.label}}
-    </text>
-    <text class="discover-tabs__filter">⊕ 距离 筛选›</text>
+  <view class="section-bar">
+    <view class="section-tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="section-tabs__item {{activeTab === item.key ? 'section-tabs__item--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleTabChange"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+    <view class="view-switch">
+      <view class="view-switch__distance">
+        <text class="view-switch__dot"></text>
+        <text>只看附近</text>
+      </view>
+      <view class="view-switch__group">
+        <view
+          wx:for="{{viewModes}}"
+          wx:key="key"
+          class="view-switch__mode {{activeViewMode === item.key ? 'view-switch__mode--active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="handleViewModeTap"
+        >
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+    </view>
   </view>
 
   <view class="discover-list">
-    <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
+    <view
+      wx:for="{{partyList}}"
+      wx:key="partyId"
+      class="party-card"
+      data-party-id="{{item.partyId}}"
+      bindtap="handlePartyTap"
+    >
+      <view class="party-card__cover">
+        <image class="party-card__image" src="{{item.coverImage}}" mode="aspectFill" />
+        <text class="party-card__status party-card__status--{{item.statusClass}}">{{item.statusText}}</text>
+        <text class="party-card__ktv">KTV</text>
+      </view>
+
+      <view class="party-card__content">
+        <view class="party-card__headline">
+          <text class="party-card__title">{{item.title}}</text>
+          <image class="party-card__favorite" src="/assets/images/ktv/star.svg" mode="aspectFit" />
+        </view>
+
+        <view class="party-card__tags">
+          <text class="party-card__tag" wx:for="{{item.tags}}" wx:key="*this">{{item}}</text>
+        </view>
+
+        <view class="party-card__meta">
+          <image class="party-card__meta-icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+          <text>{{item.timeSummary}}</text>
+        </view>
+
+        <view class="party-card__meta">
+          <image class="party-card__meta-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
+          <text class="party-card__venue">{{item.venueSummary}}</text>
+          <text class="party-card__distance">{{item.distanceText}}</text>
+        </view>
+
+        <view class="party-card__footer">
+          <view class="party-card__avatars">
+            <text
+              wx:for="{{item.avatars}}"
+              wx:key="index"
+              class="party-card__avatar party-card__avatar--{{index}}"
+            >
+              {{item}}
+            </text>
+          </view>
+          <text class="party-card__progress">{{item.progressText}}</text>
+          <text class="party-card__price">{{item.priceText}}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </view>

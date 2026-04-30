@@ -1,11 +1,6 @@
 <view class="page launch-page">
-  <view class="launch-nav">
-    <image class="launch-nav__back" src="/assets/images/ktv/back.svg" mode="aspectFit" bindtap="handleBack" />
-    <text class="launch-nav__title">发起组局</text>
-  </view>
-
   <view class="cover-title">
-    <view class="cover-upload" bindtap="handleChooseCover">
+    <view class="cover-upload">
       <text class="cover-upload__plus">＋</text>
       <text class="cover-upload__text">上传封面</text>
     </view>
@@ -43,7 +38,7 @@
   </view>
 
   <view class="form-card">
-    <view class="form-row" bindtap="handlePickTime">
+    <view class="form-row">
       <view class="form-row__label">
         <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
         <text>活动时间</text>
@@ -54,7 +49,7 @@
       </view>
     </view>
 
-    <view class="form-row" bindtap="handlePickVenue">
+    <view class="form-row">
       <view class="form-row__label">
         <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
         <text>KTV场所</text>
@@ -98,7 +93,7 @@
       </view>
     </view>
 
-    <view class="form-row" bindtap="handlePickPreference">
+    <view class="form-row">
       <view class="form-row__label">
         <text class="form-row__symbol">⚙</text>
         <text>性别/年龄偏好</text>
@@ -129,6 +124,6 @@
   </view>
 
   <view class="launch-submit">
-    <button class="launch-submit__button" bindtap="handleCreateParty">发布组局</button>
+    <button class="launch-submit__button">发布组局</button>
   </view>
 </view>

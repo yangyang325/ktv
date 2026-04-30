@@ -1,36 +1,74 @@
 <view class="page profile-page">
-  <view class="profile-hero">
-    <view class="profile-hero__row">
-      <view class="profile-hero__avatar">麦</view>
-      <view class="profile-hero__info">
-        <text class="profile-hero__name">{{profile.nickname}} ⊙</text>
-        <text class="profile-hero__intro">{{profile.intro}}</text>
+  <view
+    class="profile-nav"
+    style="height: {{navigationMetrics.navigationHeight}}px; padding-top: {{navigationMetrics.statusBarHeight}}px;"
+  >
+    <view class="profile-nav__bar" style="height: {{navigationMetrics.navigationBarHeight}}px;">
+      <text class="profile-nav__title">我的</text>
+    </view>
+  </view>
+
+  <view class="profile-shell" style="padding-top: {{navigationMetrics.navigationHeight}}px;">
+    <view class="profile-banner">
+      <view class="profile-banner__halo profile-banner__halo--left"></view>
+      <view class="profile-banner__halo profile-banner__halo--right"></view>
+      <view class="profile-banner__wave profile-banner__wave--one"></view>
+      <view class="profile-banner__wave profile-banner__wave--two"></view>
+
+      <view class="profile-banner__content">
+        <view class="profile-banner__row">
+          <image class="profile-banner__avatar" src="{{profile.avatarUrl}}" mode="aspectFill" />
+          <view class="profile-banner__info">
+            <view class="profile-banner__name-row">
+              <text class="profile-banner__name">{{profile.nickname}}</text>
+              <text class="profile-banner__verify">◎</text>
+            </view>
+            <text class="profile-banner__intro">{{profile.intro}}</text>
+            <view class="profile-banner__tags">
+              <text wx:for="{{profile.tags}}" wx:key="*this">{{item}}</text>
+            </view>
+          </view>
+          <button class="profile-banner__edit" bindtap="handleEditProfile">编辑资料</button>
+        </view>
       </view>
-      <button class="profile-hero__edit" bindtap="handleOpenMyParties">编辑资料 ›</button>
     </view>
-    <view class="profile-hero__tags">
-      <text wx:for="{{profile.tags}}" wx:key="*this">{{item}}</text>
-    </view>
-  </view>
 
-  <view class="stats-card">
-    <view class="stats__item" wx:for="{{profile.stats}}" wx:key="label">
-      <text class="stats__value">{{item.value}}</text>
-      <text class="stats__label">{{item.label}}</text>
+    <view class="stats-card">
+      <view class="stats__item" wx:for="{{profile.stats}}" wx:key="label">
+        <text class="stats__value">{{item.value}}</text>
+        <text class="stats__label">{{item.label}}</text>
+      </view>
     </view>
-  </view>
 
-  <view class="shortcut-card">
-    <view class="shortcut-card__item" wx:for="{{shortcuts}}" wx:key="key">
-      <image class="shortcut-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
-      <text class="shortcut-card__label">{{item.label}}</text>
+    <view class="shortcut-card">
+      <view
+        class="shortcut-card__item"
+        wx:for="{{shortcuts}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        data-label="{{item.label}}"
+        bindtap="handleShortcutTap"
+      >
+        <image class="shortcut-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
+        <text class="shortcut-card__label">{{item.label}}</text>
+      </view>
     </view>
-  </view>
 
-  <view class="menu-card">
-    <view class="menu-card__item" wx:for="{{menu}}" wx:key="*this">
-      <text>{{item}}</text>
-      <text>›</text>
+    <view class="menu-card">
+      <view
+        class="menu-card__item"
+        wx:for="{{menu}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        data-label="{{item.label}}"
+        bindtap="handleMenuTap"
+      >
+        <view class="menu-card__label">
+          <image class="menu-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
+          <text>{{item.label}}</text>
+        </view>
+        <text class="menu-card__arrow">›</text>
+      </view>
     </view>
   </view>
 </view>

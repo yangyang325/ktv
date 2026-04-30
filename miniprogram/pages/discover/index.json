@@ -1,6 +1,6 @@
 {
-  "usingComponents": {
-    "party-card": "/components/party-card/index"
-  },
-  "navigationBarTitleText": "找局加入"
+  "navigationStyle": "default",
+  "navigationBarTitleText": "找局加入",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black"
 }

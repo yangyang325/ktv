@@ -79,16 +79,6 @@ Page({
   },
 
   /**
-   * 选择封面。
-   */
-  handleChooseCover() {
-    wx.showToast({
-      title: "选择封面",
-      icon: "none"
-    });
-  },
-
-  /**
    * 更新表单字段。
    * @param event 输入事件
    */
@@ -120,26 +110,6 @@ Page({
       ? this.data.selectedTags.filter((item) => item !== tag)
       : [...this.data.selectedTags, tag];
     this.setData({ selectedTags });
-  },
-
-  /**
-   * 选择活动时间。
-   */
-  handlePickTime() {
-    wx.showToast({
-      title: "选择日期与时间",
-      icon: "none"
-    });
-  },
-
-  /**
-   * 选择 KTV 场所。
-   */
-  handlePickVenue() {
-    wx.showToast({
-      title: "选择KTV",
-      icon: "none"
-    });
   },
 
   /**
@@ -182,32 +152,4 @@ Page({
     });
   },
 
-  /**
-   * 选择性别和年龄偏好。
-   */
-  handlePickPreference() {
-    wx.showActionSheet({
-      itemList: ["不限", "仅限女生", "仅限男生", "同龄优先"],
-      success: (result) => {
-        const preference = ["不限", "仅限女生", "仅限男生", "同龄优先"][result.tapIndex];
-        if (!preference) {
-          return;
-        }
-
-        this.setData({
-          "form.preference": preference
-        });
-      }
-    });
-  },
-
-  /**
-   * 发布组局。
-   */
-  handleCreateParty() {
-    wx.showToast({
-      title: "发布组局",
-      icon: "none"
-    });
-  }
 });
