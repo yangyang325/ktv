@@ -564,3 +564,37 @@ test("party.detail allows draft for owner", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.data.party.partyId, draft.data.partyId);
 });
+
+test("party.createDraft rejects missing start date or time without inserting data", async () => {
+  const store = createMemoryStore(createSeedData());
+  const beforeParties = await store.list("parties");
+  const beforeEntries = await store.list("entries");
+  const basePayload = {
+    userId: "user-host",
+    title: "缺少时间的 K 局",
+    venueId: "venue-001",
+    startDate: "2026-05-23",
+    startTime: "19:30",
+    durationMin: 180,
+    roomFee: 240000,
+    maxCapacity: 12
+  };
+
+  const missingDate = await partyFunction.main(
+    { action: "createDraft", payload: { ...basePayload, startDate: "" } },
+    { store, openid: "openid-host" }
+  );
+  const missingTime = await partyFunction.main(
+    { action: "createDraft", payload: { ...basePayload, startTime: "" } },
+    { store, openid: "openid-host" }
+  );
+  const afterParties = await store.list("parties");
+  const afterEntries = await store.list("entries");
+
+  assert.equal(missingDate.ok, false);
+  assert.equal(missingDate.code, "VALIDATION_ERROR");
+  assert.equal(missingTime.ok, false);
+  assert.equal(missingTime.code, "VALIDATION_ERROR");
+  assert.equal(afterParties.length, beforeParties.length);
+  assert.equal(afterEntries.length, beforeEntries.length);
+});

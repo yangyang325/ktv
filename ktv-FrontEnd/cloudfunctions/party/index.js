@@ -188,8 +188,11 @@ async function createDraft(payload, runtime) {
 
   assertRequired(payload.title, "title", "请填写局标题");
   assertRequired(payload.venueId, "venueId", "请选择门店");
+  assertRequired(payload.startDate, "startDate", "请选择开始日期");
+  assertRequired(payload.startTime, "startTime", "请选择开始时间");
   assertCondition(Number(payload.roomFee) >= 100, ERROR_CODES.VALIDATION_ERROR, "请填写有效包厢费用");
   assertCondition(Number(payload.maxCapacity) >= 2, ERROR_CODES.VALIDATION_ERROR, "至少需要 2 人成局");
+  assertCondition(Number(payload.durationMin) > 0, ERROR_CODES.VALIDATION_ERROR, "请填写有效欢唱时长");
 
   const party = await runtime.store.insert("parties", {
     partyId: createId("party"),
