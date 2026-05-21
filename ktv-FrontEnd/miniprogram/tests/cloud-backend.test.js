@@ -9,6 +9,7 @@ const { createSeedData } = require("../../cloudfunctions/shared/seed");
 const { buildPartyView } = require("../../cloudfunctions/shared/party-view");
 const authFunction = require("../../cloudfunctions/auth/index");
 const venueFunction = require("../../cloudfunctions/venue/index");
+const partyFunction = require("../../cloudfunctions/party/index");
 
 test("shared errors expose stable validation failures", () => {
   assert.throws(
@@ -255,4 +256,103 @@ test("venue.detail rejects inactive venues", async () => {
 
   assert.equal(result.ok, false);
   assert.equal(result.code, "NOT_FOUND");
+});
+
+test("party.list returns visible party cards with display fields", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main({ action: "list", payload: {} }, { store });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.length > 0, true);
+  assert.equal(result.data.every((item) => item.status !== "finished" && item.status !== "cancelled"), true);
+  assert.equal(typeof result.data[0].estimatedPerPerson, "number");
+  assert.equal(typeof result.data[0].venueSummary, "string");
+});
+
+test("party.detail returns host entries and viewer entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    { action: "detail", payload: { partyId: "party-001", userId: "user-host" } },
+    { store }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.party.partyId, "party-001");
+  assert.equal(result.data.host.userId, "user-host");
+  assert.equal(result.data.confirmedEntries.length, 3);
+  assert.equal(result.data.waitlistEntries.length, 1);
+  assert.equal(result.data.viewerEntry.userId, "user-host");
+});
+
+test("party.myTabs groups hosting joined waitlist and history", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    { action: "myTabs", payload: { userId: "user-host" } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.data), ["hosting", "joined", "waitlist", "history"]);
+  assert.equal(result.data.hosting.length > 0, true);
+});
+
+test("party.createDraft creates draft and host entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "羊羊周六 K 局",
+        venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12,
+        notes: "欢迎新人，不限歌路。",
+        tags: ["欢迎新人"]
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+
+  const entries = await store.list("entries", (item) => item.partyId === result.data.partyId);
+  assert.equal(result.ok, true);
+  assert.equal(result.data.status, "draft");
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].entryType, "confirmed");
+});
+
+test("party.publish changes draft to recruiting", async () => {
+  const store = createMemoryStore(createSeedData());
+  await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "羊羊周六 K 局",
+        venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12,
+        notes: "欢迎新人，不限歌路。",
+        tags: ["欢迎新人"]
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+
+  const drafts = await store.list("parties", (item) => item.title === "羊羊周六 K 局");
+  const result = await partyFunction.main(
+    { action: "publish", payload: { partyId: drafts[0].partyId } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.status, "recruiting");
 });
