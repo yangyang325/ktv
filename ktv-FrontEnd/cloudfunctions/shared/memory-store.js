@@ -8,6 +8,24 @@ function clonePlainValue(value) {
 }
 
 /**
+ * 判断文档是否匹配查询条件。
+ * @param {object} item 文档
+ * @param {Function | object | undefined} selector 查询条件
+ * @returns {boolean} 是否匹配
+ */
+function matchesSelector(item, selector) {
+  if (!selector) {
+    return true;
+  }
+
+  if (typeof selector === "function") {
+    return selector(item);
+  }
+
+  return Object.keys(selector).every((key) => item[key] === selector[key]);
+}
+
+/**
  * 创建内存数据存储。
  * @param {Record<string, unknown[]>} seed 初始数据
  * @returns {object} 数据存储
@@ -19,21 +37,21 @@ function createMemoryStore(seed = {}) {
     /**
      * 列出集合数据。
      * @param {string} collection 集合名
-     * @param {(item: object) => boolean} predicate 筛选函数
+     * @param {Function | object} selector 查询条件
      * @returns {Promise<object[]>} 数据列表
      */
-    async list(collection, predicate = () => true) {
-      return (state[collection] || []).filter(predicate).map(clonePlainValue);
+    async list(collection, selector) {
+      return (state[collection] || []).filter((item) => matchesSelector(item, selector)).map(clonePlainValue);
     },
 
     /**
      * 查找单条数据。
      * @param {string} collection 集合名
-     * @param {(item: object) => boolean} predicate 筛选函数
+     * @param {Function | object} selector 查询条件
      * @returns {Promise<object | null>} 单条数据
      */
-    async findOne(collection, predicate) {
-      const item = (state[collection] || []).find(predicate);
+    async findOne(collection, selector) {
+      const item = (state[collection] || []).find((entry) => matchesSelector(entry, selector));
       return item ? clonePlainValue(item) : null;
     },
 
@@ -53,13 +71,13 @@ function createMemoryStore(seed = {}) {
     /**
      * 更新第一条匹配数据。
      * @param {string} collection 集合名
-     * @param {(item: object) => boolean} predicate 筛选函数
+     * @param {Function | object} selector 查询条件
      * @param {(item: object) => object} updater 更新函数
      * @returns {Promise<object | null>} 更新后的文档
      */
-    async updateOne(collection, predicate, updater) {
+    async updateOne(collection, selector, updater) {
       const items = state[collection] || [];
-      const index = items.findIndex(predicate);
+      const index = items.findIndex((item) => matchesSelector(item, selector));
 
       if (index < 0) {
         return null;
@@ -81,5 +99,6 @@ function createMemoryStore(seed = {}) {
 
 module.exports = {
   clonePlainValue,
+  matchesSelector,
   createMemoryStore
 };

@@ -1,3 +1,5 @@
+const crypto = require("node:crypto");
+
 const { createRuntime } = require("../shared/runtime");
 const { runAction } = require("../shared/response");
 
@@ -7,7 +9,7 @@ const { runAction } = require("../shared/response");
  * @returns {string} 用户 ID
  */
 function buildUserId(openid) {
-  return `user-${openid.replace(/[^a-zA-Z0-9]/g, "").slice(-12)}`;
+  return `user-${crypto.createHash("sha256").update(openid).digest("hex").slice(0, 24)}`;
 }
 
 /**
@@ -16,7 +18,7 @@ function buildUserId(openid) {
  * @returns {Promise<object | null>} 当前用户
  */
 function findCurrentUser(runtime) {
-  return runtime.store.findOne("users", (user) => user.openid === runtime.openid);
+  return runtime.store.findOne("users", { openid: runtime.openid });
 }
 
 /**
@@ -40,7 +42,7 @@ async function login(payload, runtime) {
       updates.avatarUrl = payload.avatarUrl;
     }
 
-    const user = await runtime.store.updateOne("users", (item) => item.openid === runtime.openid, () => updates);
+    const user = await runtime.store.updateOne("users", { openid: runtime.openid }, () => updates);
     return { openid: runtime.openid, user };
   }
 

@@ -29,6 +29,19 @@ test("memory store clones seed data and isolates writes", async () => {
   assert.equal(storedVenue.name, "新门店");
 });
 
+test("memory store supports exact object selectors", async () => {
+  const store = createMemoryStore(createSeedData());
+
+  const venues = await store.list("venues", { district: "南山", isActive: true });
+  const user = await store.findOne("users", { openid: "openid-host" });
+  const updatedUser = await store.updateOne("users", { openid: "openid-host" }, () => ({ nickname: "新昵称" }));
+
+  assert.equal(venues.length, 1);
+  assert.equal(venues[0].venueId, "venue-001");
+  assert.equal(user.userId, "user-host");
+  assert.equal(updatedUser.nickname, "新昵称");
+});
+
 test("party view builds frontend display fields", () => {
   const seed = createSeedData();
   const party = buildPartyView({
@@ -100,6 +113,65 @@ test("auth.login creates default user for new openid", async () => {
   assert.equal(result.data.user.openid, "openid-new");
 });
 
+test("auth.login creates hashed user ids for colliding suffix openids", async () => {
+  const store = createMemoryStore(createSeedData());
+  const first = await authFunction.main({ action: "login", payload: {} }, { store, openid: "wx-a-abcdefghijkl" });
+  const second = await authFunction.main({ action: "login", payload: {} }, { store, openid: "wx-b-abcdefghijkl" });
+
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.notEqual(first.data.user.userId, "user-abcdefghijkl");
+  assert.notEqual(second.data.user.userId, "user-abcdefghijkl");
+  assert.notEqual(first.data.user.userId, second.data.user.userId);
+});
+
+test("auth.profile returns current user and null for unknown openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const existing = await authFunction.main({ action: "profile", payload: {} }, { store, openid: "openid-host" });
+  const missing = await authFunction.main({ action: "profile", payload: {} }, { store, openid: "openid-missing" });
+
+  assert.equal(existing.ok, true);
+  assert.equal(existing.data.userId, "user-host");
+  assert.equal(missing.ok, true);
+  assert.equal(missing.data, null);
+});
+
+test("auth.login preserves profile fields when payload omits them", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await authFunction.main(
+    { action: "login", payload: {} },
+    { store, openid: "openid-host", now: () => "2026-05-21T08:00:00.000Z" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.nickname, "羊羊");
+  assert.equal(result.data.user.avatarUrl, "https://example.com/avatar-host.png");
+  assert.equal(result.data.user.updatedAt, "2026-05-21T08:00:00.000Z");
+});
+
+test("auth uses object selectors for current user lookups", async () => {
+  const base = createMemoryStore(createSeedData());
+  const selectors = [];
+  const store = {
+    ...base,
+    findOne(collection, selector) {
+      selectors.push(["findOne", collection, selector]);
+      return base.findOne(collection, selector);
+    },
+    updateOne(collection, selector, updater) {
+      selectors.push(["updateOne", collection, selector]);
+      return base.updateOne(collection, selector, updater);
+    }
+  };
+
+  await authFunction.main({ action: "login", payload: {} }, { store, openid: "openid-host" });
+
+  assert.deepEqual(selectors.map(([method, collection, selector]) => [method, collection, selector]), [
+    ["findOne", "users", { openid: "openid-host" }],
+    ["updateOne", "users", { openid: "openid-host" }]
+  ]);
+});
+
 test("venue.list filters active venues by district and keyword", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await venueFunction.main(
@@ -112,9 +184,54 @@ test("venue.list filters active venues by district and keyword", async () => {
   assert.equal(result.data[0].venueId, "venue-001");
 });
 
+test("venue.list filters priceLevel with string equality", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await venueFunction.main({ action: "list", payload: { priceLevel: "3" } }, { store });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].venueId, "venue-002");
+});
+
+test("venue.list pushes exact filters into object selector", async () => {
+  const base = createMemoryStore(createSeedData());
+  const selectors = [];
+  const store = {
+    ...base,
+    list(collection, selector) {
+      selectors.push([collection, selector]);
+      return base.list(collection, selector);
+    }
+  };
+
+  await venueFunction.main(
+    { action: "list", payload: { district: "南山", priceLevel: "2", keyword: "MUSE" } },
+    { store }
+  );
+
+  assert.deepEqual(selectors, [["venues", { isActive: true, district: "南山", priceLevel: 2 }]]);
+});
+
 test("venue.detail returns not found for unknown venue", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await venueFunction.main({ action: "detail", payload: { venueId: "missing" } }, { store });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "NOT_FOUND");
+});
+
+test("venue.detail rejects inactive venues", async () => {
+  const seed = createSeedData();
+  seed.venues.push({
+    venueId: "venue-inactive",
+    name: "停用门店",
+    district: "南山",
+    address: "深圳市南山区",
+    priceLevel: 1,
+    isActive: false
+  });
+  const store = createMemoryStore(seed);
+  const result = await venueFunction.main({ action: "detail", payload: { venueId: "venue-inactive" } }, { store });
 
   assert.equal(result.ok, false);
   assert.equal(result.code, "NOT_FOUND");
