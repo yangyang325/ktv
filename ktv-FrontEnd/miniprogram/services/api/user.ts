@@ -34,7 +34,7 @@ export function getUserByIdSync(userId: string) {
  */
 export async function getCurrentUser(userId: string = "user-host") {
   if (serviceConfig.dataSource === "cloud") {
-    const result = await callCloudFunction<{ user: User }>("auth", "login", { userId });
+    const result = await callCloudFunction<{ user: User }>("auth", "login");
     return result.user;
   }
 

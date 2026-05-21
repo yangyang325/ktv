@@ -65,7 +65,7 @@ export async function getPartyDetail(partyId: string) {
  */
 export async function getMyPartyTabs(userId: string): Promise<MyPartyTabs<Party>> {
   if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<MyPartyTabs<Party>>("party", "myTabs", { userId });
+    return callCloudFunction<MyPartyTabs<Party>>("party", "myTabs", {});
   }
 
   return {
@@ -83,7 +83,7 @@ export async function getMyPartyTabs(userId: string): Promise<MyPartyTabs<Party>
  */
 export async function createPartyDraft(input: PartyDraftInput) {
   if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Party>("party", "createDraft", { ...input, userId: "user-host" });
+    return callCloudFunction<Party>("party", "createDraft", { ...input });
   }
 
   const partyId = `party-draft-${String(draftCounter).padStart(3, "0")}`;
@@ -149,7 +149,7 @@ export async function publishParty(partyId: string) {
  */
 export async function joinParty(partyId: string, userId: string) {
   if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Entry>("entry", "join", { partyId, userId });
+    return callCloudFunction<Entry>("entry", "join", { partyId });
   }
 
   const party = getPartyOrThrow(partyId);
@@ -191,7 +191,7 @@ export async function joinParty(partyId: string, userId: string) {
  */
 export async function joinWaitlist(partyId: string, userId: string) {
   if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Entry>("entry", "waitlist", { partyId, userId });
+    return callCloudFunction<Entry>("entry", "waitlist", { partyId });
   }
 
   const party = getPartyOrThrow(partyId);
