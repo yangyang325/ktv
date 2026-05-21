@@ -10,6 +10,8 @@ const { buildPartyView } = require("../../cloudfunctions/shared/party-view");
 const authFunction = require("../../cloudfunctions/auth/index");
 const venueFunction = require("../../cloudfunctions/venue/index");
 const partyFunction = require("../../cloudfunctions/party/index");
+const entryFunction = require("../../cloudfunctions/entry/index");
+const notifyFunction = require("../../cloudfunctions/notify/index");
 
 test("shared errors expose stable validation failures", () => {
   assert.throws(
@@ -609,4 +611,156 @@ test("party.createDraft rejects invalid start date or time without inserting dat
   assert.equal(malformedTime.code, "VALIDATION_ERROR");
   assert.equal(afterParties.length, beforeParties.length);
   assert.equal(afterEntries.length, beforeEntries.length);
+});
+
+test("entry.join creates confirmed entry and updates party count", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", userId: "user-guest-1" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const party = await store.findOne("parties", (item) => item.partyId === "party-002");
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.entryType, "confirmed");
+  assert.equal(party.confirmedCount, 2);
+});
+
+test("entry.join blocks duplicate active entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-001", userId: "user-guest-1" } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "DUPLICATE_ENTRY");
+});
+
+test("entry.join blocks full party", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-003", userId: "user-guest-2" } },
+    { store, openid: "openid-guest-2" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "PARTY_FULL");
+});
+
+test("entry.waitlist creates waitlist entry for full party", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "waitlist", payload: { partyId: "party-003", userId: "user-guest-2" } },
+    { store, openid: "openid-guest-2" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.entryType, "waitlist");
+  assert.equal(result.data.waitlistNo, 2);
+});
+
+test("entry.quit promotes first waitlist entry after confirmed user quits", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "quit", payload: { partyId: "party-001", userId: "user-guest-1" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const promoted = await store.findOne(
+    "entries",
+    (item) => item.userId === "user-wait-1" && item.partyId === "party-001"
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(promoted.entryType, "confirmed");
+  assert.equal(promoted.waitlistNo, null);
+});
+
+test("notify.list and notify.markRead manage current user notifications", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.insert("notifications", {
+    notificationId: "notification-001",
+    userId: "user-host",
+    type: "entry_joined",
+    title: "有人报名",
+    content: "阿明报名了你的组局",
+    partyId: "party-001",
+    entryId: "entry-002",
+    read: false,
+    createdAt: "2026-05-21T10:00:00.000Z",
+    readAt: null
+  });
+
+  const listResult = await notifyFunction.main(
+    { action: "list", payload: { userId: "user-host" } },
+    { store, openid: "openid-host" }
+  );
+  const readResult = await notifyFunction.main(
+    { action: "markRead", payload: { userId: "user-host", notificationId: "notification-001" } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(listResult.ok, true);
+  assert.equal(listResult.data.length, 1);
+  assert.equal(readResult.ok, true);
+  assert.equal(readResult.data.read, true);
+});
+
+test("entry.join rejects spoofed payload userId", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", userId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("entry.join rejects missing explicit openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", userId: "user-guest-1" } },
+    { store }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("notify.list rejects spoofed payload userId", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await notifyFunction.main(
+    { action: "list", payload: { userId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("notify.markRead cannot mark another user's notification", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.insert("notifications", {
+    notificationId: "notification-002",
+    userId: "user-host",
+    type: "entry_joined",
+    title: "有人报名",
+    content: "阿明报名了你的组局",
+    partyId: "party-001",
+    entryId: "entry-002",
+    read: false,
+    createdAt: "2026-05-21T10:00:00.000Z",
+    readAt: null
+  });
+
+  const result = await notifyFunction.main(
+    { action: "markRead", payload: { userId: "user-guest-1", notificationId: "notification-002" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const notification = await store.findOne("notifications", { notificationId: "notification-002" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "NOT_FOUND");
+  assert.equal(notification.read, false);
 });
