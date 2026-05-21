@@ -1,4 +1,7 @@
 import { userList } from "../../mock/users";
+import type { User } from "../../types/user";
+import { serviceConfig } from "../config";
+import { callCloudFunction } from "./cloud";
 
 /**
  * 深拷贝纯数据。
@@ -30,6 +33,11 @@ export function getUserByIdSync(userId: string) {
  * @returns 用户信息
  */
 export async function getCurrentUser(userId: string = "user-host") {
+  if (serviceConfig.dataSource === "cloud") {
+    const result = await callCloudFunction<{ user: User }>("auth", "login");
+    return result.user;
+  }
+
   return getUserByIdSync(userId) ?? clonePlainValue(userList[0]);
 }
 
@@ -39,6 +47,10 @@ export async function getCurrentUser(userId: string = "user-host") {
  * @returns 用户信息
  */
 export async function getUserById(userId: string) {
+  if (serviceConfig.dataSource === "cloud") {
+    return callCloudFunction<User | null>("auth", "profile", { userId });
+  }
+
   return getUserByIdSync(userId);
 }
 

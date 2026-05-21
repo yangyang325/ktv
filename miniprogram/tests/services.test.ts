@@ -11,6 +11,8 @@ import {
   joinWaitlist,
   publishParty
 } from "../services/api/party";
+import { unwrapCloudResult } from "../services/api/cloud";
+import { serviceConfig } from "../services/config";
 
 test("首页列表返回可展示的局数据", async () => {
   const parties = await getPartyList();
@@ -62,4 +64,81 @@ test("报名满员后进入候补", async () => {
   assert.equal(joined.entryType, "confirmed");
   const waitlist = await joinWaitlist("party-003", "user-guest-2");
   assert.equal(waitlist.entryType, "waitlist");
+});
+
+test("云端响应解包成功时返回 data", () => {
+  const data = unwrapCloudResult<{ value: number }>({
+    result: {
+      ok: true,
+      data: { value: 1 },
+      message: "success"
+    }
+  });
+
+  assert.equal(data.value, 1);
+});
+
+test("云端响应失败时抛出带 code 的错误", () => {
+  assert.throws(
+    () =>
+      unwrapCloudResult({
+        result: {
+          ok: false,
+          code: "PARTY_FULL",
+          message: "局已满员"
+        }
+      }),
+    (error: unknown) => error instanceof Error && (error as Error & { code?: string }).code === "PARTY_FULL"
+  );
+});
+
+test("服务配置默认保持 mock 模式", () => {
+  assert.equal(serviceConfig.dataSource, "mock");
+});
+
+test("云端受保护服务不转发 mock 用户 ID", async () => {
+  const calls: Array<{ name: string; data: { action: string; payload: Record<string, unknown> } }> = [];
+  const originalWx = (globalThis as typeof globalThis & { wx?: unknown }).wx;
+  serviceConfig.dataSource = "cloud";
+  (globalThis as typeof globalThis & { wx?: unknown }).wx = {
+    cloud: {
+      callFunction: async (options: { name: string; data: { action: string; payload: Record<string, unknown> } }) => {
+        calls.push(options);
+        return {
+          result: {
+            ok: true,
+            data: {},
+            message: "success"
+          }
+        };
+      }
+    }
+  };
+
+  try {
+    await getMyPartyTabs("user-host");
+    await createPartyDraft({
+      title: "云端测试局",
+      venueId: "venue-001",
+      venueSummary: "MUSE KTV · 南山",
+      startDate: "2026-05-23",
+      startTime: "19:30",
+      durationMin: 180,
+      roomFee: 240000,
+      maxCapacity: 12,
+      notes: "测试",
+      tags: []
+    });
+    await joinParty("party-001", "user-guest-1");
+    await joinWaitlist("party-001", "user-wait-1");
+  } finally {
+    serviceConfig.dataSource = "mock";
+    (globalThis as typeof globalThis & { wx?: unknown }).wx = originalWx;
+  }
+
+  assert.deepEqual(
+    calls.map((call) => call.data.action),
+    ["myTabs", "createDraft", "join", "waitlist"]
+  );
+  assert.equal(calls.some((call) => "userId" in call.data.payload), false);
 });

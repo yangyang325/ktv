@@ -1,5 +1,8 @@
 import { normalizeDistrictName } from "../../constants/options";
 import { venueList } from "../../mock/venues";
+import type { Venue } from "../../types/venue";
+import { serviceConfig } from "../config";
+import { callCloudFunction } from "./cloud";
 
 /**
  * 深拷贝纯数据。
@@ -62,6 +65,10 @@ export async function getVenueList(filters?: {
   keyword?: string;
   priceLevel?: string | number;
 }) {
+  if (serviceConfig.dataSource === "cloud") {
+    return callCloudFunction<Venue[]>("venue", "list", filters || {});
+  }
+
   const result = [];
 
   for (const venue of venueList) {
@@ -94,5 +101,9 @@ export async function getVenueList(filters?: {
  * @returns 门店信息
  */
 export async function getVenueById(venueId: string) {
+  if (serviceConfig.dataSource === "cloud") {
+    return callCloudFunction<Venue>("venue", "detail", { venueId });
+  }
+
   return getVenueByIdSync(venueId);
 }
