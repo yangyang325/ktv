@@ -15,9 +15,12 @@ function loadCloudSdk() {
  */
 function createRuntime(context = {}) {
   if (context.store) {
+    const hasExplicitOpenid = Object.prototype.hasOwnProperty.call(context, "openid") && Boolean(context.openid);
+
     return {
       store: context.store,
       openid: context.openid || "openid-host",
+      hasExplicitOpenid,
       now: context.now || (() => new Date().toISOString())
     };
   }
@@ -29,12 +32,14 @@ function createRuntime(context = {}) {
 
   const db = cloud.database();
   const wxContext = cloud.getWXContext ? cloud.getWXContext() : {};
+  const hasExplicitOpenid = Boolean(wxContext.OPENID);
 
   return {
     cloud,
     db,
     store: createCloudStore(db),
     openid: wxContext.OPENID || "openid-host",
+    hasExplicitOpenid,
     now: () => new Date().toISOString()
   };
 }

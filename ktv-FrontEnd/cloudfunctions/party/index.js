@@ -16,10 +16,14 @@ function createId(prefix) {
 
 /**
  * 获取当前登录用户。
- * @param {{ store: object, openid: string }} runtime 云函数运行时
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
  * @returns {Promise<object>} 当前用户
  */
 async function getCurrentUser(runtime) {
+  if (!runtime.hasExplicitOpenid) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "请先登录");
+  }
+
   const user = await runtime.store.findOne("users", { openid: runtime.openid });
 
   if (!user) {
@@ -31,10 +35,14 @@ async function getCurrentUser(runtime) {
 
 /**
  * 查找已认证用户资料，不存在时返回空。
- * @param {{ store: object, openid: string }} runtime 云函数运行时
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
  * @returns {Promise<object | null>} 当前用户或空
  */
 async function findAuthenticatedUser(runtime) {
+  if (!runtime.hasExplicitOpenid) {
+    return null;
+  }
+
   return runtime.store.findOne("users", { openid: runtime.openid });
 }
 
@@ -85,7 +93,7 @@ async function list(payload, runtime) {
 /**
  * 查询组局详情。
  * @param {{ partyId?: string, userId?: string }} payload 查询参数
- * @param {{ store: object }} runtime 云函数运行时
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
  * @returns {Promise<object>} 组局详情
  */
 async function detail(payload, runtime) {
@@ -97,15 +105,20 @@ async function detail(payload, runtime) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "组局不存在");
   }
 
+  const viewer = await findAuthenticatedUser(runtime);
+
+  if (party.status === "draft" && (!viewer || viewer.userId !== party.hostId)) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有局主可以查看草稿");
+  }
+
   const host = await runtime.store.findOne("users", { userId: party.hostId });
-  const entries = await runtime.store.list("entries", (entry) => entry.partyId === payload.partyId && isActiveEntry(entry));
+  const entries = (await runtime.store.list("entries", { partyId: payload.partyId })).filter(isActiveEntry);
   const confirmedEntries = entries
     .filter((entry) => entry.entryType === "confirmed")
     .sort((left, right) => (left.seqNo || 0) - (right.seqNo || 0));
   const waitlistEntries = entries
     .filter((entry) => entry.entryType === "waitlist")
     .sort((left, right) => (left.waitlistNo || 0) - (right.waitlistNo || 0));
-  const viewer = await findAuthenticatedUser(runtime);
   const viewerEntry = viewer ? entries.find((entry) => entry.userId === viewer.userId) || null : null;
 
   return {
@@ -120,7 +133,7 @@ async function detail(payload, runtime) {
 /**
  * 查询我的组局分组。
  * @param {{ userId?: string }} payload 查询参数
- * @param {{ store: object, openid: string }} runtime 云函数运行时
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
  * @returns {Promise<{ hosting: object[], joined: object[], waitlist: object[], history: object[] }>} 我的组局分组
  */
 async function myTabs(payload, runtime) {
@@ -128,7 +141,7 @@ async function myTabs(payload, runtime) {
   assertPayloadUserMatches(currentUser, payload.userId);
 
   const parties = await runtime.store.list("parties");
-  const entries = await runtime.store.list("entries", (entry) => entry.userId === currentUser.userId && isActiveEntry(entry));
+  const entries = (await runtime.store.list("entries", { userId: currentUser.userId })).filter(isActiveEntry);
   const entryByPartyId = new Map(entries.map((entry) => [entry.partyId, entry]));
   const tabs = {
     hosting: [],

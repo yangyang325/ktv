@@ -273,7 +273,7 @@ test("party.detail returns host entries and viewer entry", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await partyFunction.main(
     { action: "detail", payload: { partyId: "party-001", userId: "user-host" } },
-    { store }
+    { store, openid: "openid-host" }
   );
 
   assert.equal(result.ok, true);
@@ -451,4 +451,116 @@ test("party.detail viewerEntry uses authenticated user instead of payload userId
 
   assert.equal(result.ok, true);
   assert.equal(result.data.viewerEntry.userId, "user-guest-1");
+});
+
+test("party.createDraft rejects missing explicit openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "未登录创建 K 局",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.myTabs rejects missing explicit openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main({ action: "myTabs", payload: {} }, { store });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.publish rejects missing explicit openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "羊羊待发布草稿",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+  const result = await partyFunction.main(
+    { action: "publish", payload: { partyId: draft.data.partyId } },
+    { store }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.detail rejects draft for non-owner", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "仅局主可见草稿",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+  const result = await partyFunction.main(
+    { action: "detail", payload: { partyId: draft.data.partyId } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.detail allows draft for owner", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "局主可见草稿",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+  const result = await partyFunction.main(
+    { action: "detail", payload: { partyId: draft.data.partyId } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.party.partyId, draft.data.partyId);
 });
