@@ -43,7 +43,7 @@ async function runAction(handlers, event = {}, runtime = {}) {
       return failure(error.code, error.message);
     }
 
-    return failure(ERROR_CODES.INTERNAL_ERROR, error.message || "服务异常");
+    return failure(ERROR_CODES.INTERNAL_ERROR, "服务异常");
   }
 }
 

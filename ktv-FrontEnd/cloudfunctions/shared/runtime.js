@@ -27,12 +27,13 @@ function createRuntime(context = {}) {
     env: cloud.DYNAMIC_CURRENT_ENV
   });
 
+  const db = cloud.database();
   const wxContext = cloud.getWXContext ? cloud.getWXContext() : {};
 
   return {
     cloud,
-    db: cloud.database(),
-    store: createCloudStore(cloud.database()),
+    db,
+    store: createCloudStore(db),
     openid: wxContext.OPENID || "openid-host",
     now: () => new Date().toISOString()
   };

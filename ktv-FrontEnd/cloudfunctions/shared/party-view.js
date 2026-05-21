@@ -7,6 +7,8 @@ const PARTY_STATUS_TEXT = {
   finished: "已结束"
 };
 
+const BUSINESS_TIME_ZONE = "Asia/Shanghai";
+
 /**
  * 将数字补齐为两位字符。
  * @param {number} value 数字
@@ -47,6 +49,30 @@ function formatDurationMin(durationMin) {
 }
 
 /**
+ * 读取上海业务时区的日期时间片段。
+ * @param {Date} date 日期
+ * @returns {{ month: string, day: string, hour: string, minute: string }} 日期时间片段
+ */
+function getShanghaiDateTimeParts(date) {
+  const formatter = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: BUSINESS_TIME_ZONE,
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+
+  return {
+    month: parts.month,
+    day: parts.day,
+    hour: parts.hour,
+    minute: parts.minute
+  };
+}
+
+/**
  * 构建组局时间摘要。
  * @param {string} startTime 开始时间
  * @param {number} durationMin 时长分钟
@@ -55,14 +81,10 @@ function formatDurationMin(durationMin) {
 function buildTimeSummary(startTime, durationMin) {
   const date = new Date(startTime);
   const endDate = new Date(date.getTime() + durationMin * 60 * 1000);
-  const month = padNumber(date.getMonth() + 1);
-  const day = padNumber(date.getDate());
-  const startHours = padNumber(date.getHours());
-  const startMinutes = padNumber(date.getMinutes());
-  const endHours = padNumber(endDate.getHours());
-  const endMinutes = padNumber(endDate.getMinutes());
+  const startParts = getShanghaiDateTimeParts(date);
+  const endParts = getShanghaiDateTimeParts(endDate);
 
-  return `${month}-${day} ${startHours}:${startMinutes}-${endHours}:${endMinutes}`;
+  return `${startParts.month}-${startParts.day} ${startParts.hour}:${startParts.minute}-${endParts.hour}:${endParts.minute}`;
 }
 
 /**
@@ -99,10 +121,12 @@ function buildPartyView({ party, host, venue }) {
 
 module.exports = {
   PARTY_STATUS_TEXT,
+  BUSINESS_TIME_ZONE,
   padNumber,
   calculateEstimatedPerPerson,
   formatCurrencyYuan,
   formatDurationMin,
+  getShanghaiDateTimeParts,
   buildTimeSummary,
   buildPartyProgressText,
   buildPartyView
