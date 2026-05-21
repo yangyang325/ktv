@@ -7,6 +7,8 @@ const { createMemoryStore } = require("../../cloudfunctions/shared/memory-store"
 const { runAction } = require("../../cloudfunctions/shared/response");
 const { createSeedData } = require("../../cloudfunctions/shared/seed");
 const { buildPartyView } = require("../../cloudfunctions/shared/party-view");
+const authFunction = require("../../cloudfunctions/auth/index");
+const venueFunction = require("../../cloudfunctions/venue/index");
 
 test("shared errors expose stable validation failures", () => {
   assert.throws(
@@ -75,4 +77,45 @@ test("runAction masks unexpected error messages", async () => {
     code: "INTERNAL_ERROR",
     message: "服务异常"
   });
+});
+
+test("auth.login returns existing user by openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await authFunction.main({ action: "login", payload: {} }, { store, openid: "openid-host" });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.userId, "user-host");
+  assert.equal(result.data.openid, "openid-host");
+});
+
+test("auth.login creates default user for new openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await authFunction.main(
+    { action: "login", payload: { nickname: "新朋友", avatarUrl: "https://example.com/new.png" } },
+    { store, openid: "openid-new" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.nickname, "新朋友");
+  assert.equal(result.data.user.openid, "openid-new");
+});
+
+test("venue.list filters active venues by district and keyword", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await venueFunction.main(
+    { action: "list", payload: { district: "南山", keyword: "MUSE" } },
+    { store }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].venueId, "venue-001");
+});
+
+test("venue.detail returns not found for unknown venue", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await venueFunction.main({ action: "detail", payload: { venueId: "missing" } }, { store });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "NOT_FOUND");
 });
