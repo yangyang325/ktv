@@ -648,6 +648,37 @@ test("entry.join blocks full party", async () => {
   assert.equal(result.code, "PARTY_FULL");
 });
 
+test("entry.join uses active entries instead of stale party count for capacity", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    maxCapacity: 2,
+    confirmedCount: 1,
+    status: "recruiting"
+  }));
+  await store.insert("entries", {
+    entryId: "entry-stale-capacity",
+    partyId: "party-002",
+    userId: "user-guest-1",
+    userNickname: "阿明",
+    entryType: "confirmed",
+    seqNo: 2,
+    waitlistNo: null,
+    createdAt: "2026-05-21T09:00:00.000Z",
+    confirmedAt: "2026-05-21T09:00:00.000Z"
+  });
+
+  const beforeEntries = await store.list("entries", { partyId: "party-002" });
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", userId: "user-guest-2" } },
+    { store, openid: "openid-guest-2" }
+  );
+  const afterEntries = await store.list("entries", { partyId: "party-002" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "PARTY_FULL");
+  assert.equal(afterEntries.length, beforeEntries.length);
+});
+
 test("entry.waitlist creates waitlist entry for full party", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await entryFunction.main(
@@ -658,6 +689,34 @@ test("entry.waitlist creates waitlist entry for full party", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.data.entryType, "waitlist");
   assert.equal(result.data.waitlistNo, 2);
+});
+
+test("entry.quit reorders waitlist and refreshes waitlist count", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.insert("entries", {
+    entryId: "entry-wait-second",
+    partyId: "party-003",
+    userId: "user-guest-2",
+    userNickname: "小秋",
+    entryType: "waitlist",
+    seqNo: null,
+    waitlistNo: 2,
+    createdAt: "2026-05-21T09:00:00.000Z",
+    confirmedAt: null
+  });
+  await store.updateOne("parties", { partyId: "party-003" }, () => ({ waitlistCount: 9 }));
+
+  const result = await entryFunction.main(
+    { action: "quit", payload: { partyId: "party-003", userId: "user-guest-3" } },
+    { store, openid: "openid-guest-3" }
+  );
+  const remaining = await store.findOne("entries", { entryId: "entry-wait-second" });
+  const party = await store.findOne("parties", { partyId: "party-003" });
+
+  assert.equal(result.ok, true);
+  assert.equal(remaining.entryType, "waitlist");
+  assert.equal(remaining.waitlistNo, 1);
+  assert.equal(party.waitlistCount, 1);
 });
 
 test("entry.quit promotes first waitlist entry after confirmed user quits", async () => {
@@ -674,6 +733,28 @@ test("entry.quit promotes first waitlist entry after confirmed user quits", asyn
   assert.equal(result.ok, true);
   assert.equal(promoted.entryType, "confirmed");
   assert.equal(promoted.waitlistNo, null);
+});
+
+test("entry.quit refreshes counts and status after waitlist promotion", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-001" }, () => ({
+    maxCapacity: 3,
+    confirmedCount: 12,
+    waitlistCount: 9,
+    status: "full"
+  }));
+
+  const result = await entryFunction.main(
+    { action: "quit", payload: { partyId: "party-001", userId: "user-guest-1" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const party = await store.findOne("parties", { partyId: "party-001" });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.promotedEntry.userId, "user-wait-1");
+  assert.equal(party.confirmedCount, 3);
+  assert.equal(party.waitlistCount, 0);
+  assert.equal(party.status, "full");
 });
 
 test("notify.list and notify.markRead manage current user notifications", async () => {
@@ -704,6 +785,24 @@ test("notify.list and notify.markRead manage current user notifications", async 
   assert.equal(listResult.data.length, 1);
   assert.equal(readResult.ok, true);
   assert.equal(readResult.data.read, true);
+});
+
+test("notify.create fills default notification fields", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await notifyFunction.main(
+    { action: "create", payload: { userId: "user-host", title: "系统通知" } },
+    { store, openid: "openid-host", now: () => "2026-05-21T12:00:00.000Z" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.userId, "user-host");
+  assert.equal(result.data.type, "system");
+  assert.equal(result.data.content, "");
+  assert.equal(result.data.partyId, "");
+  assert.equal(result.data.entryId, "");
+  assert.equal(result.data.read, false);
+  assert.equal(result.data.createdAt, "2026-05-21T12:00:00.000Z");
+  assert.equal(result.data.readAt, null);
 });
 
 test("entry.join rejects spoofed payload userId", async () => {

@@ -199,7 +199,7 @@ async function join(payload, runtime) {
   const entries = await listActiveEntries(runtime, party.partyId);
   assertNoActiveEntry(entries, currentUser.userId);
 
-  if (Number(party.confirmedCount) >= Number(party.maxCapacity)) {
+  if (countConfirmedEntries(party, entries) >= Number(party.maxCapacity)) {
     throw new AppError(ERROR_CODES.PARTY_FULL, "组局已满员");
   }
 
