@@ -58,6 +58,35 @@ function assertPayloadUserMatches(currentUser, userId) {
 }
 
 /**
+ * 判断开始日期是否为有效的 YYYY-MM-DD。
+ * @param {string} startDate 开始日期
+ * @returns {boolean} 是否有效
+ */
+function isValidStartDate(startDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDate);
+
+  if (!match) {
+    return false;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+/**
+ * 判断开始时间是否为有效的 HH:mm。
+ * @param {string} startTime 开始时间
+ * @returns {boolean} 是否有效
+ */
+function isValidStartTime(startTime) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(startTime);
+}
+
+/**
  * 为组局附加前端展示字段。
  * @param {{ store: object }} runtime 云函数运行时
  * @param {object} party 组局数据
@@ -190,6 +219,8 @@ async function createDraft(payload, runtime) {
   assertRequired(payload.venueId, "venueId", "请选择门店");
   assertRequired(payload.startDate, "startDate", "请选择开始日期");
   assertRequired(payload.startTime, "startTime", "请选择开始时间");
+  assertCondition(isValidStartDate(String(payload.startDate)), ERROR_CODES.VALIDATION_ERROR, "请选择有效开始日期");
+  assertCondition(isValidStartTime(String(payload.startTime)), ERROR_CODES.VALIDATION_ERROR, "请选择有效开始时间");
   assertCondition(Number(payload.roomFee) >= 100, ERROR_CODES.VALIDATION_ERROR, "请填写有效包厢费用");
   assertCondition(Number(payload.maxCapacity) >= 2, ERROR_CODES.VALIDATION_ERROR, "至少需要 2 人成局");
   assertCondition(Number(payload.durationMin) > 0, ERROR_CODES.VALIDATION_ERROR, "请填写有效欢唱时长");

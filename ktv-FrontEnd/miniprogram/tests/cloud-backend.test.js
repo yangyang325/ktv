@@ -565,7 +565,7 @@ test("party.detail allows draft for owner", async () => {
   assert.equal(result.data.party.partyId, draft.data.partyId);
 });
 
-test("party.createDraft rejects missing start date or time without inserting data", async () => {
+test("party.createDraft rejects invalid start date or time without inserting data", async () => {
   const store = createMemoryStore(createSeedData());
   const beforeParties = await store.list("parties");
   const beforeEntries = await store.list("entries");
@@ -588,6 +588,14 @@ test("party.createDraft rejects missing start date or time without inserting dat
     { action: "createDraft", payload: { ...basePayload, startTime: "" } },
     { store, openid: "openid-host" }
   );
+  const malformedDate = await partyFunction.main(
+    { action: "createDraft", payload: { ...basePayload, startDate: "not-a-date" } },
+    { store, openid: "openid-host" }
+  );
+  const malformedTime = await partyFunction.main(
+    { action: "createDraft", payload: { ...basePayload, startTime: "24:00" } },
+    { store, openid: "openid-host" }
+  );
   const afterParties = await store.list("parties");
   const afterEntries = await store.list("entries");
 
@@ -595,6 +603,10 @@ test("party.createDraft rejects missing start date or time without inserting dat
   assert.equal(missingDate.code, "VALIDATION_ERROR");
   assert.equal(missingTime.ok, false);
   assert.equal(missingTime.code, "VALIDATION_ERROR");
+  assert.equal(malformedDate.ok, false);
+  assert.equal(malformedDate.code, "VALIDATION_ERROR");
+  assert.equal(malformedTime.ok, false);
+  assert.equal(malformedTime.code, "VALIDATION_ERROR");
   assert.equal(afterParties.length, beforeParties.length);
   assert.equal(afterEntries.length, beforeEntries.length);
 });
