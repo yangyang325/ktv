@@ -193,6 +193,26 @@ test("venue.list filters priceLevel with string equality", async () => {
   assert.equal(result.data[0].venueId, "venue-002");
 });
 
+test("venue.list matches string stored priceLevel by string equality", async () => {
+  const seed = createSeedData();
+  seed.venues.push({
+    venueId: "venue-string-price",
+    name: "字符串价格门店",
+    district: "南山",
+    address: "深圳市南山区",
+    priceLevel: "2",
+    isActive: true
+  });
+  const store = createMemoryStore(seed);
+  const result = await venueFunction.main(
+    { action: "list", payload: { district: "南山", priceLevel: "2" } },
+    { store }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.some((venue) => venue.venueId === "venue-string-price"), true);
+});
+
 test("venue.list pushes exact filters into object selector", async () => {
   const base = createMemoryStore(createSeedData());
   const selectors = [];
@@ -209,7 +229,7 @@ test("venue.list pushes exact filters into object selector", async () => {
     { store }
   );
 
-  assert.deepEqual(selectors, [["venues", { isActive: true, district: "南山", priceLevel: 2 }]]);
+  assert.deepEqual(selectors, [["venues", { isActive: true, district: "南山" }]]);
 });
 
 test("venue.detail returns not found for unknown venue", async () => {

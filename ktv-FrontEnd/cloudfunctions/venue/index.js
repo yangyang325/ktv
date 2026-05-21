@@ -4,7 +4,7 @@ const { runAction } = require("../shared/response");
 
 /**
  * 构建门店精确查询条件。
- * @param {{ district?: string, priceLevel?: string | number, venueId?: string }} filters 筛选条件
+ * @param {{ district?: string, venueId?: string }} filters 筛选条件
  * @returns {object} 可下推查询条件
  */
 function buildVenueSelector(filters) {
@@ -16,10 +16,6 @@ function buildVenueSelector(filters) {
 
   if (filters.district) {
     selector.district = filters.district;
-  }
-
-  if (filters.priceLevel !== undefined && filters.priceLevel !== null && filters.priceLevel !== "") {
-    selector.priceLevel = Number(filters.priceLevel);
   }
 
   return selector;
