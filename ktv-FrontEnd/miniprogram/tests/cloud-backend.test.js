@@ -356,3 +356,99 @@ test("party.publish changes draft to recruiting", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.data.status, "recruiting");
 });
+
+test("party.createDraft rejects spoofed payload userId", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "冒名创建 K 局",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.publish rejects non-host user", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "羊羊待发布 K 局",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+  const result = await partyFunction.main(
+    { action: "publish", payload: { partyId: draft.data.partyId } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+});
+
+test("party.publish rejects non-draft party", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    { action: "publish", payload: { partyId: "party-001" } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+});
+
+test("party.list excludes draft parties", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "列表不可见草稿",
+        venueId: "venue-001",
+        startDate: "2026-05-23",
+        startTime: "19:30",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12
+      }
+    },
+    { store, openid: "openid-host" }
+  );
+  const result = await partyFunction.main({ action: "list", payload: {} }, { store });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.some((party) => party.partyId === draft.data.partyId), false);
+});
+
+test("party.detail viewerEntry uses authenticated user instead of payload userId", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    { action: "detail", payload: { partyId: "party-001", userId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.viewerEntry.userId, "user-guest-1");
+});

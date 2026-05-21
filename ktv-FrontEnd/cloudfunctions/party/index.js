@@ -3,6 +3,8 @@ const { createRuntime } = require("../shared/runtime");
 const { runAction } = require("../shared/response");
 const { buildPartyView } = require("../shared/party-view");
 
+const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
+
 /**
  * 创建临时业务 ID。
  * @param {string} prefix ID 前缀
@@ -15,19 +17,36 @@ function createId(prefix) {
 /**
  * 获取当前登录用户。
  * @param {{ store: object, openid: string }} runtime 云函数运行时
- * @param {string | undefined} userId 指定用户 ID
  * @returns {Promise<object>} 当前用户
  */
-async function getCurrentUser(runtime, userId) {
-  const user = userId
-    ? await runtime.store.findOne("users", { userId })
-    : await runtime.store.findOne("users", { openid: runtime.openid });
+async function getCurrentUser(runtime) {
+  const user = await runtime.store.findOne("users", { openid: runtime.openid });
 
   if (!user) {
     throw new AppError(ERROR_CODES.UNAUTHORIZED, "请先登录");
   }
 
   return user;
+}
+
+/**
+ * 查找已认证用户资料，不存在时返回空。
+ * @param {{ store: object, openid: string }} runtime 云函数运行时
+ * @returns {Promise<object | null>} 当前用户或空
+ */
+async function findAuthenticatedUser(runtime) {
+  return runtime.store.findOne("users", { openid: runtime.openid });
+}
+
+/**
+ * 校验兼容传入的用户 ID 与登录身份一致。
+ * @param {object} currentUser 当前登录用户
+ * @param {string | undefined} userId 兼容传入的用户 ID
+ */
+function assertPayloadUserMatches(currentUser, userId) {
+  if (userId && userId !== currentUser.userId) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "登录身份与用户不匹配");
+  }
 }
 
 /**
@@ -59,7 +78,7 @@ function isActiveEntry(entry) {
  * @returns {Promise<object[]>} 组局卡片列表
  */
 async function list(payload, runtime) {
-  const parties = await runtime.store.list("parties", (party) => party.status !== "finished" && party.status !== "cancelled");
+  const parties = await runtime.store.list("parties", (party) => VISIBLE_PARTY_STATUSES.has(party.status));
   return Promise.all(parties.map((party) => attachPartyView(runtime, party)));
 }
 
@@ -86,7 +105,8 @@ async function detail(payload, runtime) {
   const waitlistEntries = entries
     .filter((entry) => entry.entryType === "waitlist")
     .sort((left, right) => (left.waitlistNo || 0) - (right.waitlistNo || 0));
-  const viewerEntry = payload.userId ? entries.find((entry) => entry.userId === payload.userId) || null : null;
+  const viewer = await findAuthenticatedUser(runtime);
+  const viewerEntry = viewer ? entries.find((entry) => entry.userId === viewer.userId) || null : null;
 
   return {
     party: await attachPartyView(runtime, party),
@@ -104,7 +124,9 @@ async function detail(payload, runtime) {
  * @returns {Promise<{ hosting: object[], joined: object[], waitlist: object[], history: object[] }>} 我的组局分组
  */
 async function myTabs(payload, runtime) {
-  const currentUser = await getCurrentUser(runtime, payload.userId);
+  const currentUser = await getCurrentUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+
   const parties = await runtime.store.list("parties");
   const entries = await runtime.store.list("entries", (entry) => entry.userId === currentUser.userId && isActiveEntry(entry));
   const entryByPartyId = new Map(entries.map((entry) => [entry.partyId, entry]));
@@ -146,7 +168,9 @@ async function myTabs(payload, runtime) {
  * @returns {Promise<object>} 草稿组局展示数据
  */
 async function createDraft(payload, runtime) {
-  const currentUser = await getCurrentUser(runtime, payload.userId);
+  const currentUser = await getCurrentUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+
   const timestamp = runtime.now();
 
   assertRequired(payload.title, "title", "请填写局标题");
@@ -193,25 +217,36 @@ async function createDraft(payload, runtime) {
 
 /**
  * 发布组局草稿。
- * @param {{ partyId?: string }} payload 发布参数
- * @param {{ store: object, now: Function }} runtime 云函数运行时
+ * @param {{ partyId?: string, userId?: string }} payload 发布参数
+ * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
  * @returns {Promise<object>} 发布后的组局展示数据
  */
 async function publish(payload, runtime) {
   assertRequired(payload.partyId, "partyId", "请选择组局");
 
+  const currentUser = await getCurrentUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+
   const timestamp = runtime.now();
-  const party = await runtime.store.updateOne("parties", { partyId: payload.partyId }, () => ({
-    status: "recruiting",
-    updatedAt: timestamp,
-    publishedAt: timestamp
-  }));
+  const party = await runtime.store.findOne("parties", { partyId: payload.partyId });
 
   if (!party) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "组局不存在");
   }
 
-  return attachPartyView(runtime, party);
+  if (party.hostId !== currentUser.userId) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有局主可以发布组局");
+  }
+
+  assertCondition(party.status === "draft", ERROR_CODES.VALIDATION_ERROR, "只有草稿可以发布");
+
+  const updatedParty = await runtime.store.updateOne("parties", { partyId: payload.partyId }, () => ({
+    status: "recruiting",
+    updatedAt: timestamp,
+    publishedAt: timestamp
+  }));
+
+  return attachPartyView(runtime, updatedParty);
 }
 
 const handlers = {
