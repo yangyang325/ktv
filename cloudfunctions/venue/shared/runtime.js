@@ -18,6 +18,8 @@ function createRuntime(context = {}) {
     const hasExplicitOpenid = Object.prototype.hasOwnProperty.call(context, "openid") && Boolean(context.openid);
 
     return {
+      cloud: context.cloud,
+      db: context.db,
       store: context.store,
       openid: context.openid || "openid-host",
       hasExplicitOpenid,

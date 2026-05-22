@@ -1,8 +1,20 @@
 <view class="page form-page">
   <view class="title-card">
-    <view class="upload-box">
-      <text class="upload-box__plus">＋</text>
-      <text class="upload-box__text">上传封面</text>
+    <view class="upload-box" bindtap="handleCoverTap">
+      <image
+        wx:if="{{coverPreviewPath}}"
+        class="upload-box__image"
+        src="{{coverPreviewPath}}"
+        mode="aspectFill"
+      />
+      <view wx:else class="upload-box__placeholder">
+        <text class="upload-box__plus">＋</text>
+        <text class="upload-box__text">上传封面</text>
+      </view>
+      <view wx:if="{{uploadingCover}}" class="upload-box__mask">
+        <text>上传中</text>
+      </view>
+      <text wx:if="{{coverImage && !uploadingCover}}" class="upload-box__change">更换</text>
     </view>
     <view class="title-card__body">
       <input
@@ -19,7 +31,14 @@
   <view class="section-card">
     <text class="section-card__title">选择组局属性（可多选）</text>
     <view class="tag-cloud">
-      <text class="tag-cloud__item" wx:for="{{tags}}" wx:key="*this">{{item}}</text>
+      <text
+        wx:for="{{tags}}"
+        wx:key="name"
+        class="tag-cloud__item {{item.selected ? 'tag-cloud__item--active' : ''}}"
+        data-tag="{{item.name}}"
+        hover-class="tag-cloud__item--pressed"
+        bindtap="handleTagTap"
+      >{{item.name}}</text>
     </view>
   </view>
 
@@ -29,14 +48,22 @@
         <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
         <text>活动时间</text>
       </view>
-      <input class="form-row__input" value="{{form.date}} {{form.startTime}}" disabled />
+      <view class="time-picker-group">
+        <picker mode="date" value="{{form.date}}" start="{{todayDate}}" bindchange="handleDateChange">
+          <view class="time-picker__chip">{{form.date}}</view>
+        </picker>
+        <picker mode="time" value="{{form.startTime}}" bindchange="handleStartTimeChange">
+          <view class="time-picker__chip">{{form.startTime}}</view>
+        </picker>
+      </view>
     </view>
-    <view class="form-row">
+    <view class="form-row" bindtap="handleVenueLocationTap">
       <view class="form-row__label">
         <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
         <text>KTV场所</text>
       </view>
-      <input class="form-row__input" value="{{venueSummary}}" disabled />
+      <text class="form-row__input {{venueId ? '' : 'form-row__input--placeholder'}}">{{venueSummary}}</text>
+      <text class="form-row__arrow">›</text>
     </view>
     <view class="form-row">
       <text class="form-row__label">◈ 房间类型</text>
@@ -50,8 +77,26 @@
         <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
         <text>预计人数</text>
       </view>
-      <input class="form-row__number" value="{{form.maxCapacity}}" data-field="maxCapacity" bindinput="handleFieldChange" />
-      <text class="form-row__muted">最多 10</text>
+      <view class="capacity-stepper">
+        <view class="capacity-stepper__button" data-step="{{-1}}" hover-class="capacity-stepper__button--pressed" bindtap="handleCapacityStep">-</view>
+        <text class="capacity-stepper__value">{{form.maxCapacity}} 人</text>
+        <view class="capacity-stepper__button" data-step="{{1}}" hover-class="capacity-stepper__button--pressed" bindtap="handleCapacityStep">+</view>
+      </view>
+    </view>
+    <view class="form-row">
+      <text class="form-row__label">⚙ 性别/年龄偏好</text>
+      <picker
+        class="preference-picker"
+        mode="selector"
+        range="{{preferenceOptions}}"
+        value="{{preferenceIndex}}"
+        bindchange="handlePreferenceChange"
+      >
+        <view class="form-row__value preference-picker__value">
+          <text>{{form.preference}}</text>
+          <text class="form-row__arrow">›</text>
+        </view>
+      </picker>
     </view>
     <view class="form-row">
       <view class="form-row__label">
@@ -80,5 +125,10 @@
     ></textarea>
   </view>
 
-  <button class="submit-button" bindtap="handlePreview">发布组局</button>
+  <button
+    class="submit-button"
+    loading="{{publishing}}"
+    disabled="{{publishing}}"
+    bindtap="handlePublish"
+  >{{publishing ? '发布中...' : '发布组局'}}</button>
 </view>

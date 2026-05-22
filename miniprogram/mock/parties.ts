@@ -1,3 +1,4 @@
+import { KTV_ROOM_COVER_IMAGES } from "../constants/assets";
 import type { Party } from "../types/party";
 
 /**
@@ -18,7 +19,7 @@ export const partyList: Party[] = [
     isPublic: false,
     notes: "周末一起放松嗨唱，曲风不限，麦霸和气氛组都欢迎～一起享受音乐的快乐吧！",
     tags: ["流行", "80后-90后", "友好局"],
-    coverImage: "/assets/images/ktv/ktv-room-01.jpg",
+    coverImage: KTV_ROOM_COVER_IMAGES.room01,
     createdAt: "2026-04-24T09:00:00.000Z",
     confirmedCount: 5,
     waitlistCount: 1,
@@ -44,7 +45,7 @@ export const partyList: Party[] = [
     isPublic: true,
     notes: "下班直接集合，适合粤语歌、经典老歌和轻松聊天。",
     tags: ["粤语", "90后", "气氛好"],
-    coverImage: "/assets/images/ktv/ktv-room-02.jpg",
+    coverImage: KTV_ROOM_COVER_IMAGES.room02,
     createdAt: "2026-04-24T10:00:00.000Z",
     confirmedCount: 7,
     waitlistCount: 0,
@@ -70,7 +71,7 @@ export const partyList: Party[] = [
     isPublic: false,
     notes: "经典老歌专场，欢迎会唱、爱听、会热场的朋友。",
     tags: ["经典老歌", "80后", "麦霸局"],
-    coverImage: "/assets/images/ktv/ktv-room-03.jpg",
+    coverImage: KTV_ROOM_COVER_IMAGES.room03,
     createdAt: "2026-04-23T18:30:00.000Z",
     confirmedCount: 6,
     waitlistCount: 1,
@@ -96,7 +97,7 @@ export const partyList: Party[] = [
     isPublic: false,
     notes: "已结束。",
     tags: ["经典老歌"],
-    coverImage: "/assets/images/ktv/ktv-room-03.jpg",
+    coverImage: KTV_ROOM_COVER_IMAGES.room03,
     createdAt: "2026-04-16T09:00:00.000Z",
     confirmedCount: 10,
     waitlistCount: 0,

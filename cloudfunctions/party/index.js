@@ -2,8 +2,10 @@ const { AppError, ERROR_CODES, assertRequired, assertCondition } = require("./sh
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
 const { buildPartyView } = require("./shared/party-view");
+const { DEFAULT_PARTY_COVER_IMAGE } = require("./shared/assets");
 
 const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
+const DEFAULT_COVER_IMAGE = DEFAULT_PARTY_COVER_IMAGE;
 
 /**
  * 创建临时业务 ID。
@@ -12,6 +14,20 @@ const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
  */
 function createId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * 规范化组局封面图片。
+ * @param {unknown} coverImage 封面图片地址
+ * @returns {string} 可保存的封面图片地址
+ */
+function normalizeCoverImage(coverImage) {
+  if (typeof coverImage !== "string") {
+    return DEFAULT_COVER_IMAGE;
+  }
+
+  const trimmedCoverImage = coverImage.trim();
+  return trimmedCoverImage || DEFAULT_COVER_IMAGE;
 }
 
 /**
@@ -216,7 +232,8 @@ async function createDraft(payload, runtime) {
   const timestamp = runtime.now();
 
   assertRequired(payload.title, "title", "请填写局标题");
-  assertRequired(payload.venueId, "venueId", "请选择门店");
+  assertRequired(payload.venueId, "venueId", "请选择KTV场所");
+  assertRequired(payload.venueSummary, "venueSummary", "请选择KTV场所位置");
   assertRequired(payload.startDate, "startDate", "请选择开始日期");
   assertRequired(payload.startTime, "startTime", "请选择开始时间");
   assertCondition(isValidStartDate(String(payload.startDate)), ERROR_CODES.VALIDATION_ERROR, "请选择有效开始日期");
@@ -239,7 +256,7 @@ async function createDraft(payload, runtime) {
     isPublic: false,
     notes: payload.notes || "",
     tags: Array.isArray(payload.tags) ? payload.tags : [],
-    coverImage: "/assets/images/ktv/ktv-room-01.jpg",
+    coverImage: normalizeCoverImage(payload.coverImage),
     createdAt: timestamp,
     updatedAt: timestamp,
     publishedAt: null,

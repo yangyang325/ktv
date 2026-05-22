@@ -3,7 +3,7 @@
     <view class="city-row" bindtap="handleCityTap">
       <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
       <text>{{cityName}}</text>
-      <text class="city-row__arrow">⌄</text>
+      <text class="city-row__arrow"></text>
     </view>
 
     <view class="search">
@@ -19,18 +19,6 @@
       <text class="search__button" bindtap="handleSearch">搜索</text>
     </view>
 
-    <scroll-view class="quick-filters" scroll-x enhanced>
-      <view
-        wx:for="{{filters}}"
-        wx:key="key"
-        class="quick-filters__item"
-        data-key="{{item.key}}"
-        bindtap="handleFilterTap"
-      >
-        <text class="quick-filters__label">{{item.label}}</text>
-        <text class="quick-filters__arrow">{{item.suffix}}</text>
-      </view>
-    </scroll-view>
   </view>
 
   <view class="section-bar">
@@ -43,23 +31,6 @@
         bindtap="handleTabChange"
       >
         <text>{{item.label}}</text>
-      </view>
-    </view>
-    <view class="view-switch">
-      <view class="view-switch__distance">
-        <text class="view-switch__dot"></text>
-        <text>只看附近</text>
-      </view>
-      <view class="view-switch__group">
-        <view
-          wx:for="{{viewModes}}"
-          wx:key="key"
-          class="view-switch__mode {{activeViewMode === item.key ? 'view-switch__mode--active' : ''}}"
-          data-key="{{item.key}}"
-          bindtap="handleViewModeTap"
-        >
-          <text>{{item.label}}</text>
-        </view>
       </view>
     </view>
   </view>

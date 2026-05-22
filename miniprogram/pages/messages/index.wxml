@@ -19,11 +19,6 @@
     </view>
   </view>
 
-  <view class="message-search">
-    <view class="message-search__icon"></view>
-    <text class="message-search__placeholder">搜索聊天记录</text>
-  </view>
-
   <view class="conversation-card">
     <view class="conversation" wx:for="{{conversations}}" wx:key="id">
       <view class="conversation__avatar conversation__avatar--{{item.avatarType}}">
@@ -85,26 +80,5 @@
         </view>
       </view>
     </view>
-  </view>
-
-  <view wx:if="{{showNoticeCard}}" class="notice-card">
-    <view class="notice-card__copy">
-      <text class="notice-card__title">开启消息通知</text>
-      <text class="notice-card__desc">不错过任何组局动态和活动信息</text>
-      <button class="notice-card__button" hover-class="notice-card__button--hover">去开启</button>
-    </view>
-    <view class="gift">
-      <view class="gift__shadow"></view>
-      <view class="gift__box"></view>
-      <view class="gift__lid"></view>
-      <view class="gift__ribbon gift__ribbon--vertical"></view>
-      <view class="gift__ribbon gift__ribbon--horizontal"></view>
-      <view class="gift__bow gift__bow--left"></view>
-      <view class="gift__bow gift__bow--right"></view>
-      <view class="gift__spark gift__spark--one"></view>
-      <view class="gift__spark gift__spark--two"></view>
-      <view class="gift__spark gift__spark--three"></view>
-    </view>
-    <view class="notice-card__close" bindtap="handleCloseNoticeCard">×</view>
   </view>
 </view>

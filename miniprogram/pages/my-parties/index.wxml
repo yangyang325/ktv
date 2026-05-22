@@ -2,7 +2,7 @@
   <view class="summary-card">
     <image
       class="summary-card__bg"
-      src="/assets/images/ktv/my-parties-summary-bg.png"
+      src="{{summaryBgImage}}"
       mode="aspectFill"
     />
     <view class="summary-card__content">

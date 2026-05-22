@@ -40,5 +40,7 @@
     "ignore": [],
     "include": []
   },
-  "editorSetting": {}
+  "editorSetting": {},
+  "libVersion": "3.15.2",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
 }

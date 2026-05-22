@@ -1,4 +1,5 @@
 import { serviceConfig } from "./services/config";
+import { DEFAULT_CITY_NAME } from "./constants/location";
 
 /**
  * 全局应用数据。
@@ -19,7 +20,7 @@ interface IAppOption {
 App<IAppOption>({
   globalData: {
     currentUserId: "user-host",
-    useMock: true
+    useMock: serviceConfig.dataSource !== "cloud"
   },
 
   /**
@@ -31,6 +32,10 @@ App<IAppOption>({
         env: serviceConfig.cloudEnvId || undefined,
         traceUser: true
       });
+    }
+
+    if (!wx.getStorageSync("selectedCityName")) {
+      wx.setStorageSync("selectedCityName", DEFAULT_CITY_NAME);
     }
 
     console.log("K 局小程序启动");

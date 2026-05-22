@@ -44,4 +44,5 @@ export interface PartyDraftInput {
   maxCapacity: number;
   notes: string;
   tags: string[];
+  coverImage?: string;
 }

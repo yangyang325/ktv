@@ -175,6 +175,46 @@ test("auth uses object selectors for current user lookups", async () => {
   ]);
 });
 
+test("auth.getPhoneNumber requires a WeChat phone authorization code", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await authFunction.main({ action: "getPhoneNumber", payload: {} }, { store, openid: "openid-host" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+  assert.equal(result.message, "请先授权手机号");
+});
+
+test("auth.getPhoneNumber resolves and stores phone number for current user", async () => {
+  const store = createMemoryStore(createSeedData());
+  const calls = [];
+  const cloud = {
+    openapi: {
+      phonenumber: {
+        getPhoneNumber(options) {
+          calls.push(options);
+          return {
+            phone_info: {
+              phoneNumber: "13812348888"
+            }
+          };
+        }
+      }
+    }
+  };
+
+  const result = await authFunction.main(
+    { action: "getPhoneNumber", payload: { code: "phone-code" } },
+    { store, openid: "openid-host", now: () => "2026-05-22T10:30:00.000Z", cloud }
+  );
+  const updatedUser = await store.findOne("users", { openid: "openid-host" });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.phoneNumber, "13812348888");
+  assert.deepEqual(calls, [{ code: "phone-code" }]);
+  assert.equal(updatedUser.phoneNumber, "13812348888");
+  assert.equal(updatedUser.updatedAt, "2026-05-22T10:30:00.000Z");
+});
+
 test("venue.list filters active venues by district and keyword", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await venueFunction.main(
@@ -314,7 +354,8 @@ test("party.createDraft creates draft and host entry", async () => {
         roomFee: 240000,
         maxCapacity: 12,
         notes: "欢迎新人，不限歌路。",
-        tags: ["欢迎新人"]
+        tags: ["欢迎新人"],
+        coverImage: "cloud://party-cover-file"
       }
     },
     { store, openid: "openid-host" }
@@ -323,6 +364,7 @@ test("party.createDraft creates draft and host entry", async () => {
   const entries = await store.list("entries", (item) => item.partyId === result.data.partyId);
   assert.equal(result.ok, true);
   assert.equal(result.data.status, "draft");
+  assert.equal(result.data.coverImage, "cloud://party-cover-file");
   assert.equal(entries.length, 1);
   assert.equal(entries[0].entryType, "confirmed");
 });
@@ -368,6 +410,7 @@ test("party.createDraft rejects spoofed payload userId", async () => {
         userId: "user-host",
         title: "冒名创建 K 局",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -391,6 +434,7 @@ test("party.publish rejects non-host user", async () => {
         userId: "user-host",
         title: "羊羊待发布 K 局",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -429,6 +473,7 @@ test("party.list excludes draft parties", async () => {
         userId: "user-host",
         title: "列表不可见草稿",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -464,6 +509,7 @@ test("party.createDraft rejects missing explicit openid", async () => {
         userId: "user-host",
         title: "未登录创建 K 局",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -495,6 +541,7 @@ test("party.publish rejects missing explicit openid", async () => {
         userId: "user-host",
         title: "羊羊待发布草稿",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -522,6 +569,7 @@ test("party.detail rejects draft for non-owner", async () => {
         userId: "user-host",
         title: "仅局主可见草稿",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -549,6 +597,7 @@ test("party.detail allows draft for owner", async () => {
         userId: "user-host",
         title: "局主可见草稿",
         venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
         startDate: "2026-05-23",
         startTime: "19:30",
         durationMin: 180,
@@ -575,6 +624,7 @@ test("party.createDraft rejects invalid start date or time without inserting dat
     userId: "user-host",
     title: "缺少时间的 K 局",
     venueId: "venue-001",
+    venueSummary: "MUSE KTV · 南山",
     startDate: "2026-05-23",
     startTime: "19:30",
     durationMin: 180,

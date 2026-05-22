@@ -4,6 +4,7 @@
     "pages/discover/index",
     "pages/messages/index",
     "pages/profile/index",
+    "pages/profile-edit/index",
     "pages/my-parties/index",
     "pages/launch/index",
     "pages/party-detail/index",
@@ -36,6 +37,12 @@
     "backgroundColor": "#f6f7ff",
     "backgroundTextStyle": "light"
   },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于首页选择当前位置，并在发起组局时选择KTV场所位置"
+    }
+  },
+  "requiredPrivateInfos": ["chooseLocation"],
   "tabBar": {
     "custom": true,
     "color": "#8a91a6",

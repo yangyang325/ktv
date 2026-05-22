@@ -4,6 +4,14 @@ import { serviceConfig } from "../config";
 import { callCloudFunction } from "./cloud";
 
 /**
+ * 微信手机号授权结果。
+ */
+export interface PhoneNumberResult {
+  phoneNumber: string;
+  user?: User | null;
+}
+
+/**
  * 深拷贝纯数据。
  * @param value 原始数据
  * @returns 深拷贝后的数据
@@ -52,6 +60,22 @@ export async function getUserById(userId: string) {
   }
 
   return getUserByIdSync(userId);
+}
+
+/**
+ * 通过微信手机号授权 code 读取手机号。
+ * @param phoneCode 微信手机号授权 code
+ * @returns 手机号授权结果
+ */
+export async function getPhoneNumber(phoneCode: string): Promise<PhoneNumberResult> {
+  if (serviceConfig.dataSource === "cloud") {
+    return callCloudFunction<PhoneNumberResult>("auth", "getPhoneNumber", { code: phoneCode });
+  }
+
+  return {
+    phoneNumber: "13812348888",
+    user: null
+  };
 }
 
 /**

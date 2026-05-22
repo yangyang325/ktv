@@ -53,8 +53,14 @@
 }
 
 .hero__city-arrow {
-  font-size: 24rpx;
-  transform: translateY(-2rpx);
+  display: block;
+  width: 11rpx;
+  height: 11rpx;
+  margin-top: -5rpx;
+  box-sizing: border-box;
+  border-right: 3rpx solid rgba(255, 255, 255, 0.94);
+  border-bottom: 3rpx solid rgba(255, 255, 255, 0.94);
+  transform: rotate(45deg);
 }
 
 .hero__title {

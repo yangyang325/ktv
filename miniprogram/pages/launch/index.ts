@@ -1,12 +1,43 @@
+import { createPartyDraft, publishParty } from "../../services/api/party";
+import { uploadPartyCover } from "../../services/api/upload";
+import { buildActivityTimeText, getTodayDate } from "../../utils/date";
+import { validatePartyForm } from "../../utils/validators";
+
 interface LaunchForm {
   title: string;
+  venueId: string;
+  date: string;
+  startTime: string;
   timeText: string;
   venueText: string;
   roomType: string;
   minPeople: number;
   maxPeople: number;
+  duration: string;
+  roomFee: string;
   preference: string;
   notes: string;
+}
+
+/**
+ * 格式化用户选择的 KTV 场所位置。
+ * @param location 位置选择结果
+ * @returns 场所展示文案
+ */
+function formatChosenVenueSummary(location: WechatMiniprogram.ChooseLocationSuccessCallbackResult): string {
+  const name = (location.name || "").trim();
+  const address = (location.address || "").trim();
+
+  if (name && address && !address.includes(name)) {
+    return `${name} · ${address}`;
+  }
+
+  return name || address;
+}
+
+interface PartyTagOption {
+  name: string;
+  selected: boolean;
 }
 
 interface FieldChangeEvent extends WechatMiniprogram.Input {
@@ -25,6 +56,18 @@ interface TagTapEvent extends WechatMiniprogram.BaseEvent {
   };
 }
 
+interface PickerChangeEvent extends WechatMiniprogram.BaseEvent {
+  detail: {
+    value: string;
+  };
+}
+
+interface PreferenceChangeEvent extends WechatMiniprogram.BaseEvent {
+  detail: {
+    value: number | string;
+  };
+}
+
 interface RoomTypeTapEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
@@ -37,7 +80,7 @@ interface PeopleStepEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
       field?: "minPeople" | "maxPeople";
-      step?: number;
+      step?: number | string;
     };
   };
 }
@@ -46,18 +89,33 @@ Page({
   data: {
     form: {
       title: "",
+      venueId: "",
+      date: "",
+      startTime: "",
       timeText: "选择日期与时间",
-      venueText: "选择KTV",
+      venueText: "选择KTV位置",
       roomType: "aa",
       minPeople: 4,
       maxPeople: 10,
+      duration: "180",
+      roomFee: "2400",
       preference: "不限",
       notes: ""
     } as LaunchForm,
+    coverImage: "",
+    coverPreviewPath: "",
+    uploadingCover: false,
+    publishing: false,
+    todayDate: getTodayDate(),
+    preferenceIndex: 0,
+    preferenceOptions: ["不限", "女生优先", "男生优先", "18-25岁", "26-35岁", "35岁以上"],
     titleLength: 0,
     notesLength: 0,
-    tags: ["流行", "粤语", "经典老歌", "90后", "80后", "友好局", "麦霸局", "气氛好"],
-    selectedTags: ["流行", "粤语", "经典老歌", "90后", "80后", "友好局", "麦霸局", "气氛好"],
+    tags: ["流行", "粤语", "经典老歌", "90后", "80后", "友好局", "麦霸局", "气氛好"].map((name) => ({
+      name,
+      selected: false
+    })) as PartyTagOption[],
+    selectedTags: [] as string[],
     roomTypes: [
       { label: "AA制", value: "aa" },
       { label: "我请客", value: "treat" }
@@ -97,6 +155,99 @@ Page({
   },
 
   /**
+   * 选择 KTV 场所位置。
+   */
+  async handleVenueLocationTap() {
+    try {
+      const location = await wx.chooseLocation({});
+      const venueText = formatChosenVenueSummary(location);
+
+      if (!venueText) {
+        wx.showToast({
+          title: "请选择KTV位置",
+          icon: "none"
+        });
+        return;
+      }
+
+      this.setData({
+        "form.venueId": "custom-location",
+        "form.venueText": venueText
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("cancel")) {
+        wx.showToast({
+          title: "未选择KTV位置",
+          icon: "none"
+        });
+      }
+    }
+  },
+
+  /**
+   * 选择并上传组局封面。
+   */
+  async handleCoverTap() {
+    if (this.data.uploadingCover) {
+      return;
+    }
+
+    try {
+      const result = await wx.chooseMedia({
+        count: 1,
+        mediaType: ["image"],
+        sourceType: ["album", "camera"],
+        sizeType: ["compressed"]
+      });
+      const tempFilePath = result.tempFiles[0]?.tempFilePath;
+
+      if (!tempFilePath) {
+        return;
+      }
+
+      const previousCoverImage = this.data.coverImage;
+      const previousCoverPreviewPath = this.data.coverPreviewPath;
+
+      this.setData({
+        coverPreviewPath: tempFilePath,
+        uploadingCover: true
+      });
+
+      try {
+        const coverImage = await uploadPartyCover(tempFilePath);
+        this.setData({
+          coverImage,
+          coverPreviewPath: coverImage,
+          uploadingCover: false
+        });
+        wx.showToast({
+          title: "封面已上传",
+          icon: "success"
+        });
+      } catch (error) {
+        this.setData({
+          coverImage: previousCoverImage,
+          coverPreviewPath: previousCoverPreviewPath,
+          uploadingCover: false
+        });
+        wx.showToast({
+          title: "封面上传失败",
+          icon: "none"
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("cancel")) {
+        wx.showToast({
+          title: "未选择图片",
+          icon: "none"
+        });
+      }
+    }
+  },
+
+  /**
    * 切换属性标签。
    * @param event 点击事件
    */
@@ -106,10 +257,50 @@ Page({
       return;
     }
 
-    const selectedTags = this.data.selectedTags.includes(tag)
-      ? this.data.selectedTags.filter((item) => item !== tag)
-      : [...this.data.selectedTags, tag];
-    this.setData({ selectedTags });
+    const tags = this.data.tags.map((item) => (item.name === tag ? { ...item, selected: !item.selected } : item));
+    const selectedTags = tags.filter((item) => item.selected).map((item) => item.name);
+    this.setData({ tags, selectedTags });
+  },
+
+  /**
+   * 更新活动日期。
+   * @param event 日期选择事件
+   */
+  handleDateChange(event: PickerChangeEvent) {
+    const date = event.detail.value;
+    this.setData({
+      "form.date": date,
+      "form.timeText": buildActivityTimeText(date, this.data.form.startTime)
+    });
+  },
+
+  /**
+   * 更新活动开始时间。
+   * @param event 时间选择事件
+   */
+  handleStartTimeChange(event: PickerChangeEvent) {
+    const startTime = event.detail.value;
+    this.setData({
+      "form.startTime": startTime,
+      "form.timeText": buildActivityTimeText(this.data.form.date, startTime)
+    });
+  },
+
+  /**
+   * 更新性别年龄偏好。
+   * @param event 选择器变更事件
+   */
+  handlePreferenceChange(event: PreferenceChangeEvent) {
+    const preferenceIndex = Number(event.detail.value);
+    const preference = this.data.preferenceOptions[preferenceIndex];
+    if (!preference) {
+      return;
+    }
+
+    this.setData({
+      preferenceIndex,
+      "form.preference": preference
+    });
   },
 
   /**
@@ -133,12 +324,13 @@ Page({
    */
   handlePeopleStep(event: PeopleStepEvent) {
     const { field, step } = event.currentTarget.dataset;
-    if (!field || typeof step !== "number") {
+    const stepValue = Number(step);
+    if (!field || !Number.isFinite(stepValue)) {
       return;
     }
 
     const current = this.data.form[field];
-    const next = Math.max(1, Math.min(20, current + step));
+    const next = Math.max(1, Math.min(20, current + stepValue));
     if (field === "minPeople" && next > this.data.form.maxPeople) {
       return;
     }
@@ -150,6 +342,71 @@ Page({
     this.setData({
       [`form.${field}`]: next
     });
+  },
+
+  /**
+   * 提交首页发起组局表单并直接发布。
+   */
+  async handleSubmit() {
+    if (this.data.publishing) {
+      return;
+    }
+
+    if (this.data.uploadingCover) {
+      wx.showToast({
+        title: "封面正在上传",
+        icon: "none"
+      });
+      return;
+    }
+
+    const selectedTags =
+      this.data.form.preference === "不限"
+        ? this.data.selectedTags
+        : [...this.data.selectedTags, this.data.form.preference];
+    const draft = {
+      title: this.data.form.title,
+      venueId: this.data.form.venueId,
+      venueSummary: this.data.form.venueText,
+      startDate: this.data.form.date,
+      startTime: this.data.form.startTime,
+      durationMin: Number(this.data.form.duration),
+      roomFee: Number(this.data.form.roomFee) * 100,
+      maxCapacity: this.data.form.maxPeople,
+      notes: this.data.form.notes,
+      tags: selectedTags,
+      coverImage: this.data.coverImage
+    };
+    const validation = validatePartyForm(draft);
+
+    if (!validation.valid) {
+      wx.showToast({
+        title: validation.message,
+        icon: "none"
+      });
+      return;
+    }
+
+    this.setData({ publishing: true });
+
+    try {
+      const createdParty = await createPartyDraft(draft);
+      const publishedParty = await publishParty(createdParty.partyId);
+
+      wx.showToast({
+        title: "组局成功",
+        icon: "success"
+      });
+      wx.redirectTo({
+        url: `/pages/party-detail/index?partyId=${publishedParty.partyId}`
+      });
+    } catch (error) {
+      wx.showToast({
+        title: "发布失败，请稍后重试",
+        icon: "none"
+      });
+      this.setData({ publishing: false });
+    }
   },
 
 });

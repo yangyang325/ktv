@@ -13,6 +13,7 @@ test("主包页面已注册", () => {
     "pages/discover/index",
     "pages/messages/index",
     "pages/profile/index",
+    "pages/profile-edit/index",
     "pages/my-parties/index",
     "pages/launch/index",
     "pages/party-detail/index",
@@ -30,4 +31,12 @@ test("底部导航按 UI 图包含四个入口", () => {
     appConfig.tabBar.list.map((item) => item.pagePath),
     ["pages/home/index", "pages/discover/index", "pages/messages/index", "pages/profile/index"]
   );
+});
+
+test("首页和发起组局位置选择声明位置权限", () => {
+  const permissionDesc = appConfig.permission["scope.userLocation"].desc;
+
+  assert.equal(permissionDesc.includes("首页"), true);
+  assert.equal(permissionDesc.includes("KTV场所"), true);
+  assert.deepEqual(new Set(appConfig.requiredPrivateInfos), new Set(["chooseLocation"]));
 });

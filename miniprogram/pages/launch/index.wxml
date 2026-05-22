@@ -1,8 +1,20 @@
 <view class="page launch-page">
   <view class="cover-title">
-    <view class="cover-upload">
-      <text class="cover-upload__plus">＋</text>
-      <text class="cover-upload__text">上传封面</text>
+    <view class="cover-upload" bindtap="handleCoverTap">
+      <image
+        wx:if="{{coverPreviewPath}}"
+        class="cover-upload__image"
+        src="{{coverPreviewPath}}"
+        mode="aspectFill"
+      />
+      <view wx:else class="cover-upload__placeholder">
+        <text class="cover-upload__plus">＋</text>
+        <text class="cover-upload__text">上传封面</text>
+      </view>
+      <view wx:if="{{uploadingCover}}" class="cover-upload__mask">
+        <text>上传中</text>
+      </view>
+      <text wx:if="{{coverImage && !uploadingCover}}" class="cover-upload__change">更换</text>
     </view>
 
     <view class="title-box">
@@ -29,32 +41,42 @@
     <view class="tag-cloud">
       <text
         wx:for="{{tags}}"
-        wx:key="*this"
-        class="tag-cloud__item {{selectedTags.indexOf(item) >= 0 ? 'tag-cloud__item--active' : ''}}"
-        data-tag="{{item}}"
+        wx:key="name"
+        class="tag-cloud__item {{item.selected ? 'tag-cloud__item--active' : ''}}"
+        data-tag="{{item.name}}"
+        hover-class="tag-cloud__item--pressed"
         bindtap="handleTagTap"
-      >{{item}}</text>
+      >{{item.name}}</text>
     </view>
   </view>
 
   <view class="form-card">
-    <view class="form-row">
+    <view class="form-row form-row--time">
       <view class="form-row__label">
         <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
         <text>活动时间</text>
       </view>
-      <view class="form-row__value">
-        <text>{{form.timeText}}</text>
+      <view class="time-picker-group">
+        <picker mode="date" value="{{form.date}}" start="{{todayDate}}" bindchange="handleDateChange">
+          <view class="time-picker__chip {{form.date ? '' : 'time-picker__chip--placeholder'}}">
+            {{form.date || '选择日期'}}
+          </view>
+        </picker>
+        <picker mode="time" value="{{form.startTime}}" bindchange="handleStartTimeChange">
+          <view class="time-picker__chip {{form.startTime ? '' : 'time-picker__chip--placeholder'}}">
+            {{form.startTime || '选择时间'}}
+          </view>
+        </picker>
         <text class="form-row__arrow">›</text>
       </view>
     </view>
 
-    <view class="form-row">
+    <view class="form-row" bindtap="handleVenueLocationTap">
       <view class="form-row__label">
         <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
         <text>KTV场所</text>
       </view>
-      <view class="form-row__value">
+      <view class="form-row__value {{form.venueId ? '' : 'form-row__value--placeholder'}}">
         <text>{{form.venueText}}</text>
         <text class="form-row__arrow">›</text>
       </view>
@@ -83,12 +105,16 @@
       </view>
       <view class="people-stepper">
         <view class="people-stepper__group">
-          <text>最少 {{form.minPeople}} 人</text>
-          <view class="stepper-button" data-field="minPeople" data-step="-1" bindtap="handlePeopleStep">-</view>
+          <text class="people-stepper__label">最少</text>
+          <view class="stepper-button" data-field="minPeople" data-step="{{-1}}" hover-class="stepper-button--pressed" bindtap="handlePeopleStep">-</view>
+          <text class="people-stepper__value">{{form.minPeople}}人</text>
+          <view class="stepper-button" data-field="minPeople" data-step="{{1}}" hover-class="stepper-button--pressed" bindtap="handlePeopleStep">+</view>
         </view>
         <view class="people-stepper__group">
-          <text>最多 {{form.maxPeople}}</text>
-          <view class="stepper-button" data-field="maxPeople" data-step="1" bindtap="handlePeopleStep">+</view>
+          <text class="people-stepper__label">最多</text>
+          <view class="stepper-button" data-field="maxPeople" data-step="{{-1}}" hover-class="stepper-button--pressed" bindtap="handlePeopleStep">-</view>
+          <text class="people-stepper__value">{{form.maxPeople}}人</text>
+          <view class="stepper-button" data-field="maxPeople" data-step="{{1}}" hover-class="stepper-button--pressed" bindtap="handlePeopleStep">+</view>
         </view>
       </view>
     </view>
@@ -98,10 +124,18 @@
         <text class="form-row__symbol">⚙</text>
         <text>性别/年龄偏好</text>
       </view>
-      <view class="form-row__value">
-        <text>{{form.preference}}</text>
-        <text class="form-row__arrow">›</text>
-      </view>
+      <picker
+        class="preference-picker"
+        mode="selector"
+        range="{{preferenceOptions}}"
+        value="{{preferenceIndex}}"
+        bindchange="handlePreferenceChange"
+      >
+        <view class="form-row__value preference-picker__value">
+          <text>{{form.preference}}</text>
+          <text class="form-row__arrow">›</text>
+        </view>
+      </picker>
     </view>
   </view>
 
@@ -124,6 +158,11 @@
   </view>
 
   <view class="launch-submit">
-    <button class="launch-submit__button">发布组局</button>
+    <button
+      class="launch-submit__button"
+      loading="{{publishing}}"
+      disabled="{{publishing}}"
+      bindtap="handleSubmit"
+    >{{publishing ? '发布中...' : '发布组局'}}</button>
   </view>
 </view>

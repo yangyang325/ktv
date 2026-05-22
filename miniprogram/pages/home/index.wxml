@@ -2,14 +2,14 @@
   <view class="hero">
     <image
       class="hero__art"
-      src="/assets/images/ktv/home-hero-microphone.jpg"
+      src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/owam8ampgllwoo.jpg"
       mode="aspectFill"
     />
     <view class="hero__top">
       <view class="hero__city" bindtap="handleCityTap">
-        <image class="hero__city-icon" src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
-        <text>{{cityName}}</text>
-        <text class="hero__city-arrow">⌄</text>
+        <image class="hero__city-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
+        <text>{{cityPicking ? '选择中' : cityName}}</text>
+        <text class="hero__city-arrow"></text>
       </view>
     </view>
     <text class="hero__title">KTV组局</text>

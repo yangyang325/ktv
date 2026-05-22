@@ -1,3 +1,4 @@
+import { MY_PARTIES_SUMMARY_BG_IMAGE } from "../../constants/assets";
 import { getMyPartyTabs } from "../../services/api/party";
 import type { MyPartyTabs } from "../../types/common";
 import type { Party } from "../../types/party";
@@ -69,6 +70,7 @@ Page({
     emptyTitle: "这里还没有组局",
     partyList: [] as MyPartyCard[],
     stats: createStats(0, 0, 0),
+    summaryBgImage: MY_PARTIES_SUMMARY_BG_IMAGE,
     tabs: createTabs({
       hosting: [],
       joined: [],

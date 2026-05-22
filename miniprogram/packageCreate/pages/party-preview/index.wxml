@@ -4,5 +4,10 @@
     <text class="preview-card__content">{{previewText}}</text>
   </view>
   <button class="preview-page__primary" bindtap="handleCopy">复制文案</button>
-  <button class="preview-page__secondary" bindtap="handlePublish">确认发布</button>
+  <button
+    class="preview-page__secondary"
+    loading="{{publishing}}"
+    disabled="{{publishing}}"
+    bindtap="handlePublish"
+  >{{publishing ? '发布中...' : '确认发布'}}</button>
 </view>

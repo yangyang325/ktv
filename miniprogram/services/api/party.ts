@@ -1,6 +1,7 @@
 import { entryList } from "../../mock/entries";
 import { partyList } from "../../mock/parties";
 import { userList } from "../../mock/users";
+import { DEFAULT_PARTY_COVER_IMAGE } from "../../constants/assets";
 import type { MyPartyTabs } from "../../types/common";
 import type { Entry } from "../../types/entry";
 import type { Party, PartyDraftInput } from "../../types/party";
@@ -93,7 +94,7 @@ export async function createPartyDraft(input: PartyDraftInput) {
     partyId,
     title: input.title,
     venueId: input.venueId,
-    venueCustom: "",
+    venueCustom: input.venueSummary,
     hostId: "user-host",
     startTime: `${input.startDate}T${input.startTime}:00+08:00`,
     durationMin: input.durationMin,
@@ -103,7 +104,7 @@ export async function createPartyDraft(input: PartyDraftInput) {
     isPublic: false,
     notes: input.notes,
     tags: input.tags,
-    coverImage: "/assets/images/ktv/ktv-room-01.jpg",
+    coverImage: input.coverImage || DEFAULT_PARTY_COVER_IMAGE,
     createdAt: new Date().toISOString(),
     confirmedCount: 1,
     waitlistCount: 0,

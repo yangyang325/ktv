@@ -1,18 +1,8 @@
 import { getPartyList } from "../../services/api/party";
+import { DEFAULT_CITY_NAME } from "../../constants/location";
 import type { Party } from "../../types/party";
 
-interface DiscoverFilter {
-  key: string;
-  label: string;
-  suffix: string;
-}
-
 interface DiscoverTab {
-  key: string;
-  label: string;
-}
-
-interface DiscoverViewMode {
   key: string;
   label: string;
 }
@@ -34,26 +24,14 @@ const avatarPool = [
 Page({
   data: {
     keyword: "",
-    cityName: "成都市",
-    cityOptions: ["成都市", "重庆市", "深圳市", "广州市", "上海市"],
+    cityName: DEFAULT_CITY_NAME,
+    cityOptions: ["深圳市", "成都市", "重庆市", "广州市", "上海市"],
     activeTab: "recommend",
-    activeViewMode: "card",
     tabs: [
       { key: "recommend", label: "推荐" },
       { key: "nearby", label: "附近" },
       { key: "latest", label: "最新" }
     ] as DiscoverTab[],
-    filters: [
-      { key: "near", label: "附近", suffix: "⌄" },
-      { key: "area", label: "区域", suffix: "⌄" },
-      { key: "people", label: "人数", suffix: "⌄" },
-      { key: "fee", label: "费用", suffix: "⌄" },
-      { key: "more", label: "筛选", suffix: "▽" }
-    ] as DiscoverFilter[],
-    viewModes: [
-      { key: "list", label: "列表" },
-      { key: "card", label: "卡片" }
-    ] as DiscoverViewMode[],
     partyList: [] as DiscoverParty[]
   },
 
@@ -120,28 +98,6 @@ Page({
       title: this.data.keyword ? "已更新搜索" : "输入关键词试试",
       icon: "none"
     });
-  },
-
-  /**
-   * 处理筛选项点击。
-   * @param event 点击事件
-   */
-  handleFilterTap(event: WechatMiniprogram.BaseEvent) {
-    const { key } = event.currentTarget.dataset as { key: string };
-    const filter = this.data.filters.find((item) => item.key === key);
-    wx.showToast({
-      title: filter ? `${filter.label}筛选` : "筛选",
-      icon: "none"
-    });
-  },
-
-  /**
-   * 切换列表展示模式。
-   * @param event 点击事件
-   */
-  handleViewModeTap(event: WechatMiniprogram.BaseEvent) {
-    const { key } = event.currentTarget.dataset as { key: string };
-    this.setData({ activeViewMode: key });
   },
 
   /**
