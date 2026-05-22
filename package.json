@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node scripts/run-tests.js"
+    "sync:cloud-shared": "node scripts/sync-cloud-shared.js",
+    "test": "node scripts/sync-cloud-shared.js --check && node scripts/run-tests.js"
   },
   "devDependencies": {
     "miniprogram-api-typings": "^5.1.3",

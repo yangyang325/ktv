@@ -1,7 +1,7 @@
 const crypto = require("node:crypto");
 
-const { createRuntime } = require("../shared/runtime");
-const { runAction } = require("../shared/response");
+const { createRuntime } = require("./shared/runtime");
+const { runAction } = require("./shared/response");
 
 /**
  * 根据 openid 构建稳定用户 ID。

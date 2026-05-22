@@ -33,3 +33,23 @@ test("云函数共享后端文件完整", () => {
     assert.equal(fs.existsSync(path.join(root, "cloudfunctions", "shared", fileName)), true, fileName);
   });
 });
+
+test("云函数部署包包含共享后端文件", () => {
+  ["auth", "venue", "party", "entry", "notify"].forEach((name) => {
+    ["errors.js", "response.js", "memory-store.js", "cloud-store.js", "runtime.js", "seed.js", "party-view.js"].forEach((fileName) => {
+      assert.equal(
+        fs.existsSync(path.join(root, "cloudfunctions", name, "shared", fileName)),
+        true,
+        `${name}-${fileName}`
+      );
+    });
+  });
+});
+
+test("云函数引用部署包内共享模块", () => {
+  ["auth", "venue", "party", "entry", "notify"].forEach((name) => {
+    const source = fs.readFileSync(path.join(root, "cloudfunctions", name, "index.js"), "utf8");
+    assert.equal(source.includes('require("../shared/'), false, name);
+    assert.equal(source.includes('require("./shared/'), true, name);
+  });
+});

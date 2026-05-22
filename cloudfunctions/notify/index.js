@@ -1,6 +1,6 @@
-const { AppError, ERROR_CODES, assertRequired } = require("../shared/errors");
-const { createRuntime } = require("../shared/runtime");
-const { runAction } = require("../shared/response");
+const { AppError, ERROR_CODES, assertRequired } = require("./shared/errors");
+const { createRuntime } = require("./shared/runtime");
+const { runAction } = require("./shared/response");
 
 /**
  * 创建临时业务 ID。

@@ -1,7 +1,7 @@
-const { AppError, ERROR_CODES, assertRequired, assertCondition } = require("../shared/errors");
-const { createRuntime } = require("../shared/runtime");
-const { runAction } = require("../shared/response");
-const { buildPartyView } = require("../shared/party-view");
+const { AppError, ERROR_CODES, assertRequired, assertCondition } = require("./shared/errors");
+const { createRuntime } = require("./shared/runtime");
+const { runAction } = require("./shared/response");
+const { buildPartyView } = require("./shared/party-view");
 
 const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
 
