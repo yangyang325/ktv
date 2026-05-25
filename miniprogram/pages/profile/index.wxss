@@ -386,11 +386,27 @@
   margin-left: 12rpx;
   padding: 6rpx 12rpx;
   border-radius: 999rpx;
-  background: #eef7ff;
-  color: #4288ff;
+  background: #16c878;
+  color: #ffffff;
   font-size: 20rpx;
   font-weight: 800;
   line-height: 1;
+}
+
+.profile-party-card__status--signup {
+  background: #16c878;
+}
+
+.profile-party-card__status--active {
+  background: #2497ff;
+}
+
+.profile-party-card__status--full {
+  background: #ff982b;
+}
+
+.profile-party-card__status--finished {
+  background: rgba(25, 27, 42, 0.72);
 }
 
 .profile-party-card__tags {
@@ -407,8 +423,8 @@
   margin-right: 8rpx;
   padding: 0 10rpx;
   border-radius: 8rpx;
-  background: #f0edff;
-  color: #735cff;
+  background: #f1efff;
+  color: #6048ff;
   font-size: 18rpx;
   font-weight: 800;
   white-space: nowrap;
@@ -425,6 +441,10 @@
   line-height: 1.15;
 }
 
+.profile-party-card__meta--venue {
+  align-items: flex-start;
+}
+
 .profile-party-card__meta image {
   width: 22rpx;
   height: 22rpx;
@@ -433,11 +453,28 @@
   opacity: 0.62;
 }
 
+.profile-party-card__meta--venue image {
+  margin-top: 2rpx;
+}
+
 .profile-party-card__meta text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.profile-party-card__venue {
+  display: -webkit-box;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .profile-party-card__footer {

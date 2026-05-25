@@ -56,7 +56,7 @@ export function buildEntryText(entry: Entry, host: User): string {
 }
 
 /**
- * 生成微信群接龙文案。
+ * 生成活动信息分享文案。
  * @param party 局信息
  * @param entries 报名记录
  * @param host 发起人信息
@@ -64,20 +64,20 @@ export function buildEntryText(entry: Entry, host: User): string {
  */
 export function buildPartyRecruitmentText(party: Party, entries: Entry[], host: User): string {
   const lines = [
-    "🎤 K歌局招募！",
+    "🎤 K歌活动信息",
     `📍 ${party.venueSummary}`,
     `🗓 ${formatPartyDateTime(party.startTime, party.durationMin)}`,
-    `💰 人均约 ${formatCurrencyYuan(
+    `💰 AA参考 ${formatCurrencyYuan(
       party.estimatedPerPerson || calculateEstimatedPerPerson(party.roomFee, party.maxCapacity)
-    )}（满 ${party.maxCapacity} 人）`,
-    `👥 限 ${party.maxCapacity} 人，先报先得`
+    )}（满 ${party.maxCapacity} 人，仅作线下AA参考）`,
+    `👥 活动名额 ${party.maxCapacity} 人`
   ];
 
   if (party.notes) {
     lines.push(`📝 ${party.notes}`);
   }
 
-  lines.push("报名接龙：");
+  lines.push("参与名单：");
 
   const confirmedEntries: Entry[] = [];
 

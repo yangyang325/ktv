@@ -10,6 +10,9 @@ interface PartyDraftCache {
   title: string;
   venueId: string;
   venueSummary: string;
+  venueAddress?: string;
+  venueLatitude?: number;
+  venueLongitude?: number;
   startDate: string;
   startTime: string;
   durationMin: number;
@@ -59,10 +62,14 @@ Page({
       estimatedPerPerson,
       hostSummary: "羊羊",
       venueSummary: draft.venueSummary,
+      venueAddress: draft.venueAddress,
+      venueLatitude: draft.venueLatitude,
+      venueLongitude: draft.venueLongitude,
       progressText: `1 / ${draft.maxCapacity}`,
       statusText: "草稿",
-      priceText: `人均约 ${formatCurrencyYuan(estimatedPerPerson)}`,
-      timeSummary: buildTimeSummary(draft.startDate, draft.startTime, draft.durationMin)
+      priceText: `${formatCurrencyYuan(estimatedPerPerson)}/人`,
+      timeSummary: buildTimeSummary(draft.startDate, draft.startTime, draft.durationMin),
+      participantAvatars: []
     };
 
     const host: User = {
@@ -88,7 +95,7 @@ Page({
   },
 
   /**
-   * 创建并发布组局。
+   * 创建并发布活动。
    */
   async handlePublish() {
     if (this.data.publishing) {
@@ -109,6 +116,9 @@ Page({
       title: draft.title,
       venueId: draft.venueId,
       venueSummary: draft.venueSummary,
+      venueAddress: draft.venueAddress,
+      venueLatitude: draft.venueLatitude,
+      venueLongitude: draft.venueLongitude,
       startDate: draft.startDate,
       startTime: draft.startTime,
       durationMin: draft.durationMin,
@@ -134,6 +144,9 @@ Page({
         title: draft.title,
         venueId: draft.venueId,
         venueSummary: draft.venueSummary,
+        venueAddress: draft.venueAddress,
+        venueLatitude: draft.venueLatitude,
+        venueLongitude: draft.venueLongitude,
         startDate: draft.startDate,
         startTime: draft.startTime,
         durationMin: draft.durationMin,

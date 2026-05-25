@@ -14,6 +14,7 @@ test("主包页面已注册", () => {
     "pages/messages/index",
     "pages/profile/index",
     "pages/profile-edit/index",
+    "pages/favorites/index",
     "pages/my-parties/index",
     "pages/launch/index",
     "pages/party-detail/index",
@@ -33,10 +34,10 @@ test("底部导航按 UI 图包含四个入口", () => {
   );
 });
 
-test("首页和发起组局位置选择声明位置权限", () => {
+test("首页和发布活动位置选择声明位置权限", () => {
   const permissionDesc = appConfig.permission["scope.userLocation"].desc;
 
   assert.equal(permissionDesc.includes("首页"), true);
-  assert.equal(permissionDesc.includes("KTV场所"), true);
+  assert.equal(permissionDesc.includes("K歌活动地点"), true);
   assert.deepEqual(new Set(appConfig.requiredPrivateInfos), new Set(["chooseLocation"]));
 });

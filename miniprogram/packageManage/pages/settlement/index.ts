@@ -1,6 +1,6 @@
 Page({
   data: {
-    title: "结算能力占位",
-    description: "v2 会在这里接入金额录入、付款状态和催款通知。"
+    title: "AA参考说明",
+    description: "仅展示活动费用参考，小程序不收款，实际费用在线下自行确认。"
   }
 });

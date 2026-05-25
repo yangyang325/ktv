@@ -1,10 +1,11 @@
 import { entryList } from "../../mock/entries";
 import { partyList } from "../../mock/parties";
 import { userList } from "../../mock/users";
-import { DEFAULT_PARTY_COVER_IMAGE } from "../../constants/assets";
+import { getVenueByIdSync } from "./venue";
+import { selectRandomPartyCoverImage } from "../../constants/assets";
 import type { MyPartyTabs } from "../../types/common";
-import type { Entry } from "../../types/entry";
-import type { Party, PartyDraftInput } from "../../types/party";
+import type { Entry, EntryContactInfo } from "../../types/entry";
+import type { Party, PartyDraftInput, PartyParticipantAvatar } from "../../types/party";
 import type { User } from "../../types/user";
 import { buildTimeSummary, calculateEstimatedPerPerson, formatCurrencyYuan } from "../../utils/format";
 import { serviceConfig } from "../config";
@@ -24,7 +25,7 @@ export async function getPartyList() {
     return callCloudFunction<Party[]>("party", "list");
   }
 
-  return runtimePartyList.filter((item) => item.status !== "finished");
+  return runtimePartyList.filter((item) => item.status !== "finished").map((party) => attachPartyView(party));
 }
 
 /**
@@ -40,6 +41,7 @@ export async function getPartyDetail(partyId: string) {
       confirmedEntries: Entry[];
       waitlistEntries: Entry[];
       viewerEntry: Entry | null;
+      canViewContacts: boolean;
     }>("party", "detail", { partyId });
   }
 
@@ -51,11 +53,12 @@ export async function getPartyDetail(partyId: string) {
   const host = getUserOrThrow(party.hostId);
 
   return {
-    party,
+    party: attachPartyView(party),
     host,
     confirmedEntries: runtimeEntryList.filter((item) => item.partyId === partyId && item.entryType === "confirmed"),
     waitlistEntries: runtimeEntryList.filter((item) => item.partyId === partyId && item.entryType === "waitlist"),
-    viewerEntry: runtimeEntryList.find((item) => item.partyId === partyId && item.userId === "user-host") ?? null
+    viewerEntry: runtimeEntryList.find((item) => item.partyId === partyId && item.userId === "user-host") ?? null,
+    canViewContacts: party.hostId === "user-host"
   };
 }
 
@@ -70,10 +73,10 @@ export async function getMyPartyTabs(userId: string): Promise<MyPartyTabs<Party>
   }
 
   return {
-    hosting: runtimePartyList.filter((item) => item.hostId === userId && item.status !== "finished"),
-    joined: runtimePartyList.filter((item) => item.hostId !== userId && hasUserEntry(item.partyId, userId, "confirmed")),
-    waitlist: runtimePartyList.filter((item) => hasUserEntry(item.partyId, userId, "waitlist")),
-    history: runtimePartyList.filter((item) => item.status === "finished")
+    hosting: runtimePartyList.filter((item) => item.hostId === userId && item.status !== "finished").map((party) => attachPartyView(party)),
+    joined: runtimePartyList.filter((item) => item.hostId !== userId && hasUserEntry(item.partyId, userId, "confirmed")).map((party) => attachPartyView(party)),
+    waitlist: runtimePartyList.filter((item) => hasUserEntry(item.partyId, userId, "waitlist")).map((party) => attachPartyView(party)),
+    history: runtimePartyList.filter((item) => item.status === "finished").map((party) => attachPartyView(party))
   };
 }
 
@@ -104,17 +107,21 @@ export async function createPartyDraft(input: PartyDraftInput) {
     isPublic: false,
     notes: input.notes,
     tags: input.tags,
-    coverImage: input.coverImage || DEFAULT_PARTY_COVER_IMAGE,
+    coverImage: input.coverImage?.trim() || selectRandomPartyCoverImage(),
     createdAt: new Date().toISOString(),
     confirmedCount: 1,
     waitlistCount: 0,
     estimatedPerPerson: calculateEstimatedPerPerson(input.roomFee, input.maxCapacity),
     hostSummary: "羊羊",
     venueSummary: input.venueSummary,
+    venueAddress: input.venueAddress,
+    venueLatitude: input.venueLatitude,
+    venueLongitude: input.venueLongitude,
     progressText: `1 / ${input.maxCapacity}`,
     statusText: "草稿",
-    priceText: `人均约 ${formatCurrencyYuan(calculateEstimatedPerPerson(input.roomFee, input.maxCapacity))}`,
-    timeSummary: buildTimeSummary(input.startDate, input.startTime, input.durationMin)
+    priceText: `${formatCurrencyYuan(calculateEstimatedPerPerson(input.roomFee, input.maxCapacity))}/人`,
+    timeSummary: buildTimeSummary(input.startDate, input.startTime, input.durationMin),
+    participantAvatars: buildParticipantAvatarsForUserIds(["user-host"])
   };
 
   runtimePartyList.push(draft);
@@ -139,18 +146,22 @@ export async function publishParty(partyId: string) {
 
   party.status = "recruiting";
   party.statusText = "招募中";
-  return party;
+  return attachPartyView(party);
 }
 
 /**
  * 正式报名。
  * @param partyId 局 ID
  * @param userId 用户 ID
+ * @param contactInfo 单次报名联系信息
  * @returns 报名记录
  */
-export async function joinParty(partyId: string, userId: string) {
+export async function joinParty(partyId: string, userId: string, contactInfo?: EntryContactInfo) {
   if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Entry>("entry", "join", { partyId });
+    return callCloudFunction<Entry>("entry", "join", {
+      partyId,
+      ...(contactInfo ? { contactInfo } : {})
+    });
   }
 
   const party = getPartyOrThrow(partyId);
@@ -170,7 +181,8 @@ export async function joinParty(partyId: string, userId: string) {
     seqNo: nextSeq,
     waitlistNo: null,
     createdAt: new Date().toISOString(),
-    confirmedAt: new Date().toISOString()
+    confirmedAt: new Date().toISOString(),
+    contactInfo: contactInfo ?? null
   };
 
   runtimeEntryList.push(entry);
@@ -232,6 +244,76 @@ export function getRuntimeEntries() {
  */
 function hasUserEntry(partyId: string, userId: string, entryType: Entry["entryType"]) {
   return runtimeEntryList.some((item) => item.partyId === partyId && item.userId === userId && item.entryType === entryType);
+}
+
+/**
+ * 为局数据附加详情页展示字段。
+ * @param party 局数据
+ * @returns 附带展示字段的局数据
+ */
+function attachPartyView(party: Party) {
+  return attachParticipantAvatars(attachVenueLocation(party));
+}
+
+/**
+ * 为局数据附加导航地点信息。
+ * @param party 局数据
+ * @returns 附带地点信息的局数据
+ */
+function attachVenueLocation(party: Party): Party {
+  const venue = getVenueByIdSync(party.venueId);
+  const venueLatitude = typeof party.venueLatitude === "number" ? party.venueLatitude : venue?.lat;
+  const venueLongitude = typeof party.venueLongitude === "number" ? party.venueLongitude : venue?.lng;
+
+  return {
+    ...party,
+    venueAddress: party.venueAddress || venue?.address || "",
+    ...(typeof venueLatitude === "number" ? { venueLatitude } : {}),
+    ...(typeof venueLongitude === "number" ? { venueLongitude } : {})
+  };
+}
+
+/**
+ * 为局数据附加真实报名人头像。
+ * @param party 局数据
+ * @returns 附带报名人头像的局数据
+ */
+function attachParticipantAvatars(party: Party) {
+  return {
+    ...party,
+    participantAvatars: buildParticipantAvatars(party.partyId)
+  };
+}
+
+/**
+ * 根据报名记录构建局卡片头像。
+ * @param partyId 局 ID
+ * @returns 报名人头像列表
+ */
+function buildParticipantAvatars(partyId: string): PartyParticipantAvatar[] {
+  const userIds = runtimeEntryList
+    .filter((entry) => entry.partyId === partyId && entry.entryType === "confirmed")
+    .sort((left, right) => (left.seqNo || 0) - (right.seqNo || 0))
+    .map((entry) => entry.userId);
+
+  return buildParticipantAvatarsForUserIds(userIds);
+}
+
+/**
+ * 根据用户 ID 列表构建头像数据。
+ * @param userIds 用户 ID 列表
+ * @returns 报名人头像列表
+ */
+function buildParticipantAvatarsForUserIds(userIds: string[]): PartyParticipantAvatar[] {
+  return userIds
+    .map((userId) => userList.find((user) => user.userId === userId))
+    .filter((user): user is User => Boolean(user?.avatarUrl))
+    .slice(0, 3)
+    .map((user) => ({
+      userId: user.userId,
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl
+    }));
 }
 
 /**

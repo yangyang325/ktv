@@ -40,7 +40,7 @@ const noticeConversations: ConversationItem[] = [
     name: "系统通知",
     role: "官方",
     roleType: "official",
-    preview: "您的组局已被确认，快去准备选歌吧！",
+    preview: "您的活动报名已确认，可以准备选歌啦。",
     time: "昨天",
     unread: 1
   },

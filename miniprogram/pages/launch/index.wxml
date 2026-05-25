@@ -20,7 +20,7 @@
     <view class="title-box">
       <textarea
         class="title-box__input"
-        placeholder="给你的组局起个吸引人的标题吧～"
+        placeholder="给活动起个清晰标题吧"
         maxlength="30"
         value="{{form.title}}"
         data-field="title"
@@ -35,7 +35,7 @@
 
   <view class="tag-section">
     <view class="section-title">
-      <text>选择组局属性</text>
+      <text>选择活动属性</text>
       <text class="section-title__sub">（可多选）</text>
     </view>
     <view class="tag-cloud">
@@ -71,13 +71,31 @@
       </view>
     </view>
 
+    <view class="form-row form-row--duration">
+      <view class="form-row__label">
+        <text class="form-row__symbol">⌁</text>
+        <text>欢唱时长</text>
+      </view>
+      <view class="duration-field">
+        <input
+          type="digit"
+          class="duration-field__input"
+          value="{{form.durationHour}}"
+          data-field="durationHour"
+          bindinput="handleFieldChange"
+          placeholder="填写小时数"
+        />
+        <text class="duration-field__unit">小时</text>
+      </view>
+    </view>
+
     <view class="form-row" bindtap="handleVenueLocationTap">
       <view class="form-row__label">
         <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
-        <text>KTV场所</text>
+        <text>活动地点</text>
       </view>
       <view class="form-row__value {{form.venueId ? '' : 'form-row__value--placeholder'}}">
-        <text>{{form.venueText}}</text>
+        <text class="form-row__value-text">{{form.venueText}}</text>
         <text class="form-row__arrow">›</text>
       </view>
     </view>
@@ -85,7 +103,7 @@
     <view class="form-row">
       <view class="form-row__label">
         <text class="form-row__symbol">◉</text>
-        <text>房间类型</text>
+        <text>费用说明</text>
       </view>
       <view class="room-segment">
         <text
@@ -95,6 +113,27 @@
           data-value="{{item.value}}"
           bindtap="handleRoomTypeTap"
         >{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="form-row form-row--fee">
+      <view class="form-row__label">
+        <image src="/assets/images/ktv/yen.svg" mode="aspectFit" />
+        <text>包厢费用参考</text>
+      </view>
+      <view class="fee-field">
+        <view class="fee-field__main">
+          <input
+            type="digit"
+            class="fee-field__input"
+            value="{{form.roomFee}}"
+            data-field="roomFee"
+            bindinput="handleFieldChange"
+            placeholder="填写金额"
+          />
+          <text class="fee-field__unit">元</text>
+        </view>
+        <text class="fee-field__hint">仅作线下AA参考，小程序不收款</text>
       </view>
     </view>
 
@@ -122,7 +161,7 @@
     <view class="form-row">
       <view class="form-row__label">
         <text class="form-row__symbol">⚙</text>
-        <text>性别/年龄偏好</text>
+        <text>曲风偏好</text>
       </view>
       <picker
         class="preference-picker"
@@ -132,7 +171,7 @@
         bindchange="handlePreferenceChange"
       >
         <view class="form-row__value preference-picker__value">
-          <text>{{form.preference}}</text>
+          <text class="form-row__value-text">{{form.preference}}</text>
           <text class="form-row__arrow">›</text>
         </view>
       </picker>
@@ -147,7 +186,7 @@
     <view class="intro-box">
       <textarea
         class="intro-box__textarea"
-        placeholder="介绍一下本次活动的亮点，音乐偏好，特别要求等..."
+        placeholder="说明本次活动的曲风、时间安排和线下AA参考等..."
         maxlength="200"
         value="{{form.notes}}"
         data-field="notes"
@@ -163,6 +202,6 @@
       loading="{{publishing}}"
       disabled="{{publishing}}"
       bindtap="handleSubmit"
-    >{{publishing ? '发布中...' : '发布组局'}}</button>
+    >{{publishing ? '发布中...' : '发布活动'}}</button>
   </view>
 </view>

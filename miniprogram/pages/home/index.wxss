@@ -182,6 +182,22 @@
 }
 
 .section__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  min-height: 48rpx;
+  padding-left: 18rpx;
   color: #a2a8b8;
   font-size: 25rpx;
+  font-weight: 700;
+}
+
+.section__more-arrow {
+  display: block;
+  width: 12rpx;
+  height: 12rpx;
+  box-sizing: border-box;
+  border-right: 3rpx solid #a2a8b8;
+  border-bottom: 3rpx solid #a2a8b8;
+  transform: rotate(-45deg);
 }

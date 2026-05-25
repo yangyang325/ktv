@@ -1,5 +1,6 @@
 import { getPartyList } from "../../services/api/party";
 import { DEFAULT_CITY_NAME } from "../../constants/location";
+import { resolvePartyStatusTone } from "../../utils/party-status";
 import type { Party } from "../../types/party";
 
 interface DiscoverTab {
@@ -8,28 +9,21 @@ interface DiscoverTab {
 }
 
 interface DiscoverParty extends Party {
-  avatars: string[];
   distanceText: string;
   statusClass: string;
 }
 
 const distancePool = ["1.35km", "2.38km", "3.85km", "4.12km"];
-const avatarPool = [
-  ["周", "麦", "小", "陈"],
-  ["阿", "林", "K", "妍"],
-  ["麦", "亮", "安", "杨"],
-  ["老", "歌", "王", "苏"]
-];
 
 Page({
   data: {
     keyword: "",
     cityName: DEFAULT_CITY_NAME,
-    cityOptions: ["深圳市", "成都市", "重庆市", "广州市", "上海市"],
+    cityOptions: ["深圳市"],
     activeTab: "recommend",
     tabs: [
       { key: "recommend", label: "推荐" },
-      { key: "nearby", label: "附近" },
+      { key: "city", label: "同城" },
       { key: "latest", label: "最新" }
     ] as DiscoverTab[],
     partyList: [] as DiscoverParty[]
@@ -124,34 +118,16 @@ Page({
 function buildDiscoverPartyList(partyList: Party[]): DiscoverParty[] {
   return partyList.map((party, index) => ({
     ...party,
-    avatars: avatarPool[index % avatarPool.length],
     distanceText: distancePool[index % distancePool.length],
-    statusClass: getStatusClass(party, index)
+    statusClass: getStatusClass(party)
   }));
 }
 
 /**
  * 根据局状态生成样式类名。
  * @param party 局信息
- * @param index 当前列表位置
  * @returns 状态样式类名
  */
-function getStatusClass(party: Party, index: number) {
-  if (party.status === "finished") {
-    return "done";
-  }
-
-  if (party.status === "full") {
-    return "full";
-  }
-
-  if (party.statusText === "进行中" || index === 0) {
-    return "live";
-  }
-
-  if (index === 2) {
-    return "hot";
-  }
-
-  return "signup";
+function getStatusClass(party: Party) {
+  return resolvePartyStatusTone(party.status, party.statusText);
 }

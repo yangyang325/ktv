@@ -99,13 +99,13 @@ export function validatePartyForm(input: Partial<PartyDraftInput>): ValidationRe
   const errors: ValidationError[] = [];
 
   if (isBlankText(input.title)) {
-    errors.push({ field: "title", message: "请填写局标题" });
+    errors.push({ field: "title", message: "请填写活动标题" });
   }
 
   if (isBlankText(input.venueId)) {
-    errors.push({ field: "venueId", message: "请选择KTV场所" });
+    errors.push({ field: "venueId", message: "请选择K歌活动地点" });
   } else if (isBlankText(input.venueSummary)) {
-    errors.push({ field: "venueSummary", message: "请选择KTV场所位置" });
+    errors.push({ field: "venueSummary", message: "请选择K歌活动地点位置" });
   }
 
   if (isBlankText(input.startDate)) {

@@ -45,6 +45,20 @@ export function formatDurationMin(durationMin: number): string {
 }
 
 /**
+ * 将用户填写的小时数转换为分钟数。
+ * @param durationHour 用户填写的小时数
+ * @returns 分钟数，非法输入返回 NaN
+ */
+export function parseDurationHourToMinutes(durationHour: string | number): number {
+  const hour = typeof durationHour === "number" ? durationHour : Number(durationHour.trim());
+  if (!Number.isFinite(hour) || hour <= 0) {
+    return Number.NaN;
+  }
+
+  return Math.round(hour * 60);
+}
+
+/**
  * 获取星期文本。
  * @param dateText ISO 日期文本
  * @returns 星期文本

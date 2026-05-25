@@ -1,0 +1,73 @@
+<view class="page favorites-page">
+  <view class="favorites-hero">
+    <image
+      class="favorites-hero__bg"
+      src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/5ufdjbmpkznptd.png"
+      mode="aspectFill"
+    />
+    <view class="favorites-hero__content">
+      <text class="favorites-hero__title">管理你的收藏内容</text>
+      <view class="favorites-stats">
+        <view class="favorites-stats__item" wx:for="{{stats}}" wx:key="key">
+          <view class="favorites-stats__icon favorites-stats__icon--{{item.tone}}">
+            <text>{{item.icon}}</text>
+          </view>
+          <view class="favorites-stats__copy">
+            <text class="favorites-stats__label">{{item.label}}</text>
+            <text class="favorites-stats__value favorites-stats__value--{{item.tone}}">{{item.value}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="favorites-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="favorites-tabs__item {{currentTab === item.key ? 'favorites-tabs__item--active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabTap"
+    >
+      <text>{{item.label}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{showFavoriteParties}}" class="favorites-list">
+    <party-card wx:for="{{favoriteParties}}" wx:key="partyId" party="{{item}}" />
+  </view>
+
+  <view wx:else class="favorites-empty">
+    <text class="favorites-empty__title">这里还没有收藏记录</text>
+    <text class="favorites-empty__desc">去发现页逛逛，收藏你感兴趣的活动、歌单或用户。</text>
+    <image
+      class="favorites-empty__image"
+      src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/q4ed2ampkznpsu.png"
+      mode="aspectFit"
+    />
+  </view>
+
+  <view class="favorites-fab" bindtap="handleDiscoverTap" hover-class="favorites-fab--hover">
+    <view class="favorites-fab__icon">
+      <view class="favorites-fab__bookmark"></view>
+      <text class="favorites-fab__plus">+</text>
+    </view>
+    <text class="favorites-fab__text">去发现</text>
+  </view>
+
+  <view class="page-tabbar">
+    <view
+      wx:for="{{bottomNav}}"
+      wx:key="key"
+      class="page-tabbar__item {{item.active ? 'page-tabbar__item--active' : ''}}"
+      data-path="{{item.path}}"
+      bindtap="handleBottomNavTap"
+    >
+      <view class="page-tabbar__icon-wrap">
+        <image class="page-tabbar__icon" src="{{item.active ? item.activeIcon : item.icon}}" mode="aspectFit" />
+        <text wx:if="{{item.badge}}" class="page-tabbar__badge">{{item.badge}}</text>
+      </view>
+      <text class="page-tabbar__label">{{item.label}}</text>
+    </view>
+  </view>
+</view>

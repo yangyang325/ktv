@@ -98,6 +98,23 @@ function buildPartyProgressText(party) {
 }
 
 /**
+ * 读取组局导航坐标。
+ * @param {object} party 组局信息
+ * @param {object | null | undefined} venue 门店信息
+ * @returns {{ venueAddress: string, venueLatitude?: number, venueLongitude?: number }} 导航地点信息
+ */
+function buildVenueLocation(party, venue) {
+  const venueLatitude = typeof party.venueLatitude === "number" ? party.venueLatitude : venue && venue.lat;
+  const venueLongitude = typeof party.venueLongitude === "number" ? party.venueLongitude : venue && venue.lng;
+
+  return {
+    venueAddress: party.venueAddress || (venue && venue.address) || "",
+    ...(typeof venueLatitude === "number" ? { venueLatitude } : {}),
+    ...(typeof venueLongitude === "number" ? { venueLongitude } : {})
+  };
+}
+
+/**
  * 构建前端展示用组局信息。
  * @param {{ party: object, host?: object, venue?: object }} options 展示构建参数
  * @returns {object} 前端展示用组局信息
@@ -106,12 +123,14 @@ function buildPartyView({ party, host, venue }) {
   const estimatedPerPerson = calculateEstimatedPerPerson(party.roomFee || 0, party.maxCapacity || 0);
   const venueName = venue ? venue.name : party.venueCustom || "";
   const venueDistrict = venue && venue.district ? ` · ${venue.district}` : "";
+  const venueLocation = buildVenueLocation(party, venue);
 
   return {
     ...party,
     estimatedPerPerson,
     hostSummary: host ? host.nickname : "",
     venueSummary: `${venueName}${venueDistrict}`,
+    ...venueLocation,
     progressText: buildPartyProgressText(party),
     statusText: PARTY_STATUS_TEXT[party.status] || party.status,
     priceText: `${formatCurrencyYuan(estimatedPerPerson)}/人`,
@@ -129,5 +148,6 @@ module.exports = {
   getShanghaiDateTimeParts,
   buildTimeSummary,
   buildPartyProgressText,
+  buildVenueLocation,
   buildPartyView
 };

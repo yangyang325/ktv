@@ -2,6 +2,8 @@ const { AppError, ERROR_CODES, assertRequired } = require("./shared/errors");
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
 
+const CONTACT_METHODS = new Set(["wechat", "phone"]);
+
 /**
  * 创建临时业务 ID。
  * @param {string} prefix ID 前缀
@@ -18,6 +20,47 @@ function createId(prefix) {
  */
 function isActiveEntry(entry) {
   return entry.entryType === "confirmed" || entry.entryType === "waitlist";
+}
+
+/**
+ * 规范化可选联系文本。
+ * @param {unknown} value 原始文本
+ * @param {number} maxLength 最大长度
+ * @returns {string} 规范化文本
+ */
+function normalizeOptionalText(value, maxLength) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().slice(0, maxLength);
+}
+
+/**
+ * 规范化单次报名联系信息。
+ * @param {unknown} contactInfo 原始联系信息
+ * @returns {{ method: string, value: string, arrivalTime?: string, note?: string }} 联系信息
+ */
+function normalizeContactInfo(contactInfo) {
+  if (!contactInfo || typeof contactInfo !== "object") {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "请填写入群联系信息");
+  }
+
+  const method = CONTACT_METHODS.has(contactInfo.method) ? contactInfo.method : "";
+  const value = normalizeOptionalText(contactInfo.value, 40);
+  const arrivalTime = normalizeOptionalText(contactInfo.arrivalTime, 20);
+  const note = normalizeOptionalText(contactInfo.note, 80);
+
+  if (!method || !value) {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "请填写入群联系信息");
+  }
+
+  return {
+    method,
+    value,
+    ...(arrivalTime ? { arrivalTime } : {}),
+    ...(note ? { note } : {})
+  };
 }
 
 /**
@@ -179,7 +222,7 @@ async function refreshPartyCounts(runtime, party) {
 
 /**
  * 创建确认报名。
- * @param {{ partyId?: string, userId?: string }} payload 报名参数
+ * @param {{ partyId?: string, userId?: string, contactInfo?: object }} payload 报名参数
  * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
  * @returns {Promise<object>} 报名记录
  */
@@ -203,6 +246,7 @@ async function join(payload, runtime) {
     throw new AppError(ERROR_CODES.PARTY_FULL, "组局已满员");
   }
 
+  const contactInfo = normalizeContactInfo(payload.contactInfo);
   const timestamp = runtime.now();
   const entry = await runtime.store.insert("entries", {
     entryId: createId("entry"),
@@ -213,7 +257,8 @@ async function join(payload, runtime) {
     seqNo: getNextConfirmedSeqNo(party, entries),
     waitlistNo: null,
     createdAt: timestamp,
-    confirmedAt: timestamp
+    confirmedAt: timestamp,
+    contactInfo
   });
 
   await refreshPartyCounts(runtime, party);

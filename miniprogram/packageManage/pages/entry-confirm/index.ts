@@ -1,6 +1,31 @@
 import { getPartyDetail, joinParty } from "../../../services/api/party";
+import type { EntryContactInfo, EntryContactMethod } from "../../../types/entry";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
+type ContactMethodOption = {
+  label: string;
+  value: EntryContactMethod;
+  placeholder: string;
+};
+
+interface PickerChangeEvent extends WechatMiniprogram.BaseEvent {
+  detail: {
+    value: number | string;
+  };
+}
+
+const CONTACT_METHOD_OPTIONS: ContactMethodOption[] = [
+  {
+    label: "微信号",
+    value: "wechat",
+    placeholder: "填写微信号，便于发起人拉群"
+  },
+  {
+    label: "手机号",
+    value: "phone",
+    placeholder: "填写手机号，便于发起人集合通知"
+  }
+];
 
 Page({
   data: {
@@ -13,6 +38,16 @@ Page({
     remainingCount: 4,
     distanceText: "1.35km",
     payAmount: "68",
+    contactMethodOptions: CONTACT_METHOD_OPTIONS,
+    contactMethodIndex: 0,
+    contactMethodLabel: CONTACT_METHOD_OPTIONS[0].label,
+    contactValuePlaceholder: CONTACT_METHOD_OPTIONS[0].placeholder,
+    contactForm: {
+      method: CONTACT_METHOD_OPTIONS[0].value,
+      value: "",
+      arrivalTime: "",
+      note: ""
+    },
     agreementChecked: false,
     submitting: false
   },
@@ -105,7 +140,7 @@ Page({
   },
 
   /**
-   * 格式化付款金额。
+   * 格式化AA参考金额。
    * @param priceText 价格文本
    * @returns 金额数字文本
    */
@@ -128,8 +163,77 @@ Page({
    */
   openAgreement() {
     wx.navigateTo({
-      url: `/pages/common/webview/index?title=${encodeURIComponent("组局活动参与协议")}`
+      url: `/pages/common/webview/index?title=${encodeURIComponent("K歌活动参与须知")}`
     });
+  },
+
+  /**
+   * 切换单次报名联系信息方式。
+   * @param event 选择器事件
+   */
+  handleContactMethodChange(event: PickerChangeEvent) {
+    const nextIndex = Number(event.detail.value) || 0;
+    const safeIndex = CONTACT_METHOD_OPTIONS[nextIndex] ? nextIndex : 0;
+    const option = CONTACT_METHOD_OPTIONS[safeIndex];
+
+    this.setData({
+      contactMethodIndex: safeIndex,
+      contactMethodLabel: option.label,
+      contactValuePlaceholder: option.placeholder,
+      "contactForm.method": option.value,
+      "contactForm.value": ""
+    });
+  },
+
+  /**
+   * 更新单次报名联系信息。
+   * @param event 输入事件
+   */
+  handleContactValueInput(event: WechatMiniprogram.Input) {
+    this.setData({
+      "contactForm.value": event.detail.value
+    });
+  },
+
+  /**
+   * 更新预计到达时间。
+   * @param event 时间选择事件
+   */
+  handleArrivalTimeChange(event: PickerChangeEvent) {
+    this.setData({
+      "contactForm.arrivalTime": String(event.detail.value || "")
+    });
+  },
+
+  /**
+   * 更新报名备注。
+   * @param event 输入事件
+   */
+  handleContactNoteInput(event: WechatMiniprogram.Input) {
+    this.setData({
+      "contactForm.note": event.detail.value
+    });
+  },
+
+  /**
+   * 构建单次报名联系信息。
+   * @returns 联系信息或空值
+   */
+  buildContactInfo(): EntryContactInfo | null {
+    const contactValue = this.data.contactForm.value.trim();
+    const arrivalTime = this.data.contactForm.arrivalTime.trim();
+    const note = this.data.contactForm.note.trim();
+
+    if (!contactValue) {
+      return null;
+    }
+
+    return {
+      method: this.data.contactForm.method,
+      value: contactValue,
+      ...(arrivalTime ? { arrivalTime } : {}),
+      ...(note ? { note } : {})
+    };
   },
 
   /**
@@ -148,9 +252,18 @@ Page({
       return;
     }
 
+    const contactInfo = this.buildContactInfo();
+    if (!contactInfo) {
+      wx.showToast({
+        title: "请填写入群联系信息",
+        icon: "none"
+      });
+      return;
+    }
+
     this.setData({ submitting: true });
     try {
-      await joinParty(this.data.partyId, "user-guest-3");
+      await joinParty(this.data.partyId, "user-guest-3", contactInfo);
       wx.showToast({
         title: "报名成功",
         icon: "success"

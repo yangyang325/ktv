@@ -11,11 +11,34 @@ const KTV_ROOM_COVER_IMAGES = {
 };
 
 /**
+ * 用户未上传封面时可随机使用的默认组局封面。
+ */
+const PARTY_DEFAULT_COVER_IMAGES = [
+  KTV_ROOM_COVER_IMAGES.room02,
+  KTV_ROOM_COVER_IMAGES.room01,
+  KTV_ROOM_COVER_IMAGES.room03
+];
+
+/**
  * 默认组局封面线上图片。
  */
 const DEFAULT_PARTY_COVER_IMAGE = KTV_ROOM_COVER_IMAGES.room01;
 
+/**
+ * 随机选择一张默认组局封面。
+ * @returns {string} 默认组局封面地址
+ */
+function selectRandomPartyCoverImage() {
+  const randomIndex = Math.min(
+    Math.floor(Math.random() * PARTY_DEFAULT_COVER_IMAGES.length),
+    PARTY_DEFAULT_COVER_IMAGES.length - 1
+  );
+  return PARTY_DEFAULT_COVER_IMAGES[randomIndex];
+}
+
 module.exports = {
   DEFAULT_PARTY_COVER_IMAGE,
-  KTV_ROOM_COVER_IMAGES
+  KTV_ROOM_COVER_IMAGES,
+  PARTY_DEFAULT_COVER_IMAGES,
+  selectRandomPartyCoverImage
 };

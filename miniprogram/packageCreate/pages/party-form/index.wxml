@@ -19,7 +19,7 @@
     <view class="title-card__body">
       <input
         class="title-card__input"
-        placeholder="给你的组局起个吸引人的标题吧～"
+        placeholder="给活动起个清晰标题吧"
         value="{{form.title}}"
         data-field="title"
         bindinput="handleFieldChange"
@@ -29,7 +29,7 @@
   </view>
 
   <view class="section-card">
-    <text class="section-card__title">选择组局属性（可多选）</text>
+    <text class="section-card__title">选择活动属性（可多选）</text>
     <view class="tag-cloud">
       <text
         wx:for="{{tags}}"
@@ -60,16 +60,16 @@
     <view class="form-row" bindtap="handleVenueLocationTap">
       <view class="form-row__label">
         <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
-        <text>KTV场所</text>
+        <text>活动地点</text>
       </view>
       <text class="form-row__input {{venueId ? '' : 'form-row__input--placeholder'}}">{{venueSummary}}</text>
       <text class="form-row__arrow">›</text>
     </view>
     <view class="form-row">
-      <text class="form-row__label">◈ 房间类型</text>
+      <text class="form-row__label">◈ 费用说明</text>
       <view class="room-type">
-        <text class="room-type__item room-type__item--active">AA制</text>
-        <text class="room-type__item">我请客</text>
+        <text class="room-type__item room-type__item--active">AA参考</text>
+        <text class="room-type__item">线下自理</text>
       </view>
     </view>
     <view class="form-row">
@@ -84,7 +84,7 @@
       </view>
     </view>
     <view class="form-row">
-      <text class="form-row__label">⚙ 性别/年龄偏好</text>
+      <text class="form-row__label">⚙ 曲风偏好</text>
       <picker
         class="preference-picker"
         mode="selector"
@@ -98,18 +98,25 @@
         </view>
       </picker>
     </view>
-    <view class="form-row">
+    <view class="form-row form-row--fee">
       <view class="form-row__label">
         <image src="/assets/images/ktv/yen.svg" mode="aspectFit" />
-        <text>包厢费用</text>
+        <text>包厢费用参考</text>
       </view>
-      <input class="form-row__number" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
+      <input type="digit" class="form-row__number" value="{{form.roomFee}}" data-field="roomFee" bindinput="handleFieldChange" />
       <text class="form-row__muted">元</text>
     </view>
-    <view class="form-row">
-      <text class="form-row__label">⌁ 时长</text>
-      <input class="form-row__number" value="{{form.duration}}" data-field="duration" bindinput="handleFieldChange" />
-      <text class="form-row__muted">分钟</text>
+    <view class="form-row form-row--duration">
+      <text class="form-row__label">⌁ 欢唱时长</text>
+      <input
+        type="digit"
+        class="form-row__number"
+        value="{{form.durationHour}}"
+        data-field="durationHour"
+        bindinput="handleFieldChange"
+        placeholder="填写小时数"
+      />
+      <text class="form-row__muted">小时</text>
     </view>
   </view>
 
@@ -121,7 +128,7 @@
       data-field="notes"
       bindinput="handleFieldChange"
       maxlength="200"
-      placeholder="介绍一下本次活动的亮点，音乐偏好，特别要求等..."
+      placeholder="说明本次活动的曲风、时间安排和线下AA参考等..."
     ></textarea>
   </view>
 
@@ -130,5 +137,5 @@
     loading="{{publishing}}"
     disabled="{{publishing}}"
     bindtap="handlePublish"
-  >{{publishing ? '发布中...' : '发布组局'}}</button>
+  >{{publishing ? '发布中...' : '发布活动'}}</button>
 </view>

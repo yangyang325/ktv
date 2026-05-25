@@ -2,10 +2,9 @@ const { AppError, ERROR_CODES, assertRequired, assertCondition } = require("./sh
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
 const { buildPartyView } = require("./shared/party-view");
-const { DEFAULT_PARTY_COVER_IMAGE } = require("./shared/assets");
+const { selectRandomPartyCoverImage } = require("./shared/assets");
 
 const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
-const DEFAULT_COVER_IMAGE = DEFAULT_PARTY_COVER_IMAGE;
 
 /**
  * 创建临时业务 ID。
@@ -23,11 +22,21 @@ function createId(prefix) {
  */
 function normalizeCoverImage(coverImage) {
   if (typeof coverImage !== "string") {
-    return DEFAULT_COVER_IMAGE;
+    return selectRandomPartyCoverImage();
   }
 
   const trimmedCoverImage = coverImage.trim();
-  return trimmedCoverImage || DEFAULT_COVER_IMAGE;
+  return trimmedCoverImage || selectRandomPartyCoverImage();
+}
+
+/**
+ * 规范化导航坐标。
+ * @param {unknown} coordinate 坐标值
+ * @returns {number | undefined} 可保存的坐标
+ */
+function normalizeCoordinate(coordinate) {
+  const coordinateValue = Number(coordinate);
+  return Number.isFinite(coordinateValue) ? coordinateValue : undefined;
 }
 
 /**
@@ -111,8 +120,9 @@ function isValidStartTime(startTime) {
 async function attachPartyView(runtime, party) {
   const host = await runtime.store.findOne("users", { userId: party.hostId });
   const venue = party.venueId ? await runtime.store.findOne("venues", { venueId: party.venueId }) : null;
+  const partyView = buildPartyView({ party, host, venue });
 
-  return buildPartyView({ party, host, venue });
+  return attachParticipantAvatars(runtime, partyView);
 }
 
 /**
@@ -122,6 +132,63 @@ async function attachPartyView(runtime, party) {
  */
 function isActiveEntry(entry) {
   return entry.entryType === "confirmed" || entry.entryType === "waitlist";
+}
+
+/**
+ * 为组局展示数据附加真实报名人头像。
+ * @param {{ store: object }} runtime 云函数运行时
+ * @param {object} partyView 组局展示数据
+ * @returns {Promise<object>} 附加头像后的组局展示数据
+ */
+async function attachParticipantAvatars(runtime, partyView) {
+  return {
+    ...partyView,
+    participantAvatars: await buildParticipantAvatars(runtime, partyView.partyId)
+  };
+}
+
+/**
+ * 根据确认报名记录构建头像列表。
+ * @param {{ store: object }} runtime 云函数运行时
+ * @param {string} partyId 组局 ID
+ * @returns {Promise<object[]>} 报名人头像列表
+ */
+async function buildParticipantAvatars(runtime, partyId) {
+  const entries = (await runtime.store.list("entries", { partyId }))
+    .filter((entry) => entry.entryType === "confirmed")
+    .sort((left, right) => (left.seqNo || 0) - (right.seqNo || 0))
+    .slice(0, 3);
+  const avatars = [];
+
+  for (const entry of entries) {
+    const user = await runtime.store.findOne("users", { userId: entry.userId });
+    if (!user || !user.avatarUrl) {
+      continue;
+    }
+
+    avatars.push({
+      userId: user.userId,
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl
+    });
+  }
+
+  return avatars;
+}
+
+/**
+ * 根据查看身份脱敏报名联系信息。
+ * @param {object} entry 报名记录
+ * @param {boolean} canViewContact 是否可查看联系信息
+ * @returns {object} 脱敏后的报名记录
+ */
+function sanitizeEntryContact(entry, canViewContact) {
+  if (canViewContact) {
+    return entry;
+  }
+
+  const { contactInfo, ...safeEntry } = entry;
+  return safeEntry;
 }
 
 /**
@@ -136,10 +203,10 @@ async function list(payload, runtime) {
 }
 
 /**
- * 查询组局详情。
+ * 查询活动详情。
  * @param {{ partyId?: string, userId?: string }} payload 查询参数
  * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
- * @returns {Promise<object>} 组局详情
+ * @returns {Promise<object>} 活动详情
  */
 async function detail(payload, runtime) {
   assertRequired(payload.partyId, "partyId", "请选择组局");
@@ -164,22 +231,24 @@ async function detail(payload, runtime) {
   const waitlistEntries = entries
     .filter((entry) => entry.entryType === "waitlist")
     .sort((left, right) => (left.waitlistNo || 0) - (right.waitlistNo || 0));
+  const canViewContacts = Boolean(viewer && viewer.userId === party.hostId);
   const viewerEntry = viewer ? entries.find((entry) => entry.userId === viewer.userId) || null : null;
 
   return {
     party: await attachPartyView(runtime, party),
     host,
-    confirmedEntries,
-    waitlistEntries,
-    viewerEntry
+    confirmedEntries: confirmedEntries.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
+    waitlistEntries: waitlistEntries.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
+    viewerEntry: viewerEntry ? sanitizeEntryContact(viewerEntry, canViewContacts) : null,
+    canViewContacts
   };
 }
 
 /**
- * 查询我的组局分组。
+ * 查询我的活动分组。
  * @param {{ userId?: string }} payload 查询参数
  * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
- * @returns {Promise<{ hosting: object[], joined: object[], waitlist: object[], history: object[] }>} 我的组局分组
+ * @returns {Promise<{ hosting: object[], joined: object[], waitlist: object[], history: object[] }>} 我的活动分组
  */
 async function myTabs(payload, runtime) {
   const currentUser = await getCurrentUser(runtime);
@@ -231,9 +300,9 @@ async function createDraft(payload, runtime) {
 
   const timestamp = runtime.now();
 
-  assertRequired(payload.title, "title", "请填写局标题");
-  assertRequired(payload.venueId, "venueId", "请选择KTV场所");
-  assertRequired(payload.venueSummary, "venueSummary", "请选择KTV场所位置");
+  assertRequired(payload.title, "title", "请填写活动标题");
+  assertRequired(payload.venueId, "venueId", "请选择K歌活动地点");
+  assertRequired(payload.venueSummary, "venueSummary", "请选择K歌活动地点位置");
   assertRequired(payload.startDate, "startDate", "请选择开始日期");
   assertRequired(payload.startTime, "startTime", "请选择开始时间");
   assertCondition(isValidStartDate(String(payload.startDate)), ERROR_CODES.VALIDATION_ERROR, "请选择有效开始日期");
@@ -257,6 +326,9 @@ async function createDraft(payload, runtime) {
     notes: payload.notes || "",
     tags: Array.isArray(payload.tags) ? payload.tags : [],
     coverImage: normalizeCoverImage(payload.coverImage),
+    venueAddress: typeof payload.venueAddress === "string" ? payload.venueAddress : "",
+    venueLatitude: normalizeCoordinate(payload.venueLatitude),
+    venueLongitude: normalizeCoordinate(payload.venueLongitude),
     createdAt: timestamp,
     updatedAt: timestamp,
     publishedAt: null,
@@ -280,7 +352,7 @@ async function createDraft(payload, runtime) {
 }
 
 /**
- * 发布组局草稿。
+ * 发布活动草稿。
  * @param {{ partyId?: string, userId?: string }} payload 发布参数
  * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
  * @returns {Promise<object>} 发布后的组局展示数据
@@ -299,7 +371,7 @@ async function publish(payload, runtime) {
   }
 
   if (party.hostId !== currentUser.userId) {
-    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有局主可以发布组局");
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有发起人可以发布活动");
   }
 
   assertCondition(party.status === "draft", ERROR_CODES.VALIDATION_ERROR, "只有草稿可以发布");

@@ -15,7 +15,7 @@ const notifyFunction = require("../../cloudfunctions/notify/index");
 
 test("shared errors expose stable validation failures", () => {
   assert.throws(
-    () => assertRequired("", "title", "请填写局标题"),
+    () => assertRequired("", "title", "请填写活动标题"),
     (error) => error instanceof AppError && error.code === "VALIDATION_ERROR"
   );
 });
@@ -175,44 +175,13 @@ test("auth uses object selectors for current user lookups", async () => {
   ]);
 });
 
-test("auth.getPhoneNumber requires a WeChat phone authorization code", async () => {
+test("auth does not expose phone number collection action", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await authFunction.main({ action: "getPhoneNumber", payload: {} }, { store, openid: "openid-host" });
 
   assert.equal(result.ok, false);
   assert.equal(result.code, "VALIDATION_ERROR");
-  assert.equal(result.message, "请先授权手机号");
-});
-
-test("auth.getPhoneNumber resolves and stores phone number for current user", async () => {
-  const store = createMemoryStore(createSeedData());
-  const calls = [];
-  const cloud = {
-    openapi: {
-      phonenumber: {
-        getPhoneNumber(options) {
-          calls.push(options);
-          return {
-            phone_info: {
-              phoneNumber: "13812348888"
-            }
-          };
-        }
-      }
-    }
-  };
-
-  const result = await authFunction.main(
-    { action: "getPhoneNumber", payload: { code: "phone-code" } },
-    { store, openid: "openid-host", now: () => "2026-05-22T10:30:00.000Z", cloud }
-  );
-  const updatedUser = await store.findOne("users", { openid: "openid-host" });
-
-  assert.equal(result.ok, true);
-  assert.equal(result.data.phoneNumber, "13812348888");
-  assert.deepEqual(calls, [{ code: "phone-code" }]);
-  assert.equal(updatedUser.phoneNumber, "13812348888");
-  assert.equal(updatedUser.updatedAt, "2026-05-22T10:30:00.000Z");
+  assert.equal(result.message, "未知操作");
 });
 
 test("venue.list filters active venues by district and keyword", async () => {
@@ -309,6 +278,14 @@ test("party.list returns visible party cards with display fields", async () => {
   assert.equal(result.data.every((item) => item.status !== "finished" && item.status !== "cancelled"), true);
   assert.equal(typeof result.data[0].estimatedPerPerson, "number");
   assert.equal(typeof result.data[0].venueSummary, "string");
+  assert.deepEqual(
+    result.data[0].participantAvatars.map((item) => item.avatarUrl),
+    [
+      "https://example.com/avatar-host.png",
+      "https://example.com/avatar-aming.png",
+      "https://example.com/avatar-xiaoqiu.png"
+    ]
+  );
 });
 
 test("party.detail returns host entries and viewer entry", async () => {
@@ -324,6 +301,39 @@ test("party.detail returns host entries and viewer entry", async () => {
   assert.equal(result.data.confirmedEntries.length, 3);
   assert.equal(result.data.waitlistEntries.length, 1);
   assert.equal(result.data.viewerEntry.userId, "user-host");
+  assert.equal(result.data.party.venueAddress, "深圳市南山区海岸城东座 3 楼");
+  assert.equal(result.data.party.venueLatitude, 22.53);
+  assert.equal(result.data.party.venueLongitude, 113.934);
+});
+
+test("party.detail only exposes entry contact info to host", async () => {
+  const store = createMemoryStore(createSeedData());
+  const contactInfo = {
+    method: "wechat",
+    value: "aming-sing",
+    arrivalTime: "19:20",
+    note: "到店后等群通知"
+  };
+  await store.updateOne("entries", { entryId: "entry-002" }, () => ({ contactInfo }));
+
+  const hostResult = await partyFunction.main(
+    { action: "detail", payload: { partyId: "party-001" } },
+    { store, openid: "openid-host" }
+  );
+  const guestResult = await partyFunction.main(
+    { action: "detail", payload: { partyId: "party-001" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const hostEntry = hostResult.data.confirmedEntries.find((entry) => entry.entryId === "entry-002");
+  const guestEntry = guestResult.data.confirmedEntries.find((entry) => entry.entryId === "entry-002");
+
+  assert.equal(hostResult.ok, true);
+  assert.equal(hostResult.data.canViewContacts, true);
+  assert.deepEqual(hostEntry.contactInfo, contactInfo);
+  assert.equal(guestResult.ok, true);
+  assert.equal(guestResult.data.canViewContacts, false);
+  assert.equal(Object.hasOwn(guestEntry, "contactInfo"), false);
+  assert.equal(Object.hasOwn(guestResult.data.viewerEntry, "contactInfo"), false);
 });
 
 test("party.myTabs groups hosting joined waitlist and history", async () => {
@@ -355,7 +365,10 @@ test("party.createDraft creates draft and host entry", async () => {
         maxCapacity: 12,
         notes: "欢迎新人，不限歌路。",
         tags: ["欢迎新人"],
-        coverImage: "cloud://party-cover-file"
+        coverImage: "cloud://party-cover-file",
+        venueAddress: "深圳市南山区海岸城东座 3 楼",
+        venueLatitude: 22.53,
+        venueLongitude: 113.934
       }
     },
     { store, openid: "openid-host" }
@@ -365,8 +378,46 @@ test("party.createDraft creates draft and host entry", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.data.status, "draft");
   assert.equal(result.data.coverImage, "cloud://party-cover-file");
+  assert.equal(result.data.venueLatitude, 22.53);
+  assert.equal(result.data.venueLongitude, 113.934);
   assert.equal(entries.length, 1);
   assert.equal(entries[0].entryType, "confirmed");
+});
+
+test("party.createDraft uses random default cover when cover image is missing", async () => {
+  const store = createMemoryStore(createSeedData());
+  const originalRandom = Math.random;
+  Math.random = () => 0.99;
+
+  try {
+    const result = await partyFunction.main(
+      {
+        action: "createDraft",
+        payload: {
+          userId: "user-host",
+          title: "羊羊默认封面 K 局",
+          venueId: "venue-001",
+          venueSummary: "MUSE KTV · 南山",
+          startDate: "2026-05-24",
+          startTime: "20:00",
+          durationMin: 180,
+          roomFee: 240000,
+          maxCapacity: 10,
+          notes: "测试默认封面",
+          tags: ["欢迎新人"]
+        }
+      },
+      { store, openid: "openid-host" }
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(
+      result.data.coverImage,
+      "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/r9yyqgmpgadjl8.jpg"
+    );
+  } finally {
+    Math.random = originalRandom;
+  }
 });
 
 test("party.publish changes draft to recruiting", async () => {
@@ -665,15 +716,37 @@ test("party.createDraft rejects invalid start date or time without inserting dat
 
 test("entry.join creates confirmed entry and updates party count", async () => {
   const store = createMemoryStore(createSeedData());
+  const contactInfo = {
+    method: "wechat",
+    value: "aming-sing",
+    arrivalTime: "19:20",
+    note: "到店后等群通知"
+  };
   const result = await entryFunction.main(
-    { action: "join", payload: { partyId: "party-002", userId: "user-guest-1" } },
+    { action: "join", payload: { partyId: "party-002", userId: "user-guest-1", contactInfo } },
     { store, openid: "openid-guest-1" }
   );
   const party = await store.findOne("parties", (item) => item.partyId === "party-002");
 
   assert.equal(result.ok, true);
   assert.equal(result.data.entryType, "confirmed");
+  assert.deepEqual(result.data.contactInfo, contactInfo);
   assert.equal(party.confirmedCount, 2);
+});
+
+test("entry.join requires one-time contact info before creating entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const beforeEntries = await store.list("entries", { partyId: "party-002" });
+  const result = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", userId: "user-guest-1" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const afterEntries = await store.list("entries", { partyId: "party-002" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+  assert.equal(result.message, "请填写入群联系信息");
+  assert.equal(afterEntries.length, beforeEntries.length);
 });
 
 test("entry.join blocks duplicate active entry", async () => {

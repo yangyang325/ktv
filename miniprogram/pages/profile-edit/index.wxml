@@ -79,40 +79,6 @@
         </picker>
       </view>
 
-      <view class="edit-card">
-        <view class="edit-row">
-          <text class="edit-row__label">微信号</text>
-          <view class="edit-row__value">
-            <input
-              class="edit-row__input edit-row__input--contact"
-              value="{{form.wechatId}}"
-              data-field="wechatId"
-              maxlength="32"
-              placeholder="仅用于活动联系，不会公开展示"
-              placeholder-class="edit-row__placeholder"
-              bindinput="handleFieldInput"
-            />
-          </view>
-        </view>
-
-        <view class="edit-row">
-          <text class="edit-row__label">手机号</text>
-          <view class="edit-row__value">
-            <input
-              class="edit-row__input edit-row__input--contact"
-              value="{{form.phone}}"
-              data-field="phone"
-              type="number"
-              maxlength="11"
-              placeholder="仅用于活动联系，不会公开展示"
-              placeholder-class="edit-row__placeholder"
-              bindinput="handleFieldInput"
-            />
-          </view>
-        </view>
-
-      </view>
-
       <button class="save-button" bindtap="handleSave">完成修改</button>
     </view>
   </scroll-view>

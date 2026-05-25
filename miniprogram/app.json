@@ -5,6 +5,7 @@
     "pages/messages/index",
     "pages/profile/index",
     "pages/profile-edit/index",
+    "pages/favorites/index",
     "pages/my-parties/index",
     "pages/launch/index",
     "pages/party-detail/index",
@@ -31,7 +32,7 @@
   ],
   "window": {
     "navigationStyle": "custom",
-    "navigationBarTitleText": "KTV 组局",
+    "navigationBarTitleText": "深圳K歌活动",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f6f7ff",
@@ -39,7 +40,7 @@
   },
   "permission": {
     "scope.userLocation": {
-      "desc": "用于首页选择当前位置，并在发起组局时选择KTV场所位置"
+      "desc": "用于首页选择当前位置，并在发布活动时选择K歌活动地点"
     }
   },
   "requiredPrivateInfos": ["chooseLocation"],

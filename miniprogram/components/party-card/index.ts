@@ -1,12 +1,17 @@
+import { resolvePartyStatusTone } from "../../utils/party-status";
+
 interface PartyCardParty {
   partyId?: string;
   progressText?: string;
+  status?: string;
+  statusText?: string;
 }
 
 Component({
   data: {
     progressCountText: "6",
-    progressRestText: "/10人"
+    progressRestText: "/10人",
+    statusTone: "signup"
   },
 
   properties: {
@@ -19,6 +24,7 @@ Component({
        */
       observer(party: PartyCardParty | null) {
         this.updateProgressText(party);
+        this.updateStatusTone(party);
       }
     }
   },
@@ -42,6 +48,16 @@ Component({
       this.setData({
         progressCountText: match[1].trim(),
         progressRestText: match[2].replace(/\s+/g, "")
+      });
+    },
+
+    /**
+     * 刷新状态标签色调。
+     * @param party 局数据
+     */
+    updateStatusTone(party: PartyCardParty | null) {
+      this.setData({
+        statusTone: resolvePartyStatusTone(party?.status, party?.statusText || "")
       });
     },
 

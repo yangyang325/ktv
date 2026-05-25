@@ -1,5 +1,6 @@
 import { MY_PARTIES_SUMMARY_BG_IMAGE } from "../../constants/assets";
 import { getMyPartyTabs } from "../../services/api/party";
+import { resolvePartyStatusTone } from "../../utils/party-status";
 import type { MyPartyTabs } from "../../types/common";
 import type { Party } from "../../types/party";
 
@@ -66,8 +67,8 @@ Page({
     allParties: [] as MyPartyCard[],
     bottomNav: createBottomNav(),
     currentTab: "all" as MyPartyTabKey,
-    emptyDescription: "换个筛选看看，或发起一个新的 K 局。",
-    emptyTitle: "这里还没有组局",
+    emptyDescription: "换个筛选看看，或发布一条新的K歌活动。",
+    emptyTitle: "这里还没有活动记录",
     partyList: [] as MyPartyCard[],
     stats: createStats(0, 0, 0),
     summaryBgImage: MY_PARTIES_SUMMARY_BG_IMAGE,
@@ -80,7 +81,7 @@ Page({
   },
 
   /**
-   * 页面展示时刷新我的组局数据。
+   * 页面展示时刷新我的活动数据。
    */
   async onShow() {
     const groupedParties = await getMyPartyTabs("user-host");
@@ -97,7 +98,7 @@ Page({
   },
 
   /**
-   * 切换我的组局筛选。
+   * 切换我的活动筛选。
    * @param event 点击事件
    */
   handleTabChange(event: PartyTapEvent) {
@@ -114,7 +115,7 @@ Page({
   },
 
   /**
-   * 打开组局详情。
+   * 打开活动详情。
    * @param event 点击事件
    */
   handleCardTap(event: PartyTapEvent) {
@@ -129,7 +130,7 @@ Page({
   },
 
   /**
-   * 打开发起组局页面。
+   * 打开发布活动页面。
    */
   handleCreateTap() {
     wx.navigateTo({
@@ -212,7 +213,7 @@ function createStats(hostingCount: number, joinedCount: number, pendingCount: nu
 
 /**
  * 创建筛选标签数据。
- * @param groupedParties 我的组局分组
+ * @param groupedParties 我的活动分组
  * @returns 筛选标签项
  */
 function createTabs(groupedParties: MyPartyTabs<Party>): MyPartyTab[] {
@@ -230,8 +231,8 @@ function createTabs(groupedParties: MyPartyTabs<Party>): MyPartyTab[] {
 }
 
 /**
- * 创建我的组局卡片数据。
- * @param groupedParties 我的组局分组
+ * 创建我的活动卡片数据。
+ * @param groupedParties 我的活动分组
  * @returns 卡片数据
  */
 function createMyPartyCards(groupedParties: MyPartyTabs<Party>): MyPartyCard[] {
@@ -328,11 +329,7 @@ function createStatusTone(party: Party, isFinished: boolean): string {
     return "finished";
   }
 
-  if (party.status === "full" || party.statusText.includes("报名")) {
-    return "signup";
-  }
-
-  return "active";
+  return resolvePartyStatusTone(party.status, party.statusText);
 }
 
 /**
@@ -376,7 +373,7 @@ function countPending(parties: MyPartyCard[]): number {
 
 /**
  * 统计去重后的组局数量。
- * @param groupedParties 我的组局分组
+ * @param groupedParties 我的活动分组
  * @returns 去重数量
  */
 function countUniqueParties(groupedParties: MyPartyTabs<Party>): number {
@@ -396,9 +393,9 @@ function countUniqueParties(groupedParties: MyPartyTabs<Party>): number {
 function createEmptyDescription(tabKey: MyPartyTabKey): string {
   const descriptionMap: Record<MyPartyTabKey, string> = {
     all: "发起或报名后，记录会集中出现在这里。",
-    hosting: "还没有你发起的 K 局，先开一个好玩的局吧。",
+    hosting: "还没有你发布的K歌活动，可以先记录一条活动信息。",
     joined: "报名成功后，可以在这里管理行程。",
-    history: "唱过的局会沉淀在这里，方便之后回看。"
+    history: "已结束的活动会沉淀在这里，方便之后回看。"
   };
 
   return descriptionMap[tabKey];

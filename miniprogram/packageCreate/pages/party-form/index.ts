@@ -2,6 +2,7 @@ import { getVenueList } from "../../../services/api/venue";
 import { createPartyDraft, publishParty } from "../../../services/api/party";
 import { uploadPartyCover } from "../../../services/api/upload";
 import { getTodayDate } from "../../../utils/date";
+import { parseDurationHourToMinutes } from "../../../utils/format";
 import { validatePartyForm } from "../../../utils/validators";
 
 interface PartyTagOption {
@@ -56,25 +57,28 @@ function formatChosenVenueSummary(location: WechatMiniprogram.ChooseLocationSucc
 Page({
   data: {
     venueId: "",
-    venueSummary: "选择KTV位置",
+    venueSummary: "选择活动地点",
+    venueAddress: "",
+    venueLatitude: undefined as number | undefined,
+    venueLongitude: undefined as number | undefined,
     coverImage: "",
     coverPreviewPath: "",
     uploadingCover: false,
     publishing: false,
     todayDate: getTodayDate(),
     preferenceIndex: 0,
-    preferenceOptions: ["不限", "女生优先", "男生优先", "18-25岁", "26-35岁", "35岁以上"],
+    preferenceOptions: ["不限", "流行", "粤语", "经典老歌", "合唱友好", "轻松听歌"],
     form: {
-      title: "羊羊的 K 歌局",
+      title: "羊羊的K歌活动",
       date: "2026-04-25",
       startTime: "19:30",
-      duration: "180",
-      roomFee: "2400",
+      durationHour: "",
+      roomFee: "",
       maxCapacity: "12",
       preference: "不限",
       notes: "欢迎新人，不限歌路。"
     },
-    tags: ["流行", "粤语", "经典老歌", "90后", "80后", "友好局", "麦霸局", "气氛好"].map((name) => ({
+    tags: ["流行", "粤语", "经典老歌", "怀旧金曲", "当下流行", "新手友好", "轮流唱", "轻松氛围"].map((name) => ({
       name,
       selected: false
     })) as PartyTagOption[],
@@ -94,7 +98,10 @@ Page({
     const currentVenue = venueList.find((item) => item.venueId === venueId);
     this.setData({
       venueId,
-      venueSummary: currentVenue ? `${currentVenue.name} · ${currentVenue.district}` : "自定义门店"
+      venueSummary: currentVenue ? `${currentVenue.name} · ${currentVenue.district}` : "自定义门店",
+      venueAddress: currentVenue?.address || "",
+      venueLatitude: currentVenue?.lat,
+      venueLongitude: currentVenue?.lng
     });
   },
 
@@ -144,7 +151,7 @@ Page({
 
       if (!venueSummary) {
         wx.showToast({
-          title: "请选择KTV位置",
+          title: "请选择活动地点",
           icon: "none"
         });
         return;
@@ -152,13 +159,16 @@ Page({
 
       this.setData({
         venueId: "custom-location",
-        venueSummary
+        venueSummary,
+        venueAddress: location.address || venueSummary,
+        venueLatitude: location.latitude,
+        venueLongitude: location.longitude
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (!message.includes("cancel")) {
         wx.showToast({
-          title: "未选择KTV位置",
+          title: "未选择活动地点",
           icon: "none"
         });
       }
@@ -176,7 +186,7 @@ Page({
   },
 
   /**
-   * 更新性别年龄偏好。
+   * 更新曲风偏好。
    * @param event 选择器变更事件
    */
   handlePreferenceChange(event: PreferenceChangeEvent) {
@@ -272,7 +282,7 @@ Page({
   },
 
   /**
-   * 发布组局。
+   * 发布活动。
    */
   async handlePublish() {
     if (this.data.publishing) {
@@ -296,9 +306,12 @@ Page({
       title: this.data.form.title,
       venueId: this.data.venueId,
       venueSummary: this.data.venueSummary,
+      venueAddress: this.data.venueAddress,
+      venueLatitude: this.data.venueLatitude,
+      venueLongitude: this.data.venueLongitude,
       startDate: this.data.form.date,
       startTime: this.data.form.startTime,
-      durationMin: Number(this.data.form.duration),
+      durationMin: parseDurationHourToMinutes(this.data.form.durationHour),
       roomFee: Number(this.data.form.roomFee) * 100,
       maxCapacity: Number(this.data.form.maxCapacity),
       notes: this.data.form.notes,
@@ -322,7 +335,7 @@ Page({
       const publishedParty = await publishParty(createdParty.partyId);
 
       wx.showToast({
-        title: "组局成功",
+        title: "活动已发布",
         icon: "success"
       });
       wx.redirectTo({

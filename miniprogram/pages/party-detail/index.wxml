@@ -8,16 +8,16 @@
           src="{{detail.party.coverImage}}"
           mode="aspectFill"
         />
-        <text class="detail-hero__status">{{detail.party.statusText}}</text>
+        <text class="detail-hero__status detail-hero__status--{{statusTone}}">{{detail.party.statusText}}</text>
         <text class="detail-hero__pager">1/5</text>
       </view>
 
       <view class="detail-card">
         <text class="detail-card__title">{{detail.party.title}}</text>
-        <text class="detail-card__desc">一起唱歌放松，认识新朋友，开心最重要！</text>
+        <text class="detail-card__desc">K歌兴趣活动信息展示，线下自主确认参与。</text>
         <view class="detail-card__tags">
           <text
-            class="detail-card__tag detail-card__tag--{{item.tone}}"
+            class="detail-card__tag"
             wx:for="{{displayTags}}"
             wx:key="label"
           >{{item.label}}</text>
@@ -34,25 +34,25 @@
             <image class="detail-row__icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
             <view class="detail-row__body">
               <text class="detail-row__main">{{detail.party.venueSummary}}</text>
-              <text class="detail-row__sub">成都市锦江区春熙路XX号群光广场8楼</text>
+              <text wx:if="{{detail.party.venueAddress}}" class="detail-row__sub">{{detail.party.venueAddress}}</text>
+              <text wx:else class="detail-row__sub">地址以发起人现场通知为准</text>
             </view>
-            <button class="detail-row__nav" hover-class="none" bindtap="handleNavigate">
-              <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
-              <text>导航</text>
+            <button class="detail-row__copy" hover-class="none" bindtap="handleCopyVenueLocation">
+              <text>复制地点</text>
             </button>
           </view>
           <view class="detail-row">
             <image class="detail-row__icon" src="/assets/images/ktv/yen.svg" mode="aspectFit" />
             <view class="detail-row__body">
-              <text class="detail-row__main">AA制 · 预计 {{detail.party.priceText}}</text>
-              <text class="detail-row__sub">预估包含：包厢费+酒水小吃</text>
+              <text class="detail-row__main">AA参考 · 预计 {{detail.party.priceText}}</text>
+              <text class="detail-row__sub">仅作线下AA参考，小程序不收款</text>
             </view>
           </view>
           <view class="detail-row">
             <image class="detail-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
             <view class="detail-row__body">
               <text class="detail-row__main">{{detail.party.progressText}}</text>
-              <text class="detail-row__sub">还差 {{remainingCount}} 人，快来加入吧！</text>
+              <text class="detail-row__sub">剩余 {{remainingCount}} 个活动名额</text>
             </view>
           </view>
         </view>
@@ -68,9 +68,25 @@
             <text class="host__name">{{detail.host.nickname}}</text>
             <text class="host__badge">●</text>
           </view>
-          <text class="host__intro">喜欢唱歌，性格开朗好相处～</text>
+          <text class="host__intro">K歌爱好者，活动信息由发起人自行维护。</text>
         </view>
         <text class="host__arrow">›</text>
+      </view>
+    </view>
+
+    <view class="detail-section detail-section--contacts" wx:if="{{canViewContacts && contactEntries.length}}">
+      <text class="detail-section__title">报名联系信息</text>
+      <text class="detail-section__hint">仅发起人可见，用于本次活动建群、集合和包厢通知</text>
+      <view class="detail-contact-list">
+        <view class="detail-contact" wx:for="{{contactEntries}}" wx:key="entryId">
+          <view class="detail-contact__header">
+            <text class="detail-contact__name">{{item.userNickname}}</text>
+            <text class="detail-contact__status">{{item.entryStatusText}}</text>
+          </view>
+          <text class="detail-contact__main">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
+          <text class="detail-contact__sub">预计到达：{{item.arrivalTimeText}}</text>
+          <text class="detail-contact__sub" wx:if="{{item.note}}">备注：{{item.note}}</text>
+        </view>
       </view>
     </view>
 
@@ -80,12 +96,17 @@
     </view>
 
     <view class="actions">
-      <button class="actions__favorite" hover-class="none">
+      <button
+        class="actions__favorite {{isFavorited ? 'actions__favorite--active' : ''}}"
+        hover-class="none"
+        bindtap="handleFavoriteTap"
+      >
         <image src="/assets/images/ktv/star.svg" mode="aspectFit" />
-        <text>收藏</text>
+        <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
       </button>
-      <button class="actions__secondary" hover-class="none" bindtap="handleContactHost">联系发起人</button>
-      <button class="actions__primary" hover-class="none" bindtap="handleJoin">立即报名</button>
+      <button class="actions__secondary" hover-class="none" bindtap="handleContactHost">活动提醒</button>
+      <button wx:if="{{canViewContacts}}" class="actions__primary" hover-class="none" bindtap="handleOpenEntryDetails">报名详情</button>
+      <button wx:else class="actions__primary" hover-class="none" bindtap="handleJoin">立即报名</button>
     </view>
   </block>
 </view>

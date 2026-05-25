@@ -174,7 +174,7 @@
 .form-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 20rpx;
   min-height: 92rpx;
   padding: 0 26rpx;
   border-bottom: 1rpx solid #eef0f7;
@@ -193,13 +193,30 @@
   min-height: 104rpx;
 }
 
+.form-row--duration {
+  min-height: 104rpx;
+}
+
+.form-row--fee {
+  min-height: 126rpx;
+  align-items: flex-start;
+  padding-top: 20rpx;
+  padding-bottom: 18rpx;
+}
+
 .form-row__label {
   display: flex;
   align-items: center;
   gap: 14rpx;
+  flex: 0 0 180rpx;
   color: #252838;
   font-size: 26rpx;
   font-weight: 900;
+  white-space: nowrap;
+}
+
+.form-row--fee .form-row__label {
+  flex: 0 0 220rpx;
 }
 
 .form-row__label image {
@@ -219,10 +236,20 @@
 .form-row__value {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8rpx;
+  min-width: 0;
+  flex: 1;
   color: #73798b;
   font-size: 25rpx;
   font-weight: 800;
+}
+
+.form-row__value-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .form-row__value--placeholder {
@@ -261,6 +288,35 @@
   color: #a0a6b7;
 }
 
+.duration-field {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 0;
+}
+
+.duration-field__input {
+  width: 160rpx;
+  height: 44rpx;
+  color: #313545;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 44rpx;
+  text-align: right;
+}
+
+.duration-field__input::placeholder {
+  color: #a0a6b7;
+}
+
+.duration-field__unit {
+  margin-left: 8rpx;
+  color: #73798b;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
 .preference-picker {
   display: flex;
   justify-content: flex-end;
@@ -274,7 +330,10 @@
 .room-segment {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12rpx;
+  flex: 1;
+  min-width: 0;
 }
 
 .room-segment__item {
@@ -291,6 +350,52 @@
   background: #6242ff;
   color: #ffffff;
   box-shadow: 0 10rpx 20rpx rgba(98, 66, 255, 0.22);
+}
+
+.fee-field {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fee-field__main {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.fee-field__input {
+  width: 190rpx;
+  height: 42rpx;
+  color: #313545;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 42rpx;
+  text-align: right;
+}
+
+.fee-field__input::placeholder {
+  color: #a0a6b7;
+}
+
+.fee-field__unit {
+  margin-left: 8rpx;
+  color: #73798b;
+  font-size: 25rpx;
+  font-weight: 800;
+  line-height: 42rpx;
+}
+
+.fee-field__hint {
+  margin-top: 10rpx;
+  color: #9aa1b2;
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .people-stepper {
@@ -406,4 +511,10 @@
   font-size: 30rpx;
   font-weight: 900;
   line-height: 1;
+}
+
+.launch-submit__button[disabled] {
+  background: linear-gradient(135deg, #8d5cff 0%, #4d30ff 100%);
+  color: #ffffff !important;
+  opacity: 1;
 }

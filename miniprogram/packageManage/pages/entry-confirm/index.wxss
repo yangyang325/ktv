@@ -168,6 +168,10 @@
   min-height: 198rpx;
 }
 
+.confirm-section-card--entry-contact {
+  padding-bottom: 34rpx;
+}
+
 .confirm-section-card__side {
   position: absolute;
   top: 38rpx;
@@ -188,6 +192,11 @@
   line-height: 1.5;
 }
 
+.confirm-section-card__desc--entry-contact {
+  margin-top: 24rpx;
+  color: #565f78;
+}
+
 .confirm-privacy {
   display: flex;
   align-items: center;
@@ -203,6 +212,80 @@
   width: 28rpx;
   height: 28rpx;
   flex: 0 0 28rpx;
+}
+
+.confirm-contact-form {
+  margin-top: 24rpx;
+  padding-left: 66rpx;
+}
+
+.confirm-contact-row {
+  display: flex;
+  align-items: center;
+  min-height: 74rpx;
+  border-bottom: 1rpx solid #edf0f8;
+}
+
+.confirm-contact-row__label {
+  width: 92rpx;
+  flex: 0 0 92rpx;
+  color: #252938;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.confirm-contact-row__picker-wrap,
+.confirm-contact-row__input {
+  min-width: 0;
+  flex: 1;
+}
+
+.confirm-contact-row__picker,
+.confirm-contact-row__input {
+  color: #252938;
+  font-size: 25rpx;
+  font-weight: 700;
+  line-height: 74rpx;
+}
+
+.confirm-contact-row__picker {
+  position: relative;
+  padding-right: 30rpx;
+}
+
+.confirm-contact-row__picker::after {
+  position: absolute;
+  top: 28rpx;
+  right: 4rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-right: 3rpx solid #9aa0ae;
+  border-bottom: 3rpx solid #9aa0ae;
+  transform: rotate(45deg);
+  content: "";
+}
+
+.confirm-contact-row__picker--placeholder,
+.confirm-contact-row__placeholder {
+  color: #a5abb8;
+  font-weight: 500;
+}
+
+.confirm-contact-note {
+  margin-top: 22rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 14rpx;
+  background: #f7f8fc;
+  box-sizing: border-box;
+}
+
+.confirm-contact-note__input {
+  width: 100%;
+  min-height: 86rpx;
+  color: #252938;
+  font-size: 25rpx;
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 .confirm-agreement {

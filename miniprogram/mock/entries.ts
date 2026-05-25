@@ -24,7 +24,13 @@ export const entryList: Entry[] = [
     seqNo: 2,
     waitlistNo: null,
     createdAt: "2026-04-24T09:10:00.000Z",
-    confirmedAt: "2026-04-24T09:10:00.000Z"
+    confirmedAt: "2026-04-24T09:10:00.000Z",
+    contactInfo: {
+      method: "wechat",
+      value: "aming-sing",
+      arrivalTime: "19:20",
+      note: "到店后等群通知"
+    }
   },
   {
     entryId: "entry-003",
@@ -35,7 +41,13 @@ export const entryList: Entry[] = [
     seqNo: 3,
     waitlistNo: null,
     createdAt: "2026-04-24T09:20:00.000Z",
-    confirmedAt: "2026-04-24T09:20:00.000Z"
+    confirmedAt: "2026-04-24T09:20:00.000Z",
+    contactInfo: {
+      method: "phone",
+      value: "13800000000",
+      arrivalTime: "19:30",
+      note: "可以先加活动群"
+    }
   },
   {
     entryId: "entry-004",

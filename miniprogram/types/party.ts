@@ -1,6 +1,15 @@
 import type { PartyStatus } from "./common";
 
 /**
+ * 局卡片报名人头像。
+ */
+export interface PartyParticipantAvatar {
+  userId: string;
+  nickname: string;
+  avatarUrl: string;
+}
+
+/**
  * 局信息。
  */
 export interface Party {
@@ -24,10 +33,14 @@ export interface Party {
   estimatedPerPerson: number;
   hostSummary: string;
   venueSummary: string;
+  venueAddress?: string;
+  venueLatitude?: number;
+  venueLongitude?: number;
   progressText: string;
   statusText: string;
   priceText: string;
   timeSummary: string;
+  participantAvatars: PartyParticipantAvatar[];
 }
 
 /**
@@ -37,6 +50,9 @@ export interface PartyDraftInput {
   title: string;
   venueId: string;
   venueSummary: string;
+  venueAddress?: string;
+  venueLatitude?: number;
+  venueLongitude?: number;
   startDate: string;
   startTime: string;
   durationMin: number;

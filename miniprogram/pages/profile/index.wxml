@@ -61,7 +61,7 @@
           <view class="profile-party-card__body">
             <view class="profile-party-card__header">
               <text class="profile-party-card__title">{{item.title}}</text>
-              <text class="profile-party-card__status">{{item.statusText}}</text>
+              <text class="profile-party-card__status profile-party-card__status--{{item.statusTone}}">{{item.statusText}}</text>
             </view>
             <view class="profile-party-card__tags">
               <text wx:for="{{item.displayTags}}" wx:key="*this">{{item}}</text>
@@ -70,9 +70,9 @@
               <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
               <text>{{item.timeSummary}}</text>
             </view>
-            <view class="profile-party-card__meta">
+            <view class="profile-party-card__meta profile-party-card__meta--venue">
               <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
-              <text>{{item.venueSummary}}</text>
+              <text class="profile-party-card__venue">{{item.venueSummary}}</text>
             </view>
             <view class="profile-party-card__footer">
               <text>{{item.progressText}}</text>

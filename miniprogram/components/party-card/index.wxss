@@ -49,19 +49,26 @@
   left: 10rpx;
   padding: 5rpx 12rpx;
   border-radius: 8rpx;
-  background: #1fd17c;
+  background: #16c878;
   color: #ffffff;
   font-size: 22rpx;
   font-weight: 700;
 }
 
-.party-card__status--signup,
+.party-card__status--signup {
+  background: #16c878;
+}
+
+.party-card__status--active {
+  background: #2497ff;
+}
+
 .party-card__status--full {
-  background: #ff9d2e;
+  background: #ff982b;
 }
 
 .party-card__status--finished {
-  background: rgba(24, 27, 47, 0.68);
+  background: rgba(25, 27, 42, 0.72);
 }
 
 .party-card__body {
@@ -91,7 +98,7 @@
   padding: 4rpx 11rpx;
   border-radius: 8rpx;
   background: #f1efff;
-  color: #7465ff;
+  color: #6048ff;
   font-size: 21rpx;
   font-weight: 700;
 }
@@ -106,10 +113,31 @@
   line-height: 1.3;
 }
 
+.party-card__meta--venue {
+  align-items: flex-start;
+}
+
+.party-card__venue {
+  display: -webkit-box;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .party-card__meta-icon {
   width: 24rpx;
   height: 24rpx;
   opacity: 0.58;
+}
+
+.party-card__meta--venue .party-card__meta-icon {
+  margin-top: 2rpx;
 }
 
 .party-card__footer {
@@ -124,26 +152,13 @@
 }
 
 .party-card__avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 30rpx;
   height: 30rpx;
   margin-right: -7rpx;
   border: 2rpx solid #ffffff;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffd4b7, #aa72ff);
-  color: #ffffff;
-  font-size: 16rpx;
-  font-weight: 700;
-}
-
-.party-card__avatar--blue {
-  background: linear-gradient(135deg, #65c8ff, #5173ff);
-}
-
-.party-card__avatar--pink {
-  background: linear-gradient(135deg, #ff89b3, #ff566f);
+  background: #eef1ff;
+  box-sizing: border-box;
 }
 
 .party-card__count {
@@ -162,7 +177,7 @@
 
 .party-card__price {
   margin-left: auto;
-  color: var(--danger);
+  color: #ff443f;
   font-size: 28rpx;
   font-weight: 800;
 }

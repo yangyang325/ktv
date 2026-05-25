@@ -6,7 +6,7 @@ Component({
     },
     description: {
       type: String,
-      value: "先去发起一个新的 K 局吧。"
+      value: "先去发布一条新的K歌活动吧。"
     }
   }
 });

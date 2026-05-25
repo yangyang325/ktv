@@ -1,10 +1,20 @@
 import { ROUTES } from "../../constants/routes";
+import { isPartyFavorited, togglePartyFavorite } from "../../services/api/favorite";
 import { getPartyDetail, joinWaitlist } from "../../services/api/party";
+import { resolvePartyStatusTone } from "../../utils/party-status";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
 type DisplayTag = {
   label: string;
-  tone: "blue" | "purple" | "red" | "pink";
+};
+type ContactEntry = {
+  entryId: string;
+  userNickname: string;
+  entryStatusText: string;
+  contactMethodLabel: string;
+  contactValue: string;
+  arrivalTimeText: string;
+  note: string;
 };
 
 Page({
@@ -13,8 +23,12 @@ Page({
     detail: null as PartyDetail | null,
     confirmedUsers: [] as string[],
     waitlistUsers: [] as string[],
+    contactEntries: [] as ContactEntry[],
+    canViewContacts: false,
     displayTags: [] as DisplayTag[],
     remainingCount: 0,
+    isFavorited: false,
+    statusTone: "signup",
     durationHourText: "3",
     statusBarHeight: 0
   },
@@ -60,8 +74,12 @@ Page({
       detail,
       confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
       waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname),
+      contactEntries: this.buildContactEntries(detail),
+      canViewContacts: Boolean(detail.canViewContacts),
       displayTags: this.buildDisplayTags(detail.party.tags),
       remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0),
+      isFavorited: isPartyFavorited(detail.party.partyId),
+      statusTone: resolvePartyStatusTone(detail.party.status, detail.party.statusText),
       durationHourText: this.formatDurationHour(detail.party.durationMin)
     });
   },
@@ -72,14 +90,31 @@ Page({
    * @returns 详情页展示标签
    */
   buildDisplayTags(tags: string[]) {
-    const tones: DisplayTag["tone"][] = ["blue", "purple", "red", "pink"];
     const labels = tags.map((tag) => (tag === "流行" ? "流行歌曲" : tag));
     const mergedLabels = labels.includes("氛围好") ? labels : [...labels, "氛围好"];
 
-    return mergedLabels.slice(0, 4).map((label, index) => ({
-      label,
-      tone: tones[index] || "blue"
+    return mergedLabels.slice(0, 4).map((label) => ({
+      label
     }));
+  },
+
+  /**
+   * 构建发起人可见的报名联系信息列表。
+   * @param detail 活动详情
+   * @returns 联系信息展示列表
+   */
+  buildContactEntries(detail: PartyDetail) {
+    return [...detail.confirmedEntries, ...detail.waitlistEntries]
+      .filter((entry) => Boolean(entry.contactInfo?.value))
+      .map((entry) => ({
+        entryId: entry.entryId,
+        userNickname: entry.userNickname,
+        entryStatusText: entry.entryType === "waitlist" ? `候补 ${entry.waitlistNo || ""}`.trim() : `已报名 ${entry.seqNo || ""}`.trim(),
+        contactMethodLabel: entry.contactInfo?.method === "phone" ? "手机号" : "微信号",
+        contactValue: entry.contactInfo?.value || "",
+        arrivalTimeText: entry.contactInfo?.arrivalTime || "未填写",
+        note: entry.contactInfo?.note || ""
+      }));
   },
 
   /**
@@ -131,22 +166,72 @@ Page({
   },
 
   /**
-   * 展示导航占位反馈。
+   * 复制活动地点信息。
    */
-  handleNavigate() {
+  handleCopyVenueLocation() {
+    const party = this.data.detail?.party;
+    const venueText = this.buildCopyVenueText(party?.venueSummary || "", party?.venueAddress || "");
+    if (!venueText) {
+      wx.showToast({
+        title: "暂无地点信息",
+        icon: "none"
+      });
+      return;
+    }
+
+    wx.setClipboardData({
+      data: venueText,
+      success: () => {
+        wx.showToast({
+          title: "地点已复制",
+          icon: "success"
+        });
+      }
+    });
+  },
+
+  /**
+   * 生成可复制的活动地点文本。
+   * @param venueSummary 场所名称或位置摘要
+   * @param venueAddress 详细地址
+   * @returns 可复制的地点文本
+   */
+  buildCopyVenueText(venueSummary: string, venueAddress: string) {
+    return [venueSummary.trim(), venueAddress.trim()].filter(Boolean).join("\n");
+  },
+
+  /**
+   * 发送活动提醒。
+   */
+  handleContactHost() {
     wx.showToast({
-      title: "正在打开导航",
+      title: "已记录活动提醒",
       icon: "none"
     });
   },
 
   /**
-   * 联系发起人。
+   * 切换当前活动收藏状态。
    */
-  handleContactHost() {
+  handleFavoriteTap() {
+    if (!this.data.partyId) {
+      return;
+    }
+
+    const isFavorited = togglePartyFavorite(this.data.partyId);
+    this.setData({ isFavorited });
     wx.showToast({
-      title: "已提醒发起人联系你",
+      title: isFavorited ? "已收藏" : "已取消收藏",
       icon: "none"
+    });
+  },
+
+  /**
+   * 打开发起人可见的报名详情页。
+   */
+  handleOpenEntryDetails() {
+    wx.navigateTo({
+      url: `${ROUTES.partyMembers}?partyId=${this.data.partyId}`
     });
   },
 
@@ -178,7 +263,7 @@ Page({
   onShareAppMessage() {
     const detail = this.data.detail;
     return {
-      title: detail?.party.title || "一起加入KTV组局",
+      title: detail?.party.title || "深圳K歌兴趣活动",
       path: `/pages/party-detail/index?partyId=${this.data.partyId}`,
       imageUrl: detail?.party.coverImage
     };

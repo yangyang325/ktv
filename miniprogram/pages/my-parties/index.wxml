@@ -6,7 +6,7 @@
       mode="aspectFill"
     />
     <view class="summary-card__content">
-      <text class="summary-card__title">管理你的发起与报名记录</text>
+      <text class="summary-card__title">管理你的活动与报名记录</text>
       <view class="summary-stats">
         <view class="summary-stats__item" wx:for="{{stats}}" wx:key="key">
           <view class="summary-stats__icon summary-stats__icon--{{item.tone}}">{{item.icon}}</view>
@@ -54,9 +54,9 @@
             <image class="my-party-card__meta-icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
             <text>{{item.timeSummary}}</text>
           </view>
-          <view class="my-party-card__meta">
+          <view class="my-party-card__meta my-party-card__meta--venue">
             <image class="my-party-card__meta-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
-            <text>{{item.venueSummary}}</text>
+            <text class="my-party-card__venue">{{item.venueSummary}}</text>
           </view>
           <view class="my-party-card__footer">
             <view class="my-party-card__avatars">
@@ -84,7 +84,7 @@
 
   <view class="create-fab" bindtap="handleCreateTap" hover-class="create-fab--hover">
     <text class="create-fab__plus">＋</text>
-    <text class="create-fab__text">发起组局</text>
+    <text class="create-fab__text">发布活动</text>
   </view>
 
   <view class="page-tabbar">

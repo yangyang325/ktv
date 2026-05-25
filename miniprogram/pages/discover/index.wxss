@@ -185,23 +185,19 @@
   font-weight: 800;
 }
 
-.party-card__status--live {
-  background: #22cf75;
-}
-
 .party-card__status--signup {
-  background: #2497ff;
+  background: #16c878;
 }
 
-.party-card__status--hot {
-  background: #ff982b;
+.party-card__status--active {
+  background: #2497ff;
 }
 
 .party-card__status--full {
   background: #ff982b;
 }
 
-.party-card__status--done {
+.party-card__status--finished {
   background: rgba(25, 27, 42, 0.72);
 }
 
@@ -262,8 +258,8 @@
   margin-right: 8rpx;
   padding: 0 10rpx;
   border-radius: 8rpx;
-  background: #f0edff;
-  color: #735cff;
+  background: #f1efff;
+  color: #6048ff;
   font-size: 18rpx;
   font-weight: 700;
   white-space: nowrap;
@@ -279,24 +275,38 @@
   line-height: 27rpx;
 }
 
+.party-card__meta--venue {
+  align-items: flex-start;
+}
+
 .party-card__meta-icon {
   width: 22rpx;
   height: 22rpx;
   opacity: 0.58;
 }
 
+.party-card__meta--venue .party-card__meta-icon {
+  margin-top: 2rpx;
+}
+
 .party-card__venue {
+  display: -webkit-box;
   min-width: 0;
   flex: 1;
   overflow: hidden;
+  line-height: 27rpx;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .party-card__distance {
   flex: 0 0 auto;
   color: #a6abbb;
   font-size: 20rpx;
+  line-height: 27rpx;
 }
 
 .party-card__footer {
@@ -312,31 +322,13 @@
 }
 
 .party-card__avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 28rpx;
   height: 28rpx;
   margin-right: -7rpx;
   box-sizing: border-box;
   border: 2rpx solid #ffffff;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffd2a1, #8c67ff);
-  color: #ffffff;
-  font-size: 15rpx;
-  font-weight: 800;
-}
-
-.party-card__avatar--1 {
-  background: linear-gradient(135deg, #64d5ff, #546dff);
-}
-
-.party-card__avatar--2 {
-  background: linear-gradient(135deg, #ff9abe, #ff5573);
-}
-
-.party-card__avatar--3 {
-  background: linear-gradient(135deg, #62df9f, #2cba74);
+  background: #eef1ff;
 }
 
 .party-card__progress {

@@ -234,15 +234,19 @@ page {
 }
 
 .my-party-card__status--active {
-  background: linear-gradient(135deg, #28d886, #11bb68);
+  background: #2497ff;
 }
 
 .my-party-card__status--signup {
-  background: linear-gradient(135deg, #ffb13f, #ff8734);
+  background: #16c878;
+}
+
+.my-party-card__status--full {
+  background: #ff982b;
 }
 
 .my-party-card__status--finished {
-  background: rgba(44, 46, 56, 0.72);
+  background: rgba(25, 27, 42, 0.72);
 }
 
 .my-party-card__body {
@@ -277,8 +281,8 @@ page {
   overflow: hidden;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
-  background: #f0eeff;
-  color: #6654ff;
+  background: #f1efff;
+  color: #6048ff;
   font-size: 21rpx;
   font-weight: 700;
   line-height: 1.15;
@@ -287,8 +291,8 @@ page {
 }
 
 .my-party-card--finished .my-party-card__tag {
-  background: #f1f2f5;
-  color: #858b99;
+  background: #f1efff;
+  color: #6048ff;
 }
 
 .my-party-card__meta {
@@ -302,10 +306,27 @@ page {
   line-height: 1.25;
 }
 
+.my-party-card__meta--venue {
+  align-items: flex-start;
+}
+
 .my-party-card__meta text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.my-party-card__venue {
+  display: -webkit-box;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .my-party-card__meta-icon {
@@ -313,6 +334,10 @@ page {
   height: 25rpx;
   flex: 0 0 25rpx;
   opacity: 0.64;
+}
+
+.my-party-card__meta--venue .my-party-card__meta-icon {
+  margin-top: 2rpx;
 }
 
 .my-party-card__footer {

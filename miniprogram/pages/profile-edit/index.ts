@@ -1,4 +1,6 @@
 import { DEFAULT_CITY_NAME } from "../../constants/location";
+import { getCurrentUser, updateCurrentUser } from "../../services/api/user";
+import type { User } from "../../types/user";
 
 interface ProfileForm {
   avatarUrl: string;
@@ -8,8 +10,6 @@ interface ProfileForm {
   intro: string;
   city: string;
   birthday: string;
-  wechatId: string;
-  phone: string;
 }
 
 interface FieldInputEvent extends WechatMiniprogram.Input {
@@ -26,32 +26,39 @@ interface PickerChangeEvent extends WechatMiniprogram.BaseEvent {
   };
 }
 
+type ProfileEditUser = User & {
+  intro?: string;
+};
+
 Page({
   data: {
     genderOptions: ["女", "男", "保密"],
     genderIndex: 0,
     form: {
       avatarUrl: "/assets/images/ktv/profile-avatar.svg",
-      nickname: "小麦麦",
+      nickname: "微信用户",
       gender: "女",
       ktvId: "888888",
-      intro: "喜欢唱歌，性格开朗好相处～",
+      intro: "记录深圳K歌兴趣活动",
       city: DEFAULT_CITY_NAME,
-      birthday: "1995-06-18",
-      wechatId: "",
-      phone: ""
+      birthday: "1995-06-18"
     } as ProfileForm
   },
 
   /**
    * 页面加载时读取本地资料。
    */
-  onLoad() {
+  async onLoad() {
     const savedProfile = wx.getStorageSync("profileEditForm") as Partial<ProfileForm> | undefined;
-    const form = {
-      ...this.data.form,
-      ...(savedProfile || {})
-    };
+    let currentUser: User | null = null;
+
+    try {
+      currentUser = await getCurrentUser();
+    } catch {
+      currentUser = null;
+    }
+
+    const form = createProfileForm(this.data.form, currentUser, savedProfile);
 
     this.setData({
       form,
@@ -142,11 +149,49 @@ Page({
   /**
    * 保存编辑资料。
    */
-  handleSave() {
-    wx.setStorageSync("profileEditForm", this.data.form);
-    wx.showToast({
-      title: "保存成功",
-      icon: "success"
-    });
+  async handleSave() {
+    try {
+      wx.setStorageSync("profileEditForm", this.data.form);
+      await updateCurrentUser(this.data.form);
+      wx.showToast({
+        title: "保存成功",
+        icon: "success"
+      });
+      wx.navigateBack({
+        delta: 1
+      });
+    } catch {
+      wx.showToast({
+        title: "保存失败，请稍后再试",
+        icon: "none"
+      });
+    }
   }
 });
+
+/**
+ * 创建编辑资料表单。
+ * @param defaultForm 默认表单
+ * @param currentUser 当前用户
+ * @param savedProfile 本地保存资料
+ * @returns 编辑资料表单
+ */
+function createProfileForm(
+  defaultForm: ProfileForm,
+  currentUser: User | null,
+  savedProfile?: Partial<ProfileForm>
+): ProfileForm {
+  const profileUser = currentUser as ProfileEditUser | null;
+
+  return {
+    ...defaultForm,
+    ...(currentUser
+      ? {
+          avatarUrl: currentUser.avatarUrl || defaultForm.avatarUrl,
+          nickname: currentUser.nickname || defaultForm.nickname,
+          intro: profileUser?.intro || defaultForm.intro
+        }
+      : {}),
+    ...(savedProfile || {})
+  };
+}

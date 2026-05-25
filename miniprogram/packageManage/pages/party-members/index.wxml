@@ -1,7 +1,39 @@
 <view class="page manage-page">
+  <view class="manage-card manage-card--summary">
+    <text class="manage-card__title">报名详情</text>
+    <text class="manage-card__desc">{{partyTitle}}</text>
+    <text class="manage-card__count">{{totalText}}</text>
+  </view>
+
   <view class="manage-card">
-    <text class="manage-card__title">成员管理占位</text>
-    <text class="manage-card__desc">{{description}}</text>
-    <text class="manage-card__item" wx:for="{{members}}" wx:key="*this">{{item}}</text>
+    <text class="manage-card__title">已报名</text>
+    <block wx:if="{{confirmedMembers.length}}">
+      <view class="member-card" wx:for="{{confirmedMembers}}" wx:key="entryId">
+        <view class="member-card__header">
+          <text class="member-card__name">{{item.userNickname}}</text>
+          <text class="member-card__status">{{item.statusText}}</text>
+        </view>
+        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__line">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
+        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__sub">预计到达：{{item.arrivalTimeText}}</text>
+        <text wx:if="{{canViewContacts && item.note}}" class="member-card__sub">备注：{{item.note}}</text>
+      </view>
+    </block>
+    <text wx:else class="manage-card__empty">暂无报名记录</text>
+  </view>
+
+  <view class="manage-card">
+    <text class="manage-card__title">候补</text>
+    <block wx:if="{{waitlistMembers.length}}">
+      <view class="member-card" wx:for="{{waitlistMembers}}" wx:key="entryId">
+        <view class="member-card__header">
+          <text class="member-card__name">{{item.userNickname}}</text>
+          <text class="member-card__status member-card__status--waitlist">{{item.statusText}}</text>
+        </view>
+        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__line">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
+        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__sub">预计到达：{{item.arrivalTimeText}}</text>
+        <text wx:if="{{canViewContacts && item.note}}" class="member-card__sub">备注：{{item.note}}</text>
+      </view>
+    </block>
+    <text wx:else class="manage-card__empty">暂无候补记录</text>
   </view>
 </view>

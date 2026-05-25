@@ -28,7 +28,7 @@ export const PRICE_LEVEL_OPTIONS = [
 /**
  * 局标签选项。
  */
-export const PARTY_TAG_OPTIONS = ["欢迎新人", "大包厢", "深夜局", "生日局"];
+export const PARTY_TAG_OPTIONS = ["新手友好", "大包厢", "轻松唱", "生日活动"];
 
 /**
  * 时长选项。

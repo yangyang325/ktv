@@ -90,11 +90,6 @@ picker + .edit-row,
   width: 400rpx;
 }
 
-.edit-row__input--contact {
-  width: 480rpx;
-  font-size: 25rpx;
-}
-
 .edit-row__placeholder {
   color: #a9afbf;
   font-weight: 700;

@@ -36,26 +36,26 @@ Page({
       {
         key: "create",
         iconUrl: HOME_QUICK_ACTION_IMAGES.createParty,
-        title: "我要组局",
-        desc: "发起KTV局"
+        title: "发布活动",
+        desc: "记录K歌信息"
       },
       {
         key: "discover",
         iconUrl: HOME_QUICK_ACTION_IMAGES.discoverParty,
-        title: "找局加入",
-        desc: "发现好局"
+        title: "活动列表",
+        desc: "查看可报名"
       },
       {
         key: "mine",
         iconUrl: HOME_QUICK_ACTION_IMAGES.myParties,
-        title: "我的组局",
-        desc: "管理局"
+        title: "我的活动",
+        desc: "管理记录"
       },
       {
         key: "favorites",
         iconUrl: HOME_QUICK_ACTION_IMAGES.favorites,
-        title: "我的收藏",
-        desc: "收藏的局"
+        title: "活动收藏",
+        desc: "稍后回看"
       }
     ]
   },
@@ -133,7 +133,7 @@ Page({
       create: "/pages/launch/index",
       discover: "/pages/discover/index",
       mine: "/pages/my-parties/index",
-      favorites: "/pages/common/webview/index?title=我的收藏"
+      favorites: "/pages/favorites/index"
     };
     const url = routeMap[key];
     if (!url) {
@@ -146,5 +146,12 @@ Page({
     }
 
     wx.navigateTo({ url });
+  },
+
+  /**
+   * 跳转到发现页查看更多活动。
+   */
+  handleMoreTap() {
+    wx.switchTab({ url: "/pages/discover/index" });
   }
 });

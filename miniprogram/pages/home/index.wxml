@@ -12,12 +12,12 @@
         <text class="hero__city-arrow"></text>
       </view>
     </view>
-    <text class="hero__title">KTV组局</text>
-    <text class="hero__desc">一起嗨唱，快乐翻倍！</text>
+    <text class="hero__title">K歌兴趣活动</text>
+    <text class="hero__desc">记录活动时间地点，线下自主参与</text>
     <view class="hero__points">
-      <text>认识新朋友</text>
-      <text>丰富业余生活</text>
-      <text>轻松组局</text>
+      <text>兴趣活动</text>
+      <text>AA参考</text>
+      <text>活动信息</text>
     </view>
   </view>
 
@@ -39,7 +39,10 @@
     <view class="section">
       <view class="section__header">
         <text class="section__title">热门推荐</text>
-        <text class="section__more">查看更多 ›</text>
+        <view class="section__more" bindtap="handleMoreTap">
+          <text>查看更多</text>
+          <text class="section__more-arrow"></text>
+        </view>
       </view>
       <party-card wx:for="{{partyList}}" wx:key="partyId" party="{{item}}" />
     </view>
