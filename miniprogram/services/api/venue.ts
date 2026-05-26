@@ -1,7 +1,5 @@
 import { normalizeDistrictName } from "../../constants/options";
-import { venueList } from "../../mock/venues";
 import type { Venue } from "../../types/venue";
-import { serviceConfig } from "../config";
 import { callCloudFunction } from "./cloud";
 
 /**
@@ -41,22 +39,7 @@ export function matchesVenueKeyword(
 }
 
 /**
- * 按门店编号同步读取门店。
- * @param venueId 门店 ID
- * @returns 门店信息
- */
-export function getVenueByIdSync(venueId: string) {
-  for (const venue of venueList) {
-    if (venue.venueId === venueId) {
-      return normalizeVenue(venue);
-    }
-  }
-
-  return null;
-}
-
-/**
- * 获取门店列表。
+ * 获取云端门店列表。
  * @param filters 查询条件
  * @returns 门店列表
  */
@@ -65,45 +48,14 @@ export async function getVenueList(filters?: {
   keyword?: string;
   priceLevel?: string | number;
 }) {
-  if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Venue[]>("venue", "list", filters || {});
-  }
-
-  const result = [];
-
-  for (const venue of venueList) {
-    const normalizedVenue = normalizeVenue(venue);
-
-    if (filters?.district && normalizedVenue.district !== filters.district) {
-      continue;
-    }
-
-    if (
-      filters?.priceLevel !== undefined &&
-      String(normalizedVenue.priceLevel) !== String(filters.priceLevel)
-    ) {
-      continue;
-    }
-
-    if (filters?.keyword && !matchesVenueKeyword(normalizedVenue, filters.keyword)) {
-      continue;
-    }
-
-    result.push(normalizedVenue);
-  }
-
-  return result;
+  return callCloudFunction<Venue[]>("venue", "list", filters || {});
 }
 
 /**
- * 按门店编号异步读取门店。
+ * 按门店编号异步读取云端门店。
  * @param venueId 门店 ID
  * @returns 门店信息
  */
 export async function getVenueById(venueId: string) {
-  if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<Venue>("venue", "detail", { venueId });
-  }
-
-  return getVenueByIdSync(venueId);
+  return callCloudFunction<Venue>("venue", "detail", { venueId });
 }

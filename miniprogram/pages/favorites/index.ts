@@ -1,12 +1,6 @@
+import { DISCOVER_TAB_ICONS, HOME_TAB_ICONS, PROFILE_TAB_ICONS } from "../../constants/assets";
 import { getFavoriteParties } from "../../services/api/favorite";
 import type { Party } from "../../types/party";
-
-type FavoriteTabKey = "all" | "activities" | "songs" | "users";
-
-interface FavoriteTab {
-  key: FavoriteTabKey;
-  label: string;
-}
 
 interface FavoriteStat {
   key: string;
@@ -29,7 +23,6 @@ interface BottomNavItem {
 interface FavoritesTapEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
-      key?: FavoriteTabKey;
       path?: string;
     };
   };
@@ -38,11 +31,9 @@ interface FavoritesTapEvent extends WechatMiniprogram.BaseEvent {
 Page({
   data: {
     bottomNav: createBottomNav(),
-    currentTab: "all" as FavoriteTabKey,
     favoriteParties: [] as Party[],
     showFavoriteParties: false,
-    stats: createStats(),
-    tabs: createTabs()
+    stats: createStats()
   },
 
   /**
@@ -57,36 +48,12 @@ Page({
    */
   async refreshFavorites() {
     const favoriteParties = await getFavoriteParties();
-    const currentTab = this.data.currentTab;
 
     this.setData({
       favoriteParties,
-      showFavoriteParties: shouldShowFavoriteParties(currentTab, favoriteParties),
+      showFavoriteParties: favoriteParties.length > 0,
       stats: createStats(favoriteParties.length)
     });
-  },
-
-  /**
-   * 切换收藏分类。
-   * @param event 点击事件
-   */
-  handleTabTap(event: FavoritesTapEvent) {
-    const { key } = event.currentTarget.dataset;
-    if (!key || key === this.data.currentTab) {
-      return;
-    }
-
-    this.setData({
-      currentTab: key,
-      showFavoriteParties: shouldShowFavoriteParties(key, this.data.favoriteParties)
-    });
-  },
-
-  /**
-   * 跳转发现页。
-   */
-  handleDiscoverTap() {
-    wx.switchTab({ url: "/pages/discover/index" });
   },
 
   /**
@@ -106,38 +73,14 @@ Page({
 });
 
 /**
- * 创建收藏统计数据。
+ * 创建收藏活动统计数据。
+ * @param activityCount 收藏活动数量
  * @returns 收藏统计项
  */
 function createStats(activityCount = 0): FavoriteStat[] {
   return [
-    { key: "activities", label: "收藏活动", value: activityCount, icon: "书", tone: "purple" },
-    { key: "songs", label: "收藏歌单", value: 0, icon: "音", tone: "blue" },
-    { key: "users", label: "收藏用户", value: 0, icon: "人", tone: "orange" }
+    { key: "activities", label: "收藏活动", value: activityCount, icon: "书", tone: "purple" }
   ];
-}
-
-/**
- * 创建收藏分类标签。
- * @returns 收藏分类标签
- */
-function createTabs(): FavoriteTab[] {
-  return [
-    { key: "all", label: "全部" },
-    { key: "activities", label: "活动" },
-    { key: "songs", label: "歌单" },
-    { key: "users", label: "用户" }
-  ];
-}
-
-/**
- * 判断当前分类是否展示收藏活动列表。
- * @param tabKey 当前分类
- * @param favoriteParties 收藏活动列表
- * @returns 是否展示活动列表
- */
-function shouldShowFavoriteParties(tabKey: FavoriteTabKey, favoriteParties: Party[]): boolean {
-  return (tabKey === "all" || tabKey === "activities") && favoriteParties.length > 0;
 }
 
 /**
@@ -150,33 +93,24 @@ function createBottomNav(): BottomNavItem[] {
       key: "home",
       label: "首页",
       path: "pages/home/index",
-      icon: "/assets/images/ktv/tab-home.png",
-      activeIcon: "/assets/images/ktv/tab-home-active.png",
+      icon: HOME_TAB_ICONS.default,
+      activeIcon: HOME_TAB_ICONS.active,
       active: false
     },
     {
       key: "discover",
       label: "发现",
       path: "pages/discover/index",
-      icon: "/assets/images/ktv/tab-discover.png",
-      activeIcon: "/assets/images/ktv/tab-discover-active.png",
+      icon: DISCOVER_TAB_ICONS.default,
+      activeIcon: DISCOVER_TAB_ICONS.active,
       active: false
-    },
-    {
-      key: "messages",
-      label: "消息",
-      path: "pages/messages/index",
-      icon: "/assets/images/ktv/tab-messages.png",
-      activeIcon: "/assets/images/ktv/tab-messages-active.png",
-      active: false,
-      badge: "3"
     },
     {
       key: "profile",
       label: "我的",
       path: "pages/profile/index",
-      icon: "/assets/images/ktv/tab-profile.png",
-      activeIcon: "/assets/images/ktv/tab-profile-active.png",
+      icon: PROFILE_TAB_ICONS.default,
+      activeIcon: PROFILE_TAB_ICONS.active,
       active: true
     }
   ];

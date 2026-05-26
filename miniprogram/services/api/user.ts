@@ -1,6 +1,4 @@
-import { userList } from "../../mock/users";
 import type { User } from "../../types/user";
-import { serviceConfig } from "../config";
 import { callCloudFunction } from "./cloud";
 
 /**
@@ -8,18 +6,15 @@ import { callCloudFunction } from "./cloud";
  */
 export interface UserProfileUpdate {
   avatarUrl?: string;
-  birthday?: string;
-  city?: string;
   gender?: string;
   intro?: string;
-  ktvId?: string;
   nickname?: string;
-  tags?: string[];
 }
 
-const DEFAULT_CURRENT_USER_ID = "user-host";
-const PROFILE_EDIT_FORM_STORAGE_KEY = "profileEditForm";
-const runtimeUserProfileUpdates: Record<string, UserProfileUpdate> = {};
+interface WechatProfileUserInfo {
+  avatarUrl?: string;
+  nickName?: string;
+}
 
 /**
  * 深拷贝纯数据。
@@ -31,131 +26,86 @@ export function clonePlainValue<T>(value: T): T {
 }
 
 /**
- * 按用户编号查找用户。
- * @param userId 用户 ID
- * @returns 用户信息或空值
- */
-export function getUserByIdSync(userId: string) {
-  for (const user of userList) {
-    if (user.userId === userId) {
-      return clonePlainValue(user);
-    }
-  }
-
-  return null;
-}
-
-/**
- * 读取当前用户。
- * @param userId 用户 ID
+ * 读取当前微信登录用户。
  * @returns 用户信息
  */
-export async function getCurrentUser(userId: string = DEFAULT_CURRENT_USER_ID) {
-  if (serviceConfig.dataSource === "cloud") {
-    const result = await callCloudFunction<{ user: User }>("auth", "login");
-    return mergeUserProfile(result.user, readCurrentUserProfileUpdate(userId));
-  }
-
-  const user = getUserByIdSync(userId) ?? clonePlainValue(userList[0]);
-  return mergeUserProfile(user, readCurrentUserProfileUpdate(userId));
+export async function getCurrentUser() {
+  const result = await callCloudFunction<{ user: User }>("auth", "login");
+  return clonePlainValue(result.user);
 }
 
 /**
- * 更新当前用户资料。
+ * 进入我的页时同步微信头像昵称并完成登录。
+ * @returns 当前用户资料
+ */
+export async function getCurrentUserWithWechatProfile() {
+  const existingUser = await getUserById();
+
+  if (existingUser) {
+    return clonePlainValue(existingUser);
+  }
+
+  const wechatProfile = await requestWechatProfileUpdate();
+  if (wechatProfile) {
+    return updateCurrentUser(wechatProfile);
+  }
+
+  return getCurrentUser();
+}
+
+/**
+ * 更新当前微信登录用户资料。
  * @param profile 用户编辑资料
- * @param userId 用户 ID
  * @returns 更新后的用户资料
  */
-export async function updateCurrentUser(
-  profile: UserProfileUpdate,
-  userId: string = DEFAULT_CURRENT_USER_ID
-) {
+export async function updateCurrentUser(profile: UserProfileUpdate) {
   const profileUpdate = normalizeUserProfileUpdate(profile);
-  runtimeUserProfileUpdates[userId] = {
-    ...(runtimeUserProfileUpdates[userId] || {}),
-    ...profileUpdate
-  };
 
-  if (serviceConfig.dataSource === "cloud") {
-    const result = await callCloudFunction<{ user: User }>(
-      "auth",
-      "login",
-      pickCloudProfilePayload(profileUpdate)
-    );
-    return mergeUserProfile(result.user, readCurrentUserProfileUpdate(userId));
-  }
-
-  const user = getUserByIdSync(userId) ?? clonePlainValue(userList[0]);
-  return mergeUserProfile(user, readCurrentUserProfileUpdate(userId));
+  const result = await callCloudFunction<{ user: User }>(
+    "auth",
+    "login",
+    pickCloudProfilePayload(profileUpdate)
+  );
+  return clonePlainValue(result.user);
 }
 
 /**
- * 异步按用户编号读取用户。
- * @param userId 用户 ID
- * @returns 用户信息
+ * 异步读取当前微信登录用户资料。
+ * @returns 用户信息或空值
  */
-export async function getUserById(userId: string) {
-  if (serviceConfig.dataSource === "cloud") {
-    return callCloudFunction<User | null>("auth", "profile", { userId });
-  }
-
-  return getUserByIdSync(userId);
+export async function getUserById() {
+  const user = await callCloudFunction<User | null>("auth", "profile", {});
+  return user ? clonePlainValue(user) : null;
 }
 
 /**
- * 获取全部用户。
- * @returns 用户列表
+ * 拉取微信头像昵称资料。
+ * @returns 可写入云端的用户资料或空值
  */
-export async function listUsers() {
-  return clonePlainValue(userList);
-}
-
-/**
- * 合并用户基础资料和编辑资料。
- * @param user 用户基础资料
- * @param profileUpdate 用户编辑资料
- * @returns 合并后的用户资料
- */
-function mergeUserProfile(user: User, profileUpdate: UserProfileUpdate): User & UserProfileUpdate {
-  const mergedProfile = {
-    ...clonePlainValue(user),
-    ...profileUpdate
-  };
-
-  if (profileUpdate.tags) {
-    mergedProfile.tags = [...profileUpdate.tags];
+async function requestWechatProfileUpdate(): Promise<UserProfileUpdate | null> {
+  if (typeof wx === "undefined" || typeof wx.getUserProfile !== "function") {
+    return null;
   }
 
-  return mergedProfile;
-}
+  try {
+    const result = await wx.getUserProfile({
+      desc: "用于完善K歌活动头像和昵称"
+    });
+    const userInfo = result.userInfo as WechatProfileUserInfo | undefined;
+    const profileUpdate: UserProfileUpdate = {};
 
-/**
- * 读取当前用户的本地编辑资料。
- * @param userId 用户 ID
- * @returns 用户编辑资料
- */
-function readCurrentUserProfileUpdate(userId: string): UserProfileUpdate {
-  return {
-    ...(userId === DEFAULT_CURRENT_USER_ID ? readStoredProfileEditForm() : {}),
-    ...(runtimeUserProfileUpdates[userId] || {})
-  };
-}
+    if (userInfo?.nickName) {
+      profileUpdate.nickname = userInfo.nickName;
+    }
 
-/**
- * 读取本地编辑资料缓存。
- * @returns 本地编辑资料
- */
-function readStoredProfileEditForm(): UserProfileUpdate {
-  if (typeof wx === "undefined" || !wx.getStorageSync) {
-    return {};
+    if (userInfo?.avatarUrl) {
+      profileUpdate.avatarUrl = userInfo.avatarUrl;
+    }
+
+    return Object.keys(profileUpdate).length ? profileUpdate : null;
+  } catch {
+    return null;
   }
-
-  const savedProfile = wx.getStorageSync(PROFILE_EDIT_FORM_STORAGE_KEY) as UserProfileUpdate | undefined;
-  if (!savedProfile || typeof savedProfile !== "object") {
-    return {};
-  }
-
-  return normalizeUserProfileUpdate(savedProfile);
 }
 
 /**
@@ -170,14 +120,6 @@ function normalizeUserProfileUpdate(profile: UserProfileUpdate): UserProfileUpda
     profileUpdate.avatarUrl = profile.avatarUrl;
   }
 
-  if (typeof profile.birthday === "string") {
-    profileUpdate.birthday = profile.birthday;
-  }
-
-  if (typeof profile.city === "string") {
-    profileUpdate.city = profile.city;
-  }
-
   if (typeof profile.gender === "string") {
     profileUpdate.gender = profile.gender;
   }
@@ -186,16 +128,8 @@ function normalizeUserProfileUpdate(profile: UserProfileUpdate): UserProfileUpda
     profileUpdate.intro = profile.intro;
   }
 
-  if (typeof profile.ktvId === "string") {
-    profileUpdate.ktvId = profile.ktvId;
-  }
-
   if (typeof profile.nickname === "string") {
     profileUpdate.nickname = profile.nickname;
-  }
-
-  if (Array.isArray(profile.tags)) {
-    profileUpdate.tags = profile.tags.filter((tag) => typeof tag === "string");
   }
 
   return profileUpdate;
@@ -215,6 +149,14 @@ function pickCloudProfilePayload(profileUpdate: UserProfileUpdate): Record<strin
 
   if (Object.prototype.hasOwnProperty.call(profileUpdate, "avatarUrl")) {
     payload.avatarUrl = profileUpdate.avatarUrl;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(profileUpdate, "gender")) {
+    payload.gender = profileUpdate.gender;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(profileUpdate, "intro")) {
+    payload.intro = profileUpdate.intro;
   }
 
   return payload;

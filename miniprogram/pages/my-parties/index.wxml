@@ -60,11 +60,14 @@
           </view>
           <view class="my-party-card__footer">
             <view class="my-party-card__avatars">
-              <text
+              <image
                 wx:for="{{item.avatars}}"
-                wx:key="index"
+                wx:for-item="avatar"
+                wx:key="userId"
                 class="my-party-card__avatar my-party-card__avatar--{{index}}"
-              >{{item}}</text>
+                src="{{avatar.avatarUrl}}"
+                mode="aspectFill"
+              />
             </view>
             <view class="my-party-card__count">
               <text class="my-party-card__count-current">{{item.progressCountText}}</text>
@@ -80,11 +83,6 @@
     </view>
 
     <empty-state wx:else title="{{emptyTitle}}" description="{{emptyDescription}}" />
-  </view>
-
-  <view class="create-fab" bindtap="handleCreateTap" hover-class="create-fab--hover">
-    <text class="create-fab__plus">＋</text>
-    <text class="create-fab__text">发布活动</text>
   </view>
 
   <view class="page-tabbar">

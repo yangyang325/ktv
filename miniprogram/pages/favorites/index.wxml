@@ -21,38 +21,18 @@
     </view>
   </view>
 
-  <view class="favorites-tabs">
-    <view
-      wx:for="{{tabs}}"
-      wx:key="key"
-      class="favorites-tabs__item {{currentTab === item.key ? 'favorites-tabs__item--active' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="handleTabTap"
-    >
-      <text>{{item.label}}</text>
-    </view>
-  </view>
-
   <view wx:if="{{showFavoriteParties}}" class="favorites-list">
     <party-card wx:for="{{favoriteParties}}" wx:key="partyId" party="{{item}}" />
   </view>
 
   <view wx:else class="favorites-empty">
     <text class="favorites-empty__title">这里还没有收藏记录</text>
-    <text class="favorites-empty__desc">去发现页逛逛，收藏你感兴趣的活动、歌单或用户。</text>
+    <text class="favorites-empty__desc">去发现页逛逛，收藏你感兴趣的活动。</text>
     <image
       class="favorites-empty__image"
       src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/q4ed2ampkznpsu.png"
       mode="aspectFit"
     />
-  </view>
-
-  <view class="favorites-fab" bindtap="handleDiscoverTap" hover-class="favorites-fab--hover">
-    <view class="favorites-fab__icon">
-      <view class="favorites-fab__bookmark"></view>
-      <text class="favorites-fab__plus">+</text>
-    </view>
-    <text class="favorites-fab__text">去发现</text>
   </view>
 
   <view class="page-tabbar">

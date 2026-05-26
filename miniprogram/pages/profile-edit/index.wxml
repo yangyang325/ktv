@@ -2,10 +2,22 @@
   <scroll-view class="edit-scroll" scroll-y enhanced>
     <view class="edit-content">
       <view class="edit-card">
-        <view class="edit-row edit-row--avatar" bindtap="handleChooseAvatar">
+        <view class="edit-row edit-row--avatar">
           <text class="edit-row__label">头像</text>
           <view class="edit-row__value">
             <image class="edit-avatar" src="{{form.avatarUrl}}" mode="aspectFill" />
+          </view>
+        </view>
+
+        <view class="avatar-options">
+          <view
+            wx:for="{{avatarOptions}}"
+            wx:key="*this"
+            class="avatar-option {{form.avatarUrl === item ? 'avatar-option--active' : ''}}"
+            data-avatar="{{item}}"
+            bindtap="handleAvatarSelect"
+          >
+            <image class="avatar-option__image" src="{{item}}" mode="aspectFill" />
           </view>
         </view>
 
@@ -33,14 +45,6 @@
         </picker>
 
         <view class="edit-row">
-          <text class="edit-row__label">K歌号</text>
-          <view class="edit-row__value">
-            <text class="edit-row__text">{{form.ktvId}}</text>
-            <view class="copy-button" bindtap="handleCopyKtvId"></view>
-          </view>
-        </view>
-
-        <view class="edit-row">
           <text class="edit-row__label">个人简介</text>
           <view class="edit-row__value">
             <input
@@ -52,31 +56,6 @@
             />
           </view>
         </view>
-      </view>
-
-      <view class="edit-card edit-card--compact">
-        <view class="edit-row">
-          <text class="edit-row__label">所在城市</text>
-          <view class="edit-row__value">
-            <input
-              class="edit-row__input"
-              value="{{form.city}}"
-              data-field="city"
-              maxlength="16"
-              bindinput="handleFieldInput"
-            />
-          </view>
-        </view>
-
-        <picker mode="date" value="{{form.birthday}}" end="2026-05-22" bindchange="handleBirthdayChange">
-          <view class="edit-row">
-            <text class="edit-row__label">生日</text>
-            <view class="edit-row__value">
-              <text class="edit-row__text">{{form.birthday}}</text>
-              <text class="edit-row__arrow">›</text>
-            </view>
-          </view>
-        </picker>
       </view>
 
       <button class="save-button" bindtap="handleSave">完成修改</button>

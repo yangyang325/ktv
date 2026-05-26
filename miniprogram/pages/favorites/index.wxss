@@ -49,6 +49,7 @@ page {
 
 .favorites-stats {
   display: flex;
+  flex-wrap: nowrap;
   gap: 12rpx;
   margin-top: 36rpx;
 }
@@ -56,14 +57,15 @@ page {
 .favorites-stats__item {
   display: flex;
   align-items: center;
-  width: 148rpx;
+  width: 214rpx;
   min-width: 0;
   height: 112rpx;
-  padding: 0 12rpx;
+  padding: 0 18rpx;
   border-radius: 18rpx;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 12rpx 24rpx rgba(68, 58, 145, 0.08);
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .favorites-stats__icon {
@@ -84,19 +86,12 @@ page {
   background: linear-gradient(145deg, #8263ff 0%, #5c42eb 100%);
 }
 
-.favorites-stats__icon--blue {
-  background: linear-gradient(145deg, #65bfff 0%, #3d7dff 100%);
-}
-
-.favorites-stats__icon--orange {
-  background: linear-gradient(145deg, #ffaf45 0%, #ff7c36 100%);
-}
-
 .favorites-stats__copy {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   min-width: 0;
   margin-left: 10rpx;
+  white-space: nowrap;
 }
 
 .favorites-stats__label {
@@ -104,10 +99,11 @@ page {
   font-size: 20rpx;
   font-weight: 800;
   line-height: 1.12;
+  white-space: nowrap;
 }
 
 .favorites-stats__value {
-  margin-top: 8rpx;
+  margin-left: 12rpx;
   font-size: 40rpx;
   font-weight: 900;
   line-height: 1;
@@ -115,56 +111,6 @@ page {
 
 .favorites-stats__value--purple {
   color: #6650ff;
-}
-
-.favorites-stats__value--blue {
-  color: #3d85ff;
-}
-
-.favorites-stats__value--orange {
-  color: #ff7a33;
-}
-
-.favorites-tabs {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  height: 86rpx;
-  margin-top: 30rpx;
-  overflow: hidden;
-  border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14rpx 36rpx rgba(45, 49, 96, 0.08);
-}
-
-.favorites-tabs__item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1c2033;
-  font-size: 31rpx;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.favorites-tabs__item--active {
-  color: #6551ff;
-  font-weight: 900;
-}
-
-.favorites-tabs__item--active::after {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 58rpx;
-  height: 8rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(90deg, #8263ff 0%, #5c42eb 100%);
-  box-shadow: 0 8rpx 16rpx rgba(98, 76, 255, 0.26);
-  content: "";
-  transform: translateX(-50%);
 }
 
 .favorites-list {
@@ -207,75 +153,6 @@ page {
   margin-top: 52rpx;
 }
 
-.favorites-fab {
-  position: fixed;
-  z-index: 30;
-  right: 40rpx;
-  bottom: 132rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  width: 122rpx;
-  height: 122rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(145deg, #8467ff 0%, #5b3df0 100%);
-  color: #ffffff;
-  box-shadow: 0 20rpx 34rpx rgba(91, 63, 239, 0.36);
-}
-
-.favorites-fab--hover {
-  transform: translateY(2rpx) scale(0.98);
-}
-
-.favorites-fab__icon {
-  position: relative;
-  width: 48rpx;
-  height: 42rpx;
-}
-
-.favorites-fab__bookmark {
-  position: absolute;
-  left: 2rpx;
-  top: 0;
-  width: 28rpx;
-  height: 36rpx;
-  border: 5rpx solid #ffffff;
-  border-bottom: 0;
-  border-radius: 4rpx 4rpx 0 0;
-}
-
-.favorites-fab__bookmark::after {
-  position: absolute;
-  left: -5rpx;
-  bottom: -13rpx;
-  width: 28rpx;
-  height: 26rpx;
-  border-right: 5rpx solid #ffffff;
-  border-bottom: 5rpx solid #ffffff;
-  content: "";
-  transform: rotate(45deg);
-  transform-origin: left bottom;
-}
-
-.favorites-fab__plus {
-  position: absolute;
-  top: -12rpx;
-  right: 0;
-  color: #ffffff;
-  font-size: 36rpx;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.favorites-fab__text {
-  margin-top: 8rpx;
-  color: #ffffff;
-  font-size: 25rpx;
-  font-weight: 900;
-  line-height: 1;
-}
-
 .page-tabbar {
   position: fixed;
   z-index: 20;
@@ -283,7 +160,7 @@ page {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   height: 112rpx;
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1rpx solid rgba(226, 229, 238, 0.88);
@@ -297,13 +174,13 @@ page {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  color: #7f879a;
+  color: #848ba0;
   font-size: 22rpx;
   font-weight: 600;
 }
 
 .page-tabbar__item--active {
-  color: #6250ff;
+  color: #6048ff;
   font-weight: 900;
 }
 

@@ -11,195 +11,364 @@ import {
 } from "../services/api/party";
 import {
   getFavoriteParties,
-  getFavoritePartyIds,
   isPartyFavorited,
-  removeFavoriteParty,
   togglePartyFavorite
 } from "../services/api/favorite";
+import { getNotificationList, markNotificationRead } from "../services/api/notify";
 import { unwrapCloudResult } from "../services/api/cloud";
 import {
   buildTencentMapReverseGeocoderUrl,
   reverseGeocodeCity
 } from "../services/api/location";
 import { uploadPartyCover } from "../services/api/upload";
-import { PARTY_DEFAULT_COVER_IMAGES } from "../constants/assets";
-import * as userApi from "../services/api/user";
-import { getCurrentUser } from "../services/api/user";
+import {
+  getCurrentUser,
+  getCurrentUserWithWechatProfile,
+  getUserById,
+  updateCurrentUser
+} from "../services/api/user";
 import { locationConfig, serviceConfig } from "../services/config";
 
-const initialServiceConfig = { ...serviceConfig };
+const defaultProfileAvatarUrl =
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/tkojc1mplzroo1.png";
 
-/**
- * 切换服务测试到本地模拟数据源。
- */
-function useMockDataSource() {
-  serviceConfig.dataSource = "mock";
+interface CloudCall {
+  name: string;
+  data: {
+    action: string;
+    payload: Record<string, unknown>;
+  };
 }
 
-test("首页列表返回可展示的局数据", async () => {
-  useMockDataSource();
+const originalWx = (globalThis as typeof globalThis & { wx?: unknown }).wx;
+const sampleParty = {
+  partyId: "party-cloud-001",
+  title: "云端真实活动",
+  venueId: "venue-cloud-001",
+  venueCustom: "",
+  hostId: "user-cloud-host",
+  startTime: "2026-05-23T19:30:00+08:00",
+  durationMin: 180,
+  roomFee: 240000,
+  maxCapacity: 8,
+  status: "recruiting",
+  isPublic: true,
+  notes: "",
+  tags: ["流行"],
+  coverImage: "cloud://party-cover-file",
+  createdAt: "2026-05-20T10:00:00+08:00",
+  confirmedCount: 1,
+  waitlistCount: 0,
+  estimatedPerPerson: 30000,
+  hostSummary: "云端用户",
+  venueSummary: "真实KTV",
+  venueAddress: "深圳市南山区真实地址",
+  progressText: "1 / 8",
+  statusText: "报名中",
+  priceText: "¥300/人",
+  timeSummary: "05-23 周六 19:30 · 3小时",
+  participantAvatars: []
+};
 
-  const parties = await getPartyList();
-  assert.equal(Array.isArray(parties), true);
-  assert.equal(parties.length > 0, true);
-  assert.equal(typeof parties[0].estimatedPerPerson, "number");
-  assert.deepEqual(
-    parties[0].participantAvatars.map((item) => item.avatarUrl),
-    [
-      "https://example.com/avatar-host.png",
-      "https://example.com/avatar-aming.png",
-      "https://example.com/avatar-xiaoqiu.png"
-    ]
-  );
-});
+/**
+ * 安装云函数调用桩。
+ * @param resolver 云函数响应生成器
+ * @returns 调用记录和清理函数
+ */
+function installCloudCallMock(resolver: (call: CloudCall) => unknown) {
+  const calls: CloudCall[] = [];
+  (globalThis as typeof globalThis & { wx?: unknown }).wx = {
+    cloud: {
+      callFunction: async (options: CloudCall) => {
+        calls.push(options);
+        return {
+          result: {
+            ok: true,
+            data: resolver(options),
+            message: "success"
+          }
+        };
+      }
+    }
+  };
 
-test("首页局卡片使用线上封面图", async () => {
-  useMockDataSource();
+  return {
+    calls,
+    restore() {
+      (globalThis as typeof globalThis & { wx?: unknown }).wx = originalWx;
+    }
+  };
+}
 
-  const parties = await getPartyList();
-  const coverImage = parties[0].coverImage;
-  assert.equal(
-    coverImage,
-    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/yqgl5umpgadjkt.jpg"
-  );
-  assert.equal(parties.every((party) => party.coverImage.startsWith("https://wechatapppro-1252524126.cdn.xiaoeknow.com/")), true);
-  assert.equal(parties.some((party) => party.coverImage.includes("/assets/images/ktv/ktv-room-")), false);
-});
-
-test("我的局聚合视图包含四个分组", async () => {
-  useMockDataSource();
-
-  const tabs = await getMyPartyTabs("user-host");
-  assert.deepEqual(Object.keys(tabs), ["hosting", "joined", "waitlist", "history"]);
-});
-
-test("mock 当前用户返回真实用户资料", async () => {
-  useMockDataSource();
-
-  const user = await getCurrentUser();
-  assert.equal(user.nickname, "羊羊");
-  assert.equal(user.avatarUrl, "https://example.com/avatar-host.png");
-});
-
-test("mock 当前用户资料更新后再次读取到编辑结果", async () => {
-  useMockDataSource();
-  const updateCurrentUser = (userApi as typeof userApi & {
-    updateCurrentUser?: (profile: {
-      avatarUrl?: string;
-      intro?: string;
-      nickname?: string;
-    }) => Promise<{ avatarUrl: string; intro?: string; nickname: string }>;
-  }).updateCurrentUser;
-
-  assert.equal(typeof updateCurrentUser, "function");
-
-  await updateCurrentUser({
-    nickname: "羊羊新版",
-    avatarUrl: "temp/profile-avatar.png",
-    intro: "喜欢粤语老歌"
-  });
-  const user = await getCurrentUser();
-
-  assert.equal(user.nickname, "羊羊新版");
-  assert.equal(user.avatarUrl, "temp/profile-avatar.png");
-  assert.equal((user as typeof user & { intro?: string }).intro, "喜欢粤语老歌");
-});
-
-test("局详情能返回报名与候补人数", async () => {
-  useMockDataSource();
-
-  const detail = await getPartyDetail("party-001");
-  assert.equal(detail.party.partyId, "party-001");
-  assert.equal(detail.confirmedEntries.length > 0, true);
-  assert.equal(detail.party.venueAddress, "深圳市南山区海岸城东座 3 楼");
-  assert.equal(detail.party.venueLatitude, 22.53);
-  assert.equal(detail.party.venueLongitude, 113.934);
-});
-
-test("活动收藏服务支持收藏取消并返回收藏活动", async () => {
-  useMockDataSource();
-  removeFavoriteParty("party-001");
-
-  assert.equal(isPartyFavorited("party-001"), false);
-  assert.equal(togglePartyFavorite("party-001"), true);
-  assert.equal(isPartyFavorited("party-001"), true);
-  assert.equal(getFavoritePartyIds()[0], "party-001");
-
-  const favoriteParties = await getFavoriteParties();
-  assert.equal(favoriteParties.some((party) => party.partyId === "party-001"), true);
-
-  assert.equal(togglePartyFavorite("party-001"), false);
-  assert.equal(isPartyFavorited("party-001"), false);
-});
-
-test("发起流程可以创建并发布草稿", async () => {
-  useMockDataSource();
-
-  const draft = await createPartyDraft({
-    title: "羊羊周六 K 局",
-    venueId: "venue-001",
-    venueSummary: "MUSE KTV · 南山区",
-    startDate: "2026-04-27",
-    startTime: "19:30",
-    durationMin: 180,
-    roomFee: 240000,
-    maxCapacity: 12,
-    notes: "欢迎新人，不限歌路。",
-    tags: ["欢迎新人"],
-    venueAddress: "深圳市南山区海岸城东座 3 楼",
-    venueLatitude: 22.53,
-    venueLongitude: 113.934
-  });
-  const published = await publishParty(draft.partyId);
-  assert.equal(published.status, "recruiting");
-  assert.equal(published.venueLatitude, 22.53);
-  assert.equal(published.venueLongitude, 113.934);
-});
-
-test("未上传封面时本地草稿随机使用默认封面池", async () => {
-  useMockDataSource();
-  const originalRandom = Math.random;
-  Math.random = () => 0.99;
+test("首页列表从云端活动接口读取真实数据", async () => {
+  const cloud = installCloudCallMock(() => [sampleParty]);
 
   try {
-    const draft = await createPartyDraft({
-      title: "羊羊默认封面 K 局",
-      venueId: "venue-001",
-      venueSummary: "MUSE KTV · 南山",
-      startDate: "2026-04-28",
-      startTime: "20:00",
-      durationMin: 180,
-      roomFee: 240000,
-      maxCapacity: 10,
-      notes: "测试默认封面",
-      tags: ["欢迎新人"]
-    });
+    const parties = await getPartyList();
 
-    assert.deepEqual(PARTY_DEFAULT_COVER_IMAGES, [
-      "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/l2qwjsmpgadjl5.jpg",
-      "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/yqgl5umpgadjkt.jpg",
-      "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/r9yyqgmpgadjl8.jpg"
-    ]);
-    assert.equal(draft.coverImage, PARTY_DEFAULT_COVER_IMAGES[2]);
+    assert.deepEqual(parties, [sampleParty]);
+    assert.deepEqual(cloud.calls.map((call) => `${call.name}.${call.data.action}`), ["party.list"]);
   } finally {
-    Math.random = originalRandom;
+    cloud.restore();
   }
 });
 
-test("报名满员后进入候补", async () => {
-  useMockDataSource();
+test("活动详情和收藏列表读取云端收藏数据", async () => {
+  let favoriteState = false;
+  const cloud = installCloudCallMock((call) => {
+    if (call.data.action === "detail") {
+      return {
+        party: sampleParty,
+        host: { userId: "user-cloud-host", nickname: "云端用户", avatarUrl: "", createdAt: "" },
+        confirmedEntries: [],
+        waitlistEntries: [],
+        viewerEntry: null,
+        canViewContacts: false
+      };
+    }
 
+    if (call.data.action === "favoriteStatus") {
+      return { partyId: call.data.payload.partyId, isFavorited: favoriteState };
+    }
+
+    if (call.data.action === "favoriteToggle") {
+      favoriteState = !favoriteState;
+      return { partyId: call.data.payload.partyId, isFavorited: favoriteState };
+    }
+
+    if (call.data.action === "favoriteList") {
+      return favoriteState ? [sampleParty] : [];
+    }
+
+    return {};
+  });
+
+  try {
+    const detail = await getPartyDetail(sampleParty.partyId);
+    assert.equal(detail.party.partyId, sampleParty.partyId);
+    assert.equal(await isPartyFavorited(sampleParty.partyId), false);
+    assert.equal(await togglePartyFavorite(sampleParty.partyId), true);
+    assert.equal(await isPartyFavorited(sampleParty.partyId), true);
+
+    const favoriteParties = await getFavoriteParties();
+    assert.equal(favoriteParties[0].partyId, sampleParty.partyId);
+    assert.deepEqual(
+      cloud.calls.map((call) => `${call.name}.${call.data.action}`),
+      [
+        "party.detail",
+        "party.favoriteStatus",
+        "party.favoriteToggle",
+        "party.favoriteStatus",
+        "party.favoriteList"
+      ]
+    );
+    assert.equal(
+      cloud.calls
+        .filter((call) => call.data.action !== "favoriteList")
+        .every((call) => call.data.payload.partyId === sampleParty.partyId),
+      true
+    );
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("当前用户活动聚合不向云端传 mock 用户 ID", async () => {
+  const cloud = installCloudCallMock(() => ({
+    hosting: [],
+    joined: [],
+    waitlist: [],
+    history: []
+  }));
+
+  try {
+    const tabs = await getMyPartyTabs();
+    assert.deepEqual(Object.keys(tabs), ["hosting", "joined", "waitlist", "history"]);
+    assert.deepEqual(cloud.calls[0].data.payload, {});
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("发起报名候补流程只提交云端真实载荷", async () => {
+  const cloud = installCloudCallMock((call) => {
+    if (call.name === "entry") {
+      return {
+        entryId: "entry-cloud-001",
+        partyId: call.data.payload.partyId,
+        userId: "user-cloud-current",
+        userNickname: "云端用户",
+        entryType: call.data.action === "waitlist" ? "waitlist" : "confirmed",
+        seqNo: 1,
+        waitlistNo: call.data.action === "waitlist" ? 1 : null,
+        createdAt: "",
+        confirmedAt: ""
+      };
+    }
+
+    return sampleParty;
+  });
   const contactInfo = {
     method: "wechat" as const,
-    value: "aming-sing",
+    value: "real-wechat",
     arrivalTime: "19:20",
     note: "到店后等群通知"
   };
-  const joined = await joinParty("party-002", "user-guest-1", contactInfo);
-  assert.equal(joined.entryType, "confirmed");
-  assert.deepEqual(joined.contactInfo, contactInfo);
-  const waitlist = await joinWaitlist("party-003", "user-guest-2");
-  assert.equal(waitlist.entryType, "waitlist");
+
+  try {
+    await createPartyDraft({
+      title: "云端测试活动",
+      venueId: "venue-cloud-001",
+      venueSummary: "真实KTV",
+      startDate: "2026-05-23",
+      startTime: "19:30",
+      durationMin: 180,
+      roomFee: 240000,
+      maxCapacity: 8,
+      notes: "",
+      tags: [],
+      coverImage: "cloud://party-cover-file",
+      venueAddress: "深圳市南山区真实地址",
+      venueLatitude: 22.53,
+      venueLongitude: 113.934
+    });
+    await publishParty(sampleParty.partyId);
+    await joinParty(sampleParty.partyId, contactInfo);
+    await joinWaitlist(sampleParty.partyId);
+
+    assert.deepEqual(
+      cloud.calls.map((call) => `${call.name}.${call.data.action}`),
+      ["party.createDraft", "party.publish", "entry.join", "entry.waitlist"]
+    );
+    assert.equal(cloud.calls.some((call) => "userId" in call.data.payload), false);
+    assert.deepEqual(cloud.calls.find((call) => call.data.action === "join")?.data.payload.contactInfo, contactInfo);
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("当前用户资料从云端登录接口读取并保存", async () => {
+  const cloud = installCloudCallMock((call) => ({
+    user: {
+      userId: "user-cloud-current",
+      nickname: (call.data.payload.nickname as string) || "微信用户",
+      avatarUrl: (call.data.payload.avatarUrl as string) || defaultProfileAvatarUrl,
+      gender: (call.data.payload.gender as string) || "保密",
+      intro: (call.data.payload.intro as string) || "记录深圳K歌兴趣活动",
+      createdAt: "2026-05-20T10:00:00+08:00"
+    }
+  }));
+
+  try {
+    const user = await getCurrentUser();
+    assert.equal(user.nickname, "微信用户");
+
+    const updated = await updateCurrentUser({
+      nickname: "真实昵称",
+      avatarUrl: defaultProfileAvatarUrl,
+      gender: "女",
+      intro: "喜欢粤语老歌"
+    });
+    assert.equal(updated.nickname, "真实昵称");
+    assert.equal(updated.avatarUrl, defaultProfileAvatarUrl);
+    assert.equal(updated.gender, "女");
+    assert.equal(updated.intro, "喜欢粤语老歌");
+    assert.deepEqual(
+      cloud.calls.map((call) => call.data.payload),
+      [{}, { nickname: "真实昵称", avatarUrl: defaultProfileAvatarUrl, gender: "女", intro: "喜欢粤语老歌" }]
+    );
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("我的页首次登录会同步微信头像昵称", async () => {
+  const wechatAvatarUrl = "https://example.com/wechat-avatar.png";
+  const cloud = installCloudCallMock((call) => {
+    if (call.data.action === "profile") {
+      return null;
+    }
+
+    return {
+      user: {
+        userId: "user-cloud-current",
+        nickname: (call.data.payload.nickname as string) || "微信用户",
+        avatarUrl: (call.data.payload.avatarUrl as string) || defaultProfileAvatarUrl,
+        gender: "保密",
+        intro: "记录深圳K歌兴趣活动",
+        createdAt: "2026-05-20T10:00:00+08:00"
+      }
+    };
+  });
+  (globalThis as typeof globalThis & {
+    wx?: {
+      getUserProfile?: (options: { desc: string }) => Promise<{ userInfo: { nickName: string; avatarUrl: string } }>;
+    };
+  }).wx = {
+    ...(globalThis as typeof globalThis & { wx?: object }).wx,
+    getUserProfile: async () => ({
+      userInfo: {
+        nickName: "羊羊",
+        avatarUrl: wechatAvatarUrl
+      }
+    })
+  };
+
+  try {
+    const existingUser = await getUserById();
+    const currentUser = await getCurrentUserWithWechatProfile();
+
+    assert.equal(existingUser, null);
+    assert.equal(currentUser.nickname, "羊羊");
+    assert.equal(currentUser.avatarUrl, wechatAvatarUrl);
+    assert.deepEqual(
+      cloud.calls.map((call) => `${call.name}.${call.data.action}`),
+      ["auth.profile", "auth.profile", "auth.login"]
+    );
+    assert.deepEqual(cloud.calls[2].data.payload, {
+      nickname: "羊羊",
+      avatarUrl: wechatAvatarUrl
+    });
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("通知列表从云端通知接口读取", async () => {
+  const cloud = installCloudCallMock((call) => {
+    if (call.data.action === "markRead") {
+      return {
+        notificationId: call.data.payload.notificationId,
+        read: true
+      };
+    }
+
+    return [
+      {
+        notificationId: "notification-cloud-001",
+        userId: "user-cloud-current",
+        type: "system",
+        title: "活动通知",
+        content: "报名已确认",
+        read: false,
+        createdAt: "2026-05-20T10:00:00+08:00"
+      }
+    ];
+  });
+
+  try {
+    const notifications = await getNotificationList();
+    const readNotification = await markNotificationRead("notification-cloud-001");
+
+    assert.equal(notifications[0].title, "活动通知");
+    assert.equal(readNotification.read, true);
+    assert.deepEqual(
+      cloud.calls.map((call) => `${call.name}.${call.data.action}`),
+      ["notify.list", "notify.markRead"]
+    );
+  } finally {
+    cloud.restore();
+  }
 });
 
 test("云端响应解包成功时返回 data", () => {
@@ -228,18 +397,8 @@ test("云端响应失败时抛出带 code 的错误", () => {
   );
 });
 
-test("mock 模式上传组局封面返回本地临时路径", async () => {
-  serviceConfig.dataSource = "mock";
-
-  const filePath = await uploadPartyCover("temp/party-cover.png");
-
-  assert.equal(filePath, "temp/party-cover.png");
-});
-
-test("cloud 模式上传组局封面返回云存储 fileID", async () => {
+test("上传组局封面返回云存储 fileID", async () => {
   const calls: Array<{ cloudPath: string; filePath: string }> = [];
-  const originalWx = (globalThis as typeof globalThis & { wx?: unknown }).wx;
-  serviceConfig.dataSource = "cloud";
   (globalThis as typeof globalThis & { wx?: unknown }).wx = {
     cloud: {
       uploadFile: async (options: { cloudPath: string; filePath: string }) => {
@@ -258,89 +417,17 @@ test("cloud 模式上传组局封面返回云存储 fileID", async () => {
     assert.equal(calls[0].filePath, "tmp/cover.JPG");
     assert.match(calls[0].cloudPath, /^party-covers\/\d+-[a-z0-9]+\.jpg$/);
   } finally {
-    serviceConfig.dataSource = "mock";
     (globalThis as typeof globalThis & { wx?: unknown }).wx = originalWx;
   }
 });
 
-test("服务配置已切到云端模式", () => {
-  assert.equal(initialServiceConfig.dataSource, "cloud");
-  assert.equal(Boolean(initialServiceConfig.cloudEnvId), true);
-});
-
-test("云端受保护服务不转发 mock 用户 ID", async () => {
-  const calls: Array<{ name: string; data: { action: string; payload: Record<string, unknown> } }> = [];
-  const originalWx = (globalThis as typeof globalThis & { wx?: unknown }).wx;
-  serviceConfig.dataSource = "cloud";
-  (globalThis as typeof globalThis & { wx?: unknown }).wx = {
-    cloud: {
-      callFunction: async (options: { name: string; data: { action: string; payload: Record<string, unknown> } }) => {
-        calls.push(options);
-        return {
-          result: {
-            ok: true,
-            data: {},
-            message: "success"
-          }
-        };
-      }
-    }
-  };
-
-  try {
-    await getMyPartyTabs("user-host");
-    await createPartyDraft({
-      title: "云端测试局",
-      venueId: "venue-001",
-      venueSummary: "MUSE KTV · 南山",
-      startDate: "2026-05-23",
-      startTime: "19:30",
-      durationMin: 180,
-      roomFee: 240000,
-      maxCapacity: 12,
-      notes: "测试",
-      tags: [],
-      coverImage: "cloud://party-cover-file",
-      venueAddress: "深圳市南山区测试地址",
-      venueLatitude: 22.53,
-      venueLongitude: 113.934
-    });
-    await joinParty("party-001", "user-guest-1", {
-      method: "wechat",
-      value: "aming-sing",
-      arrivalTime: "19:20",
-      note: "到店后等群通知"
-    });
-    await joinWaitlist("party-001", "user-wait-1");
-  } finally {
-    serviceConfig.dataSource = "mock";
-    (globalThis as typeof globalThis & { wx?: unknown }).wx = originalWx;
-  }
-
-  assert.deepEqual(
-    calls.map((call) => call.data.action),
-    ["myTabs", "createDraft", "join", "waitlist"]
-  );
-  assert.equal(calls.some((call) => "userId" in call.data.payload), false);
-  assert.equal(
-    calls.find((call) => call.data.action === "createDraft")?.data.payload.coverImage,
-    "cloud://party-cover-file"
-  );
-  assert.equal(
-    calls.find((call) => call.data.action === "createDraft")?.data.payload.venueLatitude,
-    22.53
-  );
-  assert.deepEqual(calls.find((call) => call.data.action === "join")?.data.payload.contactInfo, {
-    method: "wechat",
-    value: "aming-sing",
-    arrivalTime: "19:20",
-    note: "到店后等群通知"
-  });
+test("服务配置固定为云端真实数据源", () => {
+  assert.equal(serviceConfig.dataSource, "cloud");
+  assert.equal(Boolean(serviceConfig.cloudEnvId), true);
 });
 
 test("腾讯地图逆地址解析城市时只需要经纬度", async () => {
   const calls: Array<{ url: string; method?: string }> = [];
-  const originalWx = (globalThis as typeof globalThis & { wx?: unknown }).wx;
   const originalMapKey = locationConfig.tencentMapKey;
   locationConfig.tencentMapKey = "map-key";
   (globalThis as typeof globalThis & { wx?: unknown }).wx = {

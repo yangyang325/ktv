@@ -1,4 +1,4 @@
-import { DEFAULT_CITY_NAME } from "../../constants/location";
+import { DEFAULT_PROFILE_AVATAR_IMAGES, selectRandomProfileAvatarImage } from "../../constants/assets";
 import { getCurrentUser, updateCurrentUser } from "../../services/api/user";
 import type { User } from "../../types/user";
 
@@ -6,10 +6,7 @@ interface ProfileForm {
   avatarUrl: string;
   nickname: string;
   gender: string;
-  ktvId: string;
   intro: string;
-  city: string;
-  birthday: string;
 }
 
 interface FieldInputEvent extends WechatMiniprogram.Input {
@@ -26,30 +23,35 @@ interface PickerChangeEvent extends WechatMiniprogram.BaseEvent {
   };
 }
 
+interface AvatarSelectEvent extends WechatMiniprogram.BaseEvent {
+  currentTarget: WechatMiniprogram.Target & {
+    dataset: {
+      avatar?: string;
+    };
+  };
+}
+
 type ProfileEditUser = User & {
   intro?: string;
 };
 
 Page({
   data: {
+    avatarOptions: DEFAULT_PROFILE_AVATAR_IMAGES,
     genderOptions: ["女", "男", "保密"],
     genderIndex: 0,
     form: {
-      avatarUrl: "/assets/images/ktv/profile-avatar.svg",
+      avatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES[0],
       nickname: "微信用户",
-      gender: "女",
-      ktvId: "888888",
-      intro: "记录深圳K歌兴趣活动",
-      city: DEFAULT_CITY_NAME,
-      birthday: "1995-06-18"
+      gender: "保密",
+      intro: "记录深圳K歌兴趣活动"
     } as ProfileForm
   },
 
   /**
-   * 页面加载时读取本地资料。
+   * 页面加载时读取云端资料。
    */
   async onLoad() {
-    const savedProfile = wx.getStorageSync("profileEditForm") as Partial<ProfileForm> | undefined;
     let currentUser: User | null = null;
 
     try {
@@ -58,7 +60,7 @@ Page({
       currentUser = null;
     }
 
-    const form = createProfileForm(this.data.form, currentUser, savedProfile);
+    const form = createProfileForm(this.data.form, currentUser);
 
     this.setData({
       form,
@@ -67,32 +69,18 @@ Page({
   },
 
   /**
-   * 选择头像图片。
+   * 选择默认头像。
+   * @param event 点击事件
    */
-  async handleChooseAvatar() {
-    try {
-      const result = await wx.chooseMedia({
-        count: 1,
-        mediaType: ["image"],
-        sourceType: ["album", "camera"],
-        sizeType: ["compressed"]
-      });
-      const tempFilePath = result.tempFiles[0]?.tempFilePath;
-
-      if (tempFilePath) {
-        this.setData({
-          "form.avatarUrl": tempFilePath
-        });
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (!message.includes("cancel")) {
-        wx.showToast({
-          title: "未选择头像",
-          icon: "none"
-        });
-      }
+  handleAvatarSelect(event: AvatarSelectEvent) {
+    const avatarUrl = event.currentTarget.dataset.avatar;
+    if (!avatarUrl || avatarUrl === this.data.form.avatarUrl) {
+      return;
     }
+
+    this.setData({
+      "form.avatarUrl": avatarUrl
+    });
   },
 
   /**
@@ -128,31 +116,12 @@ Page({
   },
 
   /**
-   * 更新生日。
-   * @param event 日期选择事件
-   */
-  handleBirthdayChange(event: WechatMiniprogram.BaseEvent & { detail: { value: string } }) {
-    this.setData({
-      "form.birthday": event.detail.value
-    });
-  },
-
-  /**
-   * 复制 K 歌号。
-   */
-  handleCopyKtvId() {
-    wx.setClipboardData({
-      data: this.data.form.ktvId
-    });
-  },
-
-  /**
    * 保存编辑资料。
    */
   async handleSave() {
     try {
-      wx.setStorageSync("profileEditForm", this.data.form);
-      await updateCurrentUser(this.data.form);
+      const updatedUser = await updateCurrentUser(this.data.form);
+      notifyPreviousProfilePage(updatedUser);
       wx.showToast({
         title: "保存成功",
         icon: "success"
@@ -170,16 +139,36 @@ Page({
 });
 
 /**
+ * 通知上一页即时更新资料展示。
+ * @param updatedUser 云端保存后的用户资料
+ */
+function notifyPreviousProfilePage(updatedUser: User) {
+  const pages = getCurrentPages();
+  const previousPage = pages[pages.length - 2] as
+    | {
+        applyUpdatedProfile?: (currentUser: User) => void;
+        refreshProfileData?: () => Promise<void>;
+      }
+    | undefined;
+
+  if (previousPage?.applyUpdatedProfile) {
+    previousPage.applyUpdatedProfile(updatedUser);
+  }
+
+  if (previousPage?.refreshProfileData) {
+    void previousPage.refreshProfileData();
+  }
+}
+
+/**
  * 创建编辑资料表单。
  * @param defaultForm 默认表单
  * @param currentUser 当前用户
- * @param savedProfile 本地保存资料
  * @returns 编辑资料表单
  */
 function createProfileForm(
   defaultForm: ProfileForm,
-  currentUser: User | null,
-  savedProfile?: Partial<ProfileForm>
+  currentUser: User | null
 ): ProfileForm {
   const profileUser = currentUser as ProfileEditUser | null;
 
@@ -187,11 +176,13 @@ function createProfileForm(
     ...defaultForm,
     ...(currentUser
       ? {
-          avatarUrl: currentUser.avatarUrl || defaultForm.avatarUrl,
+          avatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES.includes(currentUser.avatarUrl as typeof DEFAULT_PROFILE_AVATAR_IMAGES[number])
+            ? currentUser.avatarUrl
+            : selectRandomProfileAvatarImage(),
           nickname: currentUser.nickname || defaultForm.nickname,
+          gender: profileUser?.gender || defaultForm.gender,
           intro: profileUser?.intro || defaultForm.intro
         }
-      : {}),
-    ...(savedProfile || {})
+      : {})
   };
 }

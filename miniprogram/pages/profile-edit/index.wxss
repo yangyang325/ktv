@@ -26,10 +26,6 @@
   box-sizing: border-box;
 }
 
-.edit-card--compact {
-  margin-bottom: 22rpx;
-}
-
 .edit-row {
   display: flex;
   align-items: center;
@@ -45,7 +41,8 @@
 .edit-row + .edit-row,
 picker + picker .edit-row,
 picker + .edit-row,
-.edit-row + picker .edit-row {
+.edit-row + picker .edit-row,
+.avatar-options + .edit-row {
   border-top: 1rpx solid #edf0f8;
 }
 
@@ -109,33 +106,35 @@ picker + .edit-row,
   background: #f0f2fb;
 }
 
-.copy-button {
-  position: relative;
-  width: 34rpx;
-  height: 34rpx;
-  flex: 0 0 34rpx;
+.avatar-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18rpx;
+  padding: 0 0 28rpx 154rpx;
+  box-sizing: border-box;
 }
 
-.copy-button::before,
-.copy-button::after {
-  position: absolute;
-  width: 18rpx;
-  height: 22rpx;
-  border: 3rpx solid #7e8498;
-  border-radius: 4rpx;
-  content: "";
+.avatar-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border: 3rpx solid transparent;
+  border-radius: 50%;
+  background: #f4f6ff;
+  box-sizing: border-box;
 }
 
-.copy-button::before {
-  right: 2rpx;
-  bottom: 2rpx;
-  background: #ffffff;
+.avatar-option--active {
+  border-color: #6048ff;
+  box-shadow: 0 8rpx 18rpx rgba(96, 72, 255, 0.18);
 }
 
-.copy-button::after {
-  top: 2rpx;
-  left: 2rpx;
-  opacity: 0.72;
+.avatar-option__image {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
 }
 
 .save-button {

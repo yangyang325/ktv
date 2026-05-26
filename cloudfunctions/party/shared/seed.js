@@ -8,6 +8,8 @@ const seedData = {
       openid: "openid-host",
       nickname: "羊羊",
       avatarUrl: "https://example.com/avatar-host.png",
+      gender: "保密",
+      intro: "记录深圳K歌兴趣活动",
       createdAt: "2026-04-20T12:00:00.000Z",
       updatedAt: "2026-04-20T12:00:00.000Z"
     },
@@ -16,6 +18,8 @@ const seedData = {
       openid: "openid-guest-1",
       nickname: "阿明",
       avatarUrl: "https://example.com/avatar-aming.png",
+      gender: "保密",
+      intro: "",
       createdAt: "2026-04-20T12:05:00.000Z",
       updatedAt: "2026-04-20T12:05:00.000Z"
     },
@@ -24,6 +28,8 @@ const seedData = {
       openid: "openid-guest-2",
       nickname: "小秋",
       avatarUrl: "https://example.com/avatar-xiaoqiu.png",
+      gender: "保密",
+      intro: "",
       createdAt: "2026-04-20T12:10:00.000Z",
       updatedAt: "2026-04-20T12:10:00.000Z"
     },
@@ -32,6 +38,8 @@ const seedData = {
       openid: "openid-guest-3",
       nickname: "阿哲",
       avatarUrl: "https://example.com/avatar-azhe.png",
+      gender: "保密",
+      intro: "",
       createdAt: "2026-04-20T12:15:00.000Z",
       updatedAt: "2026-04-20T12:15:00.000Z"
     },
@@ -40,6 +48,8 @@ const seedData = {
       openid: "openid-wait-1",
       nickname: "晓峰",
       avatarUrl: "https://example.com/avatar-xiaofeng.png",
+      gender: "保密",
+      intro: "",
       createdAt: "2026-04-20T12:20:00.000Z",
       updatedAt: "2026-04-20T12:20:00.000Z"
     }
@@ -245,7 +255,8 @@ const seedData = {
       confirmedAt: null
     }
   ],
-  notifications: []
+  notifications: [],
+  favorites: []
 };
 
 /**

@@ -38,6 +38,31 @@
   z-index: 1;
 }
 
+.messages-empty {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  margin-top: 90rpx;
+  flex-direction: column;
+  text-align: center;
+}
+
+.messages-empty__title {
+  color: #202235;
+  font-size: 32rpx;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.messages-empty__desc {
+  width: 520rpx;
+  margin-top: 18rpx;
+  color: #7f879a;
+  font-size: 25rpx;
+  line-height: 1.7;
+}
+
 .messages-nav {
   display: flex;
   align-items: center;

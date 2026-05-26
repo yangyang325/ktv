@@ -87,7 +87,7 @@
   line-height: 1.25;
 }
 
-.confirm-meta-row text {
+.confirm-meta-row__text {
   display: block;
   overflow: hidden;
   min-width: 0;
@@ -95,7 +95,7 @@
   white-space: nowrap;
 }
 
-.confirm-meta-row--time text {
+.confirm-meta-row--time .confirm-meta-row__text {
   width: 112%;
   transform: scale(0.9);
   transform-origin: left center;
@@ -176,10 +176,37 @@
   position: absolute;
   top: 38rpx;
   right: 42rpx;
-  color: #17a74b;
+  color: #252938;
   font-size: 34rpx;
   font-weight: 800;
   line-height: 1;
+}
+
+.confirm-capacity__current {
+  color: #6048ff;
+  font-weight: 900;
+}
+
+.confirm-capacity__separator {
+  color: #252938;
+  font-weight: 800;
+}
+
+.confirm-capacity__total {
+  color: #252938;
+  font-weight: 800;
+}
+
+.confirm-capacity__current--full {
+  color: #ff982b;
+}
+
+.confirm-capacity__separator--full {
+  color: #ff982b;
+}
+
+.confirm-capacity__total--full {
+  color: #ff982b;
 }
 
 .confirm-section-card__desc {

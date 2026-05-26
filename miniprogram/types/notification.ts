@@ -1,9 +1,15 @@
 /**
- * 通知事件占位模型。
+ * 通知记录。
  */
-export interface NotifyEvent {
-  eventId: string;
-  partyId: string;
-  type: "waitlist-promoted" | "party-updated" | "party-cancelled";
+export interface Notification {
+  notificationId: string;
+  userId: string;
+  type: string;
+  title: string;
+  content: string;
+  partyId?: string;
+  entryId?: string;
+  read: boolean;
   createdAt: string;
+  readAt?: string | null;
 }

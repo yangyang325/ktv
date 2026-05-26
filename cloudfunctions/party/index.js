@@ -1,3 +1,5 @@
+const crypto = require("node:crypto");
+
 const { AppError, ERROR_CODES, assertRequired, assertCondition } = require("./shared/errors");
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
@@ -13,6 +15,15 @@ const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
  */
 function createId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * 根据 openid 构建稳定用户 ID。
+ * @param {string} openid 微信 openid
+ * @returns {string} 用户 ID
+ */
+function buildUserId(openid) {
+  return `user-${crypto.createHash("sha256").update(openid).digest("hex").slice(0, 24)}`;
 }
 
 /**
@@ -72,6 +83,33 @@ async function findAuthenticatedUser(runtime) {
 }
 
 /**
+ * 确保收藏动作有当前登录用户资料。
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean, now: Function }} runtime 云函数运行时
+ * @returns {Promise<object>} 当前用户
+ */
+async function ensureFavoriteUser(runtime) {
+  const currentUser = await findAuthenticatedUser(runtime);
+
+  if (currentUser) {
+    return currentUser;
+  }
+
+  if (!runtime.hasExplicitOpenid) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "请先登录");
+  }
+
+  const timestamp = runtime.now();
+  return runtime.store.insert("users", {
+    userId: buildUserId(runtime.openid),
+    openid: runtime.openid,
+    nickname: "微信用户",
+    avatarUrl: "",
+    createdAt: timestamp,
+    updatedAt: timestamp
+  });
+}
+
+/**
  * 校验兼容传入的用户 ID 与登录身份一致。
  * @param {object} currentUser 当前登录用户
  * @param {string | undefined} userId 兼容传入的用户 ID
@@ -79,6 +117,35 @@ async function findAuthenticatedUser(runtime) {
 function assertPayloadUserMatches(currentUser, userId) {
   if (userId && userId !== currentUser.userId) {
     throw new AppError(ERROR_CODES.UNAUTHORIZED, "登录身份与用户不匹配");
+  }
+}
+
+/**
+ * 查询可收藏的活动。
+ * @param {string} partyId 活动 ID
+ * @param {{ store: object }} runtime 云函数运行时
+ * @returns {Promise<object>} 活动数据
+ */
+async function findFavoriteParty(partyId, runtime) {
+  assertRequired(partyId, "partyId", "请选择收藏活动");
+
+  const party = await runtime.store.findOne("parties", { partyId });
+
+  if (!party) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, "活动不存在");
+  }
+
+  return party;
+}
+
+/**
+ * 校验当前用户是否可以操作活动收藏。
+ * @param {object} party 活动数据
+ * @param {object | null} currentUser 当前用户
+ */
+function assertCanFavoriteParty(party, currentUser) {
+  if (party.status === "draft" && (!currentUser || currentUser.userId !== party.hostId)) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有发起人可以收藏草稿活动");
   }
 }
 
@@ -192,6 +259,25 @@ function sanitizeEntryContact(entry, canViewContact) {
 }
 
 /**
+ * 给报名记录补充报名用户资料。
+ * @param {{ store: object }} runtime 云函数运行时
+ * @param {object[]} entries 报名记录列表
+ * @returns {Promise<object[]>} 补充用户头像和性别后的报名记录
+ */
+async function attachEntryUserProfiles(runtime, entries) {
+  return Promise.all(
+    entries.map(async (entry) => {
+      const user = await runtime.store.findOne("users", { userId: entry.userId });
+      return {
+        ...entry,
+        userAvatarUrl: user?.avatarUrl || "",
+        userGender: user?.gender || "保密"
+      };
+    })
+  );
+}
+
+/**
  * 查询可展示组局列表。
  * @param {Record<string, unknown>} payload 查询参数
  * @param {{ store: object }} runtime 云函数运行时
@@ -233,13 +319,16 @@ async function detail(payload, runtime) {
     .sort((left, right) => (left.waitlistNo || 0) - (right.waitlistNo || 0));
   const canViewContacts = Boolean(viewer && viewer.userId === party.hostId);
   const viewerEntry = viewer ? entries.find((entry) => entry.userId === viewer.userId) || null : null;
+  const confirmedEntriesWithProfiles = await attachEntryUserProfiles(runtime, confirmedEntries);
+  const waitlistEntriesWithProfiles = await attachEntryUserProfiles(runtime, waitlistEntries);
+  const viewerEntryWithProfile = viewerEntry ? (await attachEntryUserProfiles(runtime, [viewerEntry]))[0] : null;
 
   return {
     party: await attachPartyView(runtime, party),
     host,
-    confirmedEntries: confirmedEntries.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
-    waitlistEntries: waitlistEntries.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
-    viewerEntry: viewerEntry ? sanitizeEntryContact(viewerEntry, canViewContacts) : null,
+    confirmedEntries: confirmedEntriesWithProfiles.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
+    waitlistEntries: waitlistEntriesWithProfiles.map((entry) => sanitizeEntryContact(entry, canViewContacts)),
+    viewerEntry: viewerEntryWithProfile ? sanitizeEntryContact(viewerEntryWithProfile, canViewContacts) : null,
     canViewContacts
   };
 }
@@ -286,6 +375,121 @@ async function myTabs(payload, runtime) {
   }
 
   return tabs;
+}
+
+/**
+ * 查询当前用户是否已收藏活动。
+ * @param {{ partyId?: string, userId?: string }} payload 收藏查询参数
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean }} runtime 云函数运行时
+ * @returns {Promise<{ partyId: string, isFavorited: boolean }>} 收藏状态
+ */
+async function favoriteStatus(payload, runtime) {
+  const party = await findFavoriteParty(payload.partyId, runtime);
+  const currentUser = await findAuthenticatedUser(runtime);
+  assertCanFavoriteParty(party, currentUser);
+
+  if (!currentUser) {
+    return {
+      partyId: party.partyId,
+      isFavorited: false
+    };
+  }
+
+  assertPayloadUserMatches(currentUser, payload.userId);
+
+  const favorites = await runtime.store.list("favorites", {
+    userId: currentUser.userId,
+    partyId: party.partyId
+  });
+
+  return {
+    partyId: party.partyId,
+    isFavorited: favorites.some((favorite) => favorite.active)
+  };
+}
+
+/**
+ * 切换当前用户的活动收藏状态。
+ * @param {{ partyId?: string, userId?: string }} payload 收藏切换参数
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean, now: Function }} runtime 云函数运行时
+ * @returns {Promise<{ partyId: string, isFavorited: boolean }>} 切换后的收藏状态
+ */
+async function favoriteToggle(payload, runtime) {
+  const party = await findFavoriteParty(payload.partyId, runtime);
+  const currentUser = await ensureFavoriteUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+  assertCanFavoriteParty(party, currentUser);
+
+  const timestamp = runtime.now();
+  const favorite = await runtime.store.findOne("favorites", {
+    userId: currentUser.userId,
+    partyId: party.partyId
+  });
+
+  if (favorite) {
+    const isFavorited = !favorite.active;
+    await runtime.store.updateOne("favorites", { favoriteId: favorite.favoriteId }, () => ({
+      active: isFavorited,
+      updatedAt: timestamp
+    }));
+
+    return {
+      partyId: party.partyId,
+      isFavorited
+    };
+  }
+
+  await runtime.store.insert("favorites", {
+    favoriteId: createId("favorite"),
+    userId: currentUser.userId,
+    partyId: party.partyId,
+    active: true,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  });
+
+  return {
+    partyId: party.partyId,
+    isFavorited: true
+  };
+}
+
+/**
+ * 查询当前用户收藏的活动列表。
+ * @param {{ userId?: string }} payload 收藏列表参数
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean, now: Function }} runtime 云函数运行时
+ * @returns {Promise<object[]>} 收藏活动列表
+ */
+async function favoriteList(payload, runtime) {
+  const currentUser = await ensureFavoriteUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+
+  const favorites = (await runtime.store.list("favorites", { userId: currentUser.userId, active: true })).sort(
+    (left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || ""))
+  );
+  const seenPartyIds = new Set();
+  const parties = [];
+
+  for (const favorite of favorites) {
+    if (seenPartyIds.has(favorite.partyId)) {
+      continue;
+    }
+
+    seenPartyIds.add(favorite.partyId);
+    const party = await runtime.store.findOne("parties", { partyId: favorite.partyId });
+
+    if (!party) {
+      continue;
+    }
+
+    if (party.status === "draft" && party.hostId !== currentUser.userId) {
+      continue;
+    }
+
+    parties.push(await attachPartyView(runtime, party));
+  }
+
+  return parties;
 }
 
 /**
@@ -389,6 +593,9 @@ const handlers = {
   list,
   detail,
   myTabs,
+  favoriteStatus,
+  favoriteToggle,
+  favoriteList,
   createDraft,
   publish
 };

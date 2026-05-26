@@ -1,3 +1,5 @@
+import { DISCOVER_TAB_ICONS, HOME_TAB_ICONS, PROFILE_TAB_ICONS } from "../constants/assets";
+
 interface TabBarItem {
   pagePath: string;
   iconPath: string;
@@ -21,27 +23,20 @@ Component({
     list: [
       {
         pagePath: "pages/home/index",
-        iconPath: "/assets/images/ktv/tab-home.png",
-        selectedIconPath: "/assets/images/ktv/tab-home-active.png",
+        iconPath: HOME_TAB_ICONS.default,
+        selectedIconPath: HOME_TAB_ICONS.active,
         text: "首页"
       },
       {
         pagePath: "pages/discover/index",
-        iconPath: "/assets/images/ktv/tab-discover.png",
-        selectedIconPath: "/assets/images/ktv/tab-discover-active.png",
+        iconPath: DISCOVER_TAB_ICONS.default,
+        selectedIconPath: DISCOVER_TAB_ICONS.active,
         text: "发现"
       },
       {
-        pagePath: "pages/messages/index",
-        iconPath: "/assets/images/ktv/tab-messages.png",
-        selectedIconPath: "/assets/images/ktv/tab-messages-active.png",
-        text: "消息",
-        badge: "3"
-      },
-      {
         pagePath: "pages/profile/index",
-        iconPath: "/assets/images/ktv/tab-profile.png",
-        selectedIconPath: "/assets/images/ktv/tab-profile-active.png",
+        iconPath: PROFILE_TAB_ICONS.default,
+        selectedIconPath: PROFILE_TAB_ICONS.active,
         text: "我的"
       }
     ] as TabBarItem[]

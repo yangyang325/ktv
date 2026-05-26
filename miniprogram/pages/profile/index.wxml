@@ -13,17 +13,13 @@
           <view class="profile-banner__info">
             <view class="profile-banner__name-row">
               <text class="profile-banner__name">{{profile.nickname}}</text>
-              <text class="profile-banner__verify">◎</text>
+              <image class="profile-banner__verify" src="{{profile.genderIconUrl}}" mode="aspectFit" />
             </view>
             <text class="profile-banner__intro">{{profile.intro}}</text>
           </view>
           <button class="profile-banner__edit" bindtap="handleEditProfile">
-            <image class="profile-banner__edit-icon" src="/assets/images/ktv/edit.svg" mode="aspectFit" />
             <text>编辑资料</text>
           </button>
-        </view>
-        <view class="profile-banner__tags">
-          <text wx:for="{{profile.tags}}" wx:key="*this">{{item}}</text>
         </view>
       </view>
     </view>
@@ -36,66 +32,6 @@
         </view>
       </view>
 
-      <view class="profile-tabs">
-        <view
-          wx:for="{{profileTabs}}"
-          wx:key="key"
-          class="profile-tabs__item {{profileCurrentTab === item.key ? 'profile-tabs__item--active' : ''}}"
-          data-key="{{item.key}}"
-          bindtap="handleProfileTabTap"
-        >
-          <text>{{item.label}}</text>
-          <text wx:if="{{item.count > 0}}" class="profile-tabs__count">({{item.count}})</text>
-        </view>
-      </view>
-
-      <view class="profile-party-list" wx:if="{{profilePartyList.length}}">
-        <view
-          wx:for="{{profilePartyList}}"
-          wx:key="partyId"
-          class="profile-party-card"
-          data-id="{{item.partyId}}"
-          bindtap="handleProfilePartyTap"
-        >
-          <image class="profile-party-card__cover" src="{{item.coverImage}}" mode="aspectFill" />
-          <view class="profile-party-card__body">
-            <view class="profile-party-card__header">
-              <text class="profile-party-card__title">{{item.title}}</text>
-              <text class="profile-party-card__status profile-party-card__status--{{item.statusTone}}">{{item.statusText}}</text>
-            </view>
-            <view class="profile-party-card__tags">
-              <text wx:for="{{item.displayTags}}" wx:key="*this">{{item}}</text>
-            </view>
-            <view class="profile-party-card__meta">
-              <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
-              <text>{{item.timeSummary}}</text>
-            </view>
-            <view class="profile-party-card__meta profile-party-card__meta--venue">
-              <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
-              <text class="profile-party-card__venue">{{item.venueSummary}}</text>
-            </view>
-            <view class="profile-party-card__footer">
-              <text>{{item.progressText}}</text>
-              <text>{{item.priceText}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="profile-empty" wx:else>
-        <view class="profile-empty__scene">
-          <view class="profile-empty__bench"></view>
-          <view class="profile-empty__face">
-            <view class="profile-empty__eye profile-empty__eye--left"></view>
-            <view class="profile-empty__eye profile-empty__eye--right"></view>
-            <view class="profile-empty__mouth"></view>
-          </view>
-          <view class="profile-empty__dot"></view>
-        </view>
-        <text class="profile-empty__title">{{profileEmptyTitle}}</text>
-        <text class="profile-empty__desc">{{profileEmptyDescription}}</text>
-      </view>
-
       <view class="menu-card">
         <view
           class="menu-card__item"
@@ -103,13 +39,17 @@
           wx:key="key"
           data-key="{{item.key}}"
           data-label="{{item.label}}"
+          data-contact="{{item.contact}}"
           bindtap="handleMenuTap"
         >
           <view class="menu-card__label">
             <image class="menu-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
-            <text>{{item.label}}</text>
+            <view class="menu-card__text">
+              <text class="menu-card__title">{{item.label}}</text>
+              <text class="menu-card__desc">{{item.desc}}</text>
+            </view>
           </view>
-          <text class="menu-card__arrow">›</text>
+          <text class="menu-card__action">{{item.actionText}}</text>
         </view>
       </view>
     </view>

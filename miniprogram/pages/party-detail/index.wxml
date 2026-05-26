@@ -9,7 +9,6 @@
           mode="aspectFill"
         />
         <text class="detail-hero__status detail-hero__status--{{statusTone}}">{{detail.party.statusText}}</text>
-        <text class="detail-hero__pager">1/5</text>
       </view>
 
       <view class="detail-card">
@@ -44,15 +43,20 @@
           <view class="detail-row">
             <image class="detail-row__icon" src="/assets/images/ktv/yen.svg" mode="aspectFit" />
             <view class="detail-row__body">
-              <text class="detail-row__main">AA参考 · 预计 {{detail.party.priceText}}</text>
+              <text class="detail-row__main">AA参考 · 预计 <text class="detail-row__price-value">{{detail.party.priceText}}</text></text>
               <text class="detail-row__sub">仅作线下AA参考，小程序不收款</text>
             </view>
           </view>
           <view class="detail-row">
             <image class="detail-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
             <view class="detail-row__body">
-              <text class="detail-row__main">{{detail.party.progressText}}</text>
-              <text class="detail-row__sub">剩余 {{remainingCount}} 个活动名额</text>
+              <text class="detail-row__main">
+                <text class="detail-row__progress-current {{remainingCount === 0 ? 'detail-row__progress-current--full' : ''}}">{{detail.party.confirmedCount}}</text>
+                <text class="detail-row__progress-separator {{remainingCount === 0 ? 'detail-row__progress-separator--full' : ''}}">/</text>
+                <text class="detail-row__progress-total {{remainingCount === 0 ? 'detail-row__progress-total--full' : ''}}">{{detail.party.maxCapacity}}</text>
+                <text>人</text>
+              </text>
+              <text class="detail-row__sub">剩余 <text class="detail-row__remaining-value">{{remainingCount}}</text> 个活动名额</text>
             </view>
           </view>
         </view>
@@ -62,11 +66,11 @@
     <view class="detail-section">
       <text class="detail-section__title">发起人</text>
       <view class="host">
-        <image class="host__avatar" src="/assets/images/ktv/profile-avatar.svg" mode="aspectFill" />
+        <image wx:if="{{detail.host.avatarUrl}}" class="host__avatar" src="{{detail.host.avatarUrl}}" mode="aspectFill" />
+        <image wx:else class="host__avatar" src="{{defaultHostAvatarUrl}}" mode="aspectFill" />
         <view class="host__body">
           <view class="host__name-line">
             <text class="host__name">{{detail.host.nickname}}</text>
-            <text class="host__badge">●</text>
           </view>
           <text class="host__intro">K歌爱好者，活动信息由发起人自行维护。</text>
         </view>
@@ -101,10 +105,9 @@
         hover-class="none"
         bindtap="handleFavoriteTap"
       >
-        <image src="/assets/images/ktv/star.svg" mode="aspectFit" />
+        <image src="{{isFavorited ? '/assets/images/ktv/star-active.svg' : '/assets/images/ktv/star.svg'}}" mode="aspectFit" />
         <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
       </button>
-      <button class="actions__secondary" hover-class="none" bindtap="handleContactHost">活动提醒</button>
       <button wx:if="{{canViewContacts}}" class="actions__primary" hover-class="none" bindtap="handleOpenEntryDetails">报名详情</button>
       <button wx:else class="actions__primary" hover-class="none" bindtap="handleJoin">立即报名</button>
     </view>

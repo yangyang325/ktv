@@ -1,6 +1,8 @@
 import { ROUTES } from "../../constants/routes";
+import { DEFAULT_PROFILE_AVATAR_IMAGES } from "../../constants/assets";
 import { isPartyFavorited, togglePartyFavorite } from "../../services/api/favorite";
 import { getPartyDetail, joinWaitlist } from "../../services/api/party";
+import { ensureLoggedInForAction } from "../../utils/auth";
 import { resolvePartyStatusTone } from "../../utils/party-status";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
@@ -30,6 +32,7 @@ Page({
     isFavorited: false,
     statusTone: "signup",
     durationHourText: "3",
+    defaultHostAvatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES[0],
     statusBarHeight: 0
   },
 
@@ -39,7 +42,15 @@ Page({
   async onLoad(options: Record<string, string>) {
     this.setupNavigation();
 
-    const partyId = options.partyId || "party-001";
+    const partyId = options.partyId || "";
+    if (!partyId) {
+      wx.showToast({
+        title: "缺少活动信息",
+        icon: "none"
+      });
+      return;
+    }
+
     this.setData({ partyId });
     await this.refreshDetail();
   },
@@ -70,6 +81,7 @@ Page({
    */
   async refreshDetail() {
     const detail = await getPartyDetail(this.data.partyId);
+
     this.setData({
       detail,
       confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
@@ -78,10 +90,25 @@ Page({
       canViewContacts: Boolean(detail.canViewContacts),
       displayTags: this.buildDisplayTags(detail.party.tags),
       remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0),
-      isFavorited: isPartyFavorited(detail.party.partyId),
+      isFavorited: false,
       statusTone: resolvePartyStatusTone(detail.party.status, detail.party.statusText),
       durationHourText: this.formatDurationHour(detail.party.durationMin)
     });
+
+    void this.refreshFavoriteStatus(detail.party.partyId);
+  },
+
+  /**
+   * 后台刷新活动收藏状态，失败时不阻塞详情展示。
+   * @param partyId 活动 ID
+   */
+  async refreshFavoriteStatus(partyId: string) {
+    try {
+      const isFavorited = await isPartyFavorited(partyId);
+      this.setData({ isFavorited });
+    } catch (error) {
+      this.setData({ isFavorited: false });
+    }
   },
 
   /**
@@ -90,10 +117,7 @@ Page({
    * @returns 详情页展示标签
    */
   buildDisplayTags(tags: string[]) {
-    const labels = tags.map((tag) => (tag === "流行" ? "流行歌曲" : tag));
-    const mergedLabels = labels.includes("氛围好") ? labels : [...labels, "氛围好"];
-
-    return mergedLabels.slice(0, 4).map((label) => ({
+    return tags.slice(0, 4).map((label) => ({
       label
     }));
   },
@@ -201,29 +225,26 @@ Page({
   },
 
   /**
-   * 发送活动提醒。
-   */
-  handleContactHost() {
-    wx.showToast({
-      title: "已记录活动提醒",
-      icon: "none"
-    });
-  },
-
-  /**
    * 切换当前活动收藏状态。
    */
-  handleFavoriteTap() {
+  async handleFavoriteTap() {
     if (!this.data.partyId) {
       return;
     }
 
-    const isFavorited = togglePartyFavorite(this.data.partyId);
-    this.setData({ isFavorited });
-    wx.showToast({
-      title: isFavorited ? "已收藏" : "已取消收藏",
-      icon: "none"
-    });
+    try {
+      const isFavorited = await togglePartyFavorite(this.data.partyId);
+      this.setData({ isFavorited });
+      wx.showToast({
+        title: isFavorited ? "已收藏" : "已取消收藏",
+        icon: "none"
+      });
+    } catch (error) {
+      wx.showToast({
+        title: "收藏失败，请稍后再试",
+        icon: "none"
+      });
+    }
   },
 
   /**
@@ -238,7 +259,12 @@ Page({
   /**
    * 打开报名确认页。
    */
-  handleJoin() {
+  async handleJoin() {
+    const hasLoggedIn = await ensureLoggedInForAction("报名活动");
+    if (!hasLoggedIn) {
+      return;
+    }
+
     wx.navigateTo({
       url: `${ROUTES.entryConfirm}?partyId=${this.data.partyId}`
     });
@@ -248,7 +274,12 @@ Page({
    * 加入当前局候补。
    */
   async handleWaitlist() {
-    const waitEntry = await joinWaitlist(this.data.partyId, "user-wait-1");
+    const hasLoggedIn = await ensureLoggedInForAction("报名活动");
+    if (!hasLoggedIn) {
+      return;
+    }
+
+    const waitEntry = await joinWaitlist(this.data.partyId);
     await this.refreshDetail();
     wx.showToast({
       title: `已成为候补第 ${waitEntry.waitlistNo} 位`,

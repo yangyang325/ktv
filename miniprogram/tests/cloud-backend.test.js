@@ -3,10 +3,15 @@ const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
 const { AppError, assertRequired } = require("../../cloudfunctions/shared/errors");
+const { createCloudStore } = require("../../cloudfunctions/shared/cloud-store");
 const { createMemoryStore } = require("../../cloudfunctions/shared/memory-store");
 const { runAction } = require("../../cloudfunctions/shared/response");
 const { createSeedData } = require("../../cloudfunctions/shared/seed");
 const { buildPartyView } = require("../../cloudfunctions/shared/party-view");
+const {
+  DEFAULT_PROFILE_AVATAR_IMAGES,
+  selectRandomProfileAvatarImage
+} = require("../../cloudfunctions/shared/assets");
 const authFunction = require("../../cloudfunctions/auth/index");
 const venueFunction = require("../../cloudfunctions/venue/index");
 const partyFunction = require("../../cloudfunctions/party/index");
@@ -43,6 +48,77 @@ test("memory store supports exact object selectors", async () => {
   assert.equal(venues[0].venueId, "venue-001");
   assert.equal(user.userId, "user-host");
   assert.equal(updatedUser.nickname, "新昵称");
+});
+
+test("cloud store tolerates missing collections and creates them on first insert", async () => {
+  const collections = {};
+  const createdCollections = [];
+  const createMissingCollectionError = () => {
+    const error = new Error("collection not exists");
+    error.errCode = -502005;
+    return error;
+  };
+  const db = {
+    async createCollection(collectionName) {
+      createdCollections.push(collectionName);
+      collections[collectionName] = collections[collectionName] || [];
+    },
+    collection(collectionName) {
+      const createQuery = (selector) => ({
+        async get() {
+          if (!collections[collectionName]) {
+            throw createMissingCollectionError();
+          }
+
+          return {
+            data: collections[collectionName].filter((item) =>
+              Object.keys(selector || {}).every((key) => item[key] === selector[key])
+            )
+          };
+        }
+      });
+
+      return {
+        where(selector) {
+          return createQuery(selector);
+        },
+        get: createQuery({}).get,
+        async add({ data }) {
+          if (!collections[collectionName]) {
+            throw createMissingCollectionError();
+          }
+
+          const _id = `${collectionName}-${collections[collectionName].length + 1}`;
+          collections[collectionName].push({ ...data, _id });
+          return { _id };
+        },
+        doc(id) {
+          return {
+            async update({ data }) {
+              const item = (collections[collectionName] || []).find((entry) => entry._id === id);
+              Object.assign(item, data);
+            }
+          };
+        }
+      };
+    }
+  };
+  const store = createCloudStore(db);
+
+  assert.deepEqual(await store.list("favorites", { userId: "user-new" }), []);
+
+  const inserted = await store.insert("favorites", {
+    favoriteId: "favorite-new",
+    userId: "user-new",
+    partyId: "party-001",
+    active: true
+  });
+  const favorites = await store.list("favorites", { userId: "user-new" });
+
+  assert.equal(inserted._id, "favorites-1");
+  assert.deepEqual(createdCollections, ["favorites"]);
+  assert.equal(favorites.length, 1);
+  assert.equal(favorites[0].partyId, "party-001");
 });
 
 test("party view builds frontend display fields", () => {
@@ -106,14 +182,43 @@ test("auth.login returns existing user by openid", async () => {
 
 test("auth.login creates default user for new openid", async () => {
   const store = createMemoryStore(createSeedData());
-  const result = await authFunction.main(
-    { action: "login", payload: { nickname: "新朋友", avatarUrl: "https://example.com/new.png" } },
-    { store, openid: "openid-new" }
-  );
+  const originalRandom = Math.random;
+  Math.random = () => 0.99;
 
-  assert.equal(result.ok, true);
-  assert.equal(result.data.user.nickname, "新朋友");
-  assert.equal(result.data.user.openid, "openid-new");
+  try {
+    const result = await authFunction.main(
+      {
+        action: "login",
+        payload: {
+          nickname: "新朋友",
+          gender: "女",
+          intro: "喜欢粤语老歌"
+        }
+      },
+      { store, openid: "openid-new" }
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.data.user.nickname, "新朋友");
+    assert.equal(result.data.user.openid, "openid-new");
+    assert.equal(result.data.user.avatarUrl, DEFAULT_PROFILE_AVATAR_IMAGES[8]);
+    assert.equal(result.data.user.gender, "女");
+    assert.equal(result.data.user.intro, "喜欢粤语老歌");
+  } finally {
+    Math.random = originalRandom;
+  }
+});
+
+test("默认头像池提供 9 个可随机选择头像", () => {
+  const originalRandom = Math.random;
+  Math.random = () => 0.5;
+
+  try {
+    assert.equal(DEFAULT_PROFILE_AVATAR_IMAGES.length, 9);
+    assert.equal(selectRandomProfileAvatarImage(), DEFAULT_PROFILE_AVATAR_IMAGES[4]);
+  } finally {
+    Math.random = originalRandom;
+  }
 });
 
 test("auth.login creates hashed user ids for colliding suffix openids", async () => {
@@ -141,6 +246,10 @@ test("auth.profile returns current user and null for unknown openid", async () =
 
 test("auth.login preserves profile fields when payload omits them", async () => {
   const store = createMemoryStore(createSeedData());
+  await authFunction.main(
+    { action: "login", payload: { gender: "女", intro: "喜欢粤语老歌" } },
+    { store, openid: "openid-host", now: () => "2026-05-21T07:00:00.000Z" }
+  );
   const result = await authFunction.main(
     { action: "login", payload: {} },
     { store, openid: "openid-host", now: () => "2026-05-21T08:00:00.000Z" }
@@ -149,6 +258,8 @@ test("auth.login preserves profile fields when payload omits them", async () => 
   assert.equal(result.ok, true);
   assert.equal(result.data.user.nickname, "羊羊");
   assert.equal(result.data.user.avatarUrl, "https://example.com/avatar-host.png");
+  assert.equal(result.data.user.gender, "女");
+  assert.equal(result.data.user.intro, "喜欢粤语老歌");
   assert.equal(result.data.user.updatedAt, "2026-05-21T08:00:00.000Z");
 });
 
@@ -300,6 +411,8 @@ test("party.detail returns host entries and viewer entry", async () => {
   assert.equal(result.data.host.userId, "user-host");
   assert.equal(result.data.confirmedEntries.length, 3);
   assert.equal(result.data.waitlistEntries.length, 1);
+  assert.equal(result.data.confirmedEntries[0].userAvatarUrl, "https://example.com/avatar-host.png");
+  assert.equal(result.data.confirmedEntries[0].userGender, "保密");
   assert.equal(result.data.viewerEntry.userId, "user-host");
   assert.equal(result.data.party.venueAddress, "深圳市南山区海岸城东座 3 楼");
   assert.equal(result.data.party.venueLatitude, 22.53);
@@ -346,6 +459,55 @@ test("party.myTabs groups hosting joined waitlist and history", async () => {
   assert.equal(result.ok, true);
   assert.deepEqual(Object.keys(result.data), ["hosting", "joined", "waitlist", "history"]);
   assert.equal(result.data.hosting.length > 0, true);
+});
+
+test("party favorites are stored in cloud store per current user", async () => {
+  const store = createMemoryStore(createSeedData());
+  const emptyList = await partyFunction.main({ action: "favoriteList", payload: {} }, { store, openid: "openid-guest-1" });
+  const beforeStatus = await partyFunction.main(
+    { action: "favoriteStatus", payload: { partyId: "party-001" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const toggledOn = await partyFunction.main(
+    { action: "favoriteToggle", payload: { partyId: "party-001" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-25T10:00:00.000Z" }
+  );
+  const hostList = await partyFunction.main({ action: "favoriteList", payload: {} }, { store, openid: "openid-host" });
+  const guestList = await partyFunction.main({ action: "favoriteList", payload: {} }, { store, openid: "openid-guest-1" });
+  const afterStatus = await partyFunction.main(
+    { action: "favoriteStatus", payload: { partyId: "party-001" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const toggledOff = await partyFunction.main(
+    { action: "favoriteToggle", payload: { partyId: "party-001" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-25T10:05:00.000Z" }
+  );
+  const finalList = await partyFunction.main({ action: "favoriteList", payload: {} }, { store, openid: "openid-guest-1" });
+
+  assert.equal(emptyList.ok, true);
+  assert.equal(emptyList.data.length, 0);
+  assert.equal(beforeStatus.ok, true);
+  assert.deepEqual(beforeStatus.data, { partyId: "party-001", isFavorited: false });
+  assert.equal(toggledOn.ok, true);
+  assert.deepEqual(toggledOn.data, { partyId: "party-001", isFavorited: true });
+  assert.equal(hostList.data.length, 0);
+  assert.equal(guestList.data.length, 1);
+  assert.equal(guestList.data[0].partyId, "party-001");
+  assert.equal(afterStatus.data.isFavorited, true);
+  assert.equal(toggledOff.data.isFavorited, false);
+  assert.equal(finalList.data.length, 0);
+});
+
+test("party favorites reject missing explicit openid", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    { action: "favoriteToggle", payload: { partyId: "party-001" } },
+    { store }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "UNAUTHORIZED");
+  assert.equal(result.message, "请先登录");
 });
 
 test("party.createDraft creates draft and host entry", async () => {

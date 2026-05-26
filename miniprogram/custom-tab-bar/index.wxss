@@ -28,7 +28,7 @@
   width: 25%;
   min-height: 106rpx;
   flex-direction: column;
-  color: #8a91a6;
+  color: #848ba0;
 }
 
 .tabbar__icon-wrap {
@@ -52,7 +52,7 @@
 }
 
 .tabbar__item--active {
-  color: #4e63ff;
+  color: #6048ff;
 }
 
 .tabbar__badge {

@@ -2,6 +2,7 @@ const crypto = require("node:crypto");
 
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
+const { selectRandomProfileAvatarImage } = require("./shared/assets");
 
 /**
  * 根据 openid 构建稳定用户 ID。
@@ -23,7 +24,7 @@ function findCurrentUser(runtime) {
 
 /**
  * 登录并返回当前用户信息。
- * @param {{ nickname?: string, avatarUrl?: string }} payload 登录资料
+ * @param {{ nickname?: string, avatarUrl?: string, gender?: string, intro?: string }} payload 登录资料
  * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
  * @returns {Promise<{ openid: string, user: object }>} 登录结果
  */
@@ -42,6 +43,14 @@ async function login(payload, runtime) {
       updates.avatarUrl = payload.avatarUrl;
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, "gender")) {
+      updates.gender = payload.gender;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "intro")) {
+      updates.intro = payload.intro;
+    }
+
     const user = await runtime.store.updateOne("users", { openid: runtime.openid }, () => updates);
     return { openid: runtime.openid, user };
   }
@@ -50,7 +59,9 @@ async function login(payload, runtime) {
     userId: buildUserId(runtime.openid),
     openid: runtime.openid,
     nickname: payload.nickname || "微信用户",
-    avatarUrl: payload.avatarUrl || "",
+    avatarUrl: payload.avatarUrl || selectRandomProfileAvatarImage(),
+    gender: payload.gender || "保密",
+    intro: payload.intro || "",
     createdAt: timestamp,
     updatedAt: timestamp
   });

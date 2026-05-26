@@ -10,15 +10,21 @@
         <view class="confirm-party-card__meta">
           <view class="confirm-meta-row confirm-meta-row--time">
             <image class="confirm-meta-row__icon" src="/assets/images/ktv/clock.svg" mode="aspectFit" />
-            <text>{{detail.party.timeSummary}}（预计{{durationHourText}}小时）</text>
+            <text class="confirm-meta-row__text">{{detail.party.timeSummary}}（预计{{durationHourText}}小时）</text>
           </view>
           <view class="confirm-meta-row">
             <image class="confirm-meta-row__icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
-            <text>{{detail.party.venueSummary}}</text>
+            <text class="confirm-meta-row__text">{{detail.party.venueSummary}}</text>
           </view>
           <view class="confirm-meta-row">
             <image class="confirm-meta-row__icon" src="/assets/images/ktv/users.svg" mode="aspectFit" />
-            <text>已报名 {{capacityText}} · {{distanceText}}</text>
+            <view class="confirm-meta-row__text confirm-capacity">
+              <text>已报名 </text>
+              <text class="confirm-capacity__current {{remainingCount === 0 ? 'confirm-capacity__current--full' : ''}}">{{capacityConfirmedCount}}</text>
+              <text class="confirm-capacity__separator {{remainingCount === 0 ? 'confirm-capacity__separator--full' : ''}}">/</text>
+              <text class="confirm-capacity__total {{remainingCount === 0 ? 'confirm-capacity__total--full' : ''}}">{{capacityMaxCount}}</text>
+              <text>人 · {{distanceText}}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -37,7 +43,12 @@
         <image class="confirm-card-title__image" src="/assets/images/ktv/confirm-users.svg" mode="aspectFit" />
         <text>名额与备注</text>
       </view>
-      <text class="confirm-section-card__side">{{capacityText}}</text>
+      <view class="confirm-section-card__side confirm-capacity">
+        <text class="confirm-capacity__current {{remainingCount === 0 ? 'confirm-capacity__current--full' : ''}}">{{capacityConfirmedCount}}</text>
+        <text class="confirm-capacity__separator {{remainingCount === 0 ? 'confirm-capacity__separator--full' : ''}}">/</text>
+        <text class="confirm-capacity__total {{remainingCount === 0 ? 'confirm-capacity__total--full' : ''}}">{{capacityMaxCount}}</text>
+        <text>人</text>
+      </view>
       <text class="confirm-section-card__desc">剩余{{remainingCount}}个活动名额，按实际到场情况线下确认</text>
     </view>
 

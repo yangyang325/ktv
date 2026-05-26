@@ -1,5 +1,3 @@
-import { serviceConfig } from "../config";
-
 /**
  * 获取图片文件扩展名。
  * @param filePath 临时文件路径
@@ -17,14 +15,38 @@ function getImageExtension(filePath: string): string {
 }
 
 /**
- * 创建组局封面云存储路径。
+ * 创建图片云存储路径。
+ * @param directory 云存储目录
  * @param filePath 临时文件路径
  * @returns 云存储路径
  */
-function createPartyCoverCloudPath(filePath: string): string {
+function createImageCloudPath(directory: string, filePath: string): string {
   const extension = getImageExtension(filePath);
   const suffix = Math.random().toString(36).slice(2, 10);
-  return `party-covers/${Date.now()}-${suffix}.${extension}`;
+  return `${directory}/${Date.now()}-${suffix}.${extension}`;
+}
+
+/**
+ * 上传图片到云存储。
+ * @param directory 云存储目录
+ * @param filePath 本地临时图片路径
+ * @returns 云存储 fileID
+ */
+async function uploadImageFile(directory: string, filePath: string): Promise<string> {
+  if (!filePath) {
+    return "";
+  }
+
+  if (typeof wx === "undefined" || !wx.cloud || !wx.cloud.uploadFile) {
+    throw new Error("当前环境不支持云存储上传");
+  }
+
+  const result = await wx.cloud.uploadFile({
+    cloudPath: createImageCloudPath(directory, filePath),
+    filePath
+  });
+
+  return result.fileID;
 }
 
 /**
@@ -33,22 +55,5 @@ function createPartyCoverCloudPath(filePath: string): string {
  * @returns 可保存到组局数据的图片地址
  */
 export async function uploadPartyCover(filePath: string): Promise<string> {
-  if (!filePath) {
-    return "";
-  }
-
-  if (serviceConfig.dataSource !== "cloud") {
-    return filePath;
-  }
-
-  if (typeof wx === "undefined" || !wx.cloud || !wx.cloud.uploadFile) {
-    throw new Error("当前环境不支持云存储上传");
-  }
-
-  const result = await wx.cloud.uploadFile({
-    cloudPath: createPartyCoverCloudPath(filePath),
-    filePath
-  });
-
-  return result.fileID;
+  return uploadImageFile("party-covers", filePath);
 }

@@ -14,7 +14,6 @@
 
 .detail-row__copy::after,
 .actions__favorite::after,
-.actions__secondary::after,
 .actions__primary::after {
   border: 0;
 }
@@ -83,17 +82,6 @@
 
 .detail-hero__status--finished {
   background: rgba(25, 27, 42, 0.72);
-}
-
-.detail-hero__pager {
-  position: absolute;
-  z-index: 2;
-  right: 20rpx;
-  bottom: 20rpx;
-  color: #ffffff;
-  font-size: 24rpx;
-  font-weight: 700;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.35);
 }
 
 .detail-card {
@@ -181,6 +169,43 @@
   line-height: 1.35;
 }
 
+.detail-row__price-value {
+  color: #ff443f;
+  font-weight: 900;
+}
+
+.detail-row__progress-current {
+  color: #6048ff;
+  font-weight: 900;
+}
+
+.detail-row__progress-separator {
+  color: #252938;
+  font-weight: 900;
+}
+
+.detail-row__progress-total {
+  color: #252938;
+  font-weight: 900;
+}
+
+.detail-row__progress-current--full {
+  color: #ff982b;
+}
+
+.detail-row__progress-separator--full {
+  color: #ff982b;
+}
+
+.detail-row__progress-total--full {
+  color: #ff982b;
+}
+
+.detail-row__remaining-value {
+  color: #6048ff;
+  font-weight: 900;
+}
+
 .detail-row__copy {
   display: flex;
   align-items: center;
@@ -255,12 +280,6 @@
   color: #252938;
   font-size: 28rpx;
   font-weight: 900;
-}
-
-.host__badge {
-  color: #ff5b8a;
-  font-size: 19rpx;
-  line-height: 1;
 }
 
 .host__intro,
@@ -387,15 +406,14 @@
 }
 
 .actions__favorite--active {
-  color: #6546ff;
+  color: #6048ff;
   font-weight: 900;
 }
 
 .actions__favorite--active image {
-  filter: drop-shadow(0 0 8rpx rgba(101, 70, 255, 0.22));
+  filter: drop-shadow(0 0 8rpx rgba(255, 184, 0, 0.3));
 }
 
-.actions__secondary,
 .actions__primary {
   width: 0;
   min-width: 0;
@@ -409,12 +427,6 @@
   font-weight: 900;
   line-height: 82rpx;
   text-align: center;
-}
-
-.actions__secondary {
-  border: 2rpx solid #7459ff;
-  background: #ffffff;
-  color: #6546ff;
 }
 
 .actions__primary {

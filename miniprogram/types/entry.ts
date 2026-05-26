@@ -26,4 +26,6 @@ export interface Entry {
   createdAt: string;
   confirmedAt: string | null;
   contactInfo?: EntryContactInfo | null;
+  userAvatarUrl?: string;
+  userGender?: string;
 }

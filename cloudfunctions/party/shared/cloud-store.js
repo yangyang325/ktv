@@ -20,8 +20,92 @@ async function fetchCollectionData(db, collection, selector) {
   const query = isObjectSelector(selector)
     ? db.collection(collection).where(selector)
     : db.collection(collection);
-  const result = await query.get();
-  return (result.data || []).filter((item) => matchesSelector(item, selector));
+
+  try {
+    const result = await query.get();
+    return (result.data || []).filter((item) => matchesSelector(item, selector));
+  } catch (error) {
+    if (isCollectionMissingError(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * 判断错误是否为云数据库集合不存在。
+ * @param {unknown} error 原始错误
+ * @returns {boolean} 是否为集合不存在错误
+ */
+function isCollectionMissingError(error) {
+  const errorText = [
+    error && error.errCode,
+    error && error.code,
+    error && error.errMsg,
+    error && error.message
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return /collection.*not.*exist|DATABASE_COLLECTION_NOT_EXIST|-502005/i.test(errorText);
+}
+
+/**
+ * 判断错误是否为云数据库集合已存在。
+ * @param {unknown} error 原始错误
+ * @returns {boolean} 是否为集合已存在错误
+ */
+function isCollectionAlreadyExistsError(error) {
+  const errorText = [
+    error && error.errCode,
+    error && error.code,
+    error && error.errMsg,
+    error && error.message
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return /collection.*already.*exist|collection.*exists|DATABASE_COLLECTION_ALREADY_EXIST/i.test(errorText);
+}
+
+/**
+ * 确保云数据库集合存在。
+ * @param {object} db 云数据库
+ * @param {string} collection 集合名
+ */
+async function ensureCollectionExists(db, collection) {
+  if (typeof db.createCollection !== "function") {
+    return;
+  }
+
+  try {
+    await db.createCollection(collection);
+  } catch (error) {
+    if (!isCollectionAlreadyExistsError(error)) {
+      throw error;
+    }
+  }
+}
+
+/**
+ * 向云数据库集合写入文档，集合不存在时会先创建集合。
+ * @param {object} db 云数据库
+ * @param {string} collection 集合名
+ * @param {object} document 文档
+ * @returns {Promise<object>} 写入结果
+ */
+async function addDocument(db, collection, document) {
+  try {
+    return await db.collection(collection).add({ data: document });
+  } catch (error) {
+    if (!isCollectionMissingError(error)) {
+      throw error;
+    }
+  }
+
+  await ensureCollectionExists(db, collection);
+  return db.collection(collection).add({ data: document });
 }
 
 /**
@@ -61,7 +145,7 @@ function createCloudStore(db) {
      */
     async insert(collection, document) {
       const nextDocument = clonePlainValue(document);
-      const result = await db.collection(collection).add({ data: nextDocument });
+      const result = await addDocument(db, collection, nextDocument);
       return clonePlainValue({ ...nextDocument, _id: result._id });
     },
 

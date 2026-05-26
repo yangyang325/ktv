@@ -1,5 +1,6 @@
 import { getPartyDetail, joinParty } from "../../../services/api/party";
 import type { EntryContactInfo, EntryContactMethod } from "../../../types/entry";
+import { ensureLoggedInForAction } from "../../../utils/auth";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
 type ContactMethodOption = {
@@ -34,7 +35,8 @@ Page({
     displayTitle: "",
     displayTags: [] as string[],
     durationHourText: "3",
-    capacityText: "6/10人",
+    capacityConfirmedCount: 6,
+    capacityMaxCount: 10,
     remainingCount: 4,
     distanceText: "1.35km",
     payAmount: "68",
@@ -57,7 +59,14 @@ Page({
    * @param options 页面路由参数
    */
   async onLoad(options: Record<string, string>) {
-    const partyId = options.partyId || "party-001";
+    const partyId = options.partyId || "";
+    if (!partyId) {
+      wx.showToast({
+        title: "缺少活动信息",
+        icon: "none"
+      });
+      return;
+    }
     this.setData({ partyId });
     await this.refreshDetail();
   },
@@ -67,13 +76,15 @@ Page({
    */
   async refreshDetail() {
     const detail = await getPartyDetail(this.data.partyId);
+    const capacityCounts = this.parseCapacityCounts(detail.party.progressText, detail.party.confirmedCount, detail.party.maxCapacity);
     this.setData({
       detail,
       displayTitle: this.formatDisplayTitle(detail.party.title),
       displayTags: this.buildDisplayTags(detail.party.tags),
       durationHourText: this.formatDurationHour(detail.party.durationMin),
-      capacityText: this.formatCapacityText(detail.party.progressText, detail.party.confirmedCount, detail.party.maxCapacity),
-      remainingCount: this.calculateRemainingCount(detail.party.progressText, detail.party.confirmedCount, detail.party.maxCapacity),
+      capacityConfirmedCount: capacityCounts.confirmedCount,
+      capacityMaxCount: capacityCounts.maxCapacity,
+      remainingCount: Math.max(capacityCounts.maxCapacity - capacityCounts.confirmedCount, 0),
       payAmount: this.formatPayAmount(detail.party.priceText)
     });
   },
@@ -108,35 +119,22 @@ Page({
   },
 
   /**
-   * 格式化人数容量展示。
+   * 解析报名人数和人数上限。
    * @param progressText 原始进度文本
    * @param confirmedCount 已确认人数
    * @param maxCapacity 最大容量
-   * @returns 人数容量文本
+   * @returns 报名人数和人数上限
    */
-  formatCapacityText(progressText: string, confirmedCount: number, maxCapacity: number) {
-    const matched = progressText.match(/\d+\s*\/\s*\d+/);
-    if (matched) {
-      return `${matched[0].replace(/\s/g, "")}人`;
-    }
-
-    return `${confirmedCount}/${maxCapacity}人`;
-  },
-
-  /**
-   * 计算剩余名额数。
-   * @param progressText 原始进度文本
-   * @param confirmedCount 已确认人数
-   * @param maxCapacity 最大容量
-   * @returns 剩余名额
-   */
-  calculateRemainingCount(progressText: string, confirmedCount: number, maxCapacity: number) {
+  parseCapacityCounts(progressText: string, confirmedCount: number, maxCapacity: number) {
     const matched = progressText.match(/(\d+)\s*\/\s*(\d+)/);
     if (matched) {
-      return Math.max(Number(matched[2]) - Number(matched[1]), 0);
+      return {
+        confirmedCount: Number(matched[1]),
+        maxCapacity: Number(matched[2])
+      };
     }
 
-    return Math.max(maxCapacity - confirmedCount, 0);
+    return { confirmedCount, maxCapacity };
   },
 
   /**
@@ -244,6 +242,11 @@ Page({
       return;
     }
 
+    const hasLoggedIn = await ensureLoggedInForAction("报名活动");
+    if (!hasLoggedIn) {
+      return;
+    }
+
     if (!this.data.agreementChecked) {
       wx.showToast({
         title: "请先同意参与协议",
@@ -263,7 +266,7 @@ Page({
 
     this.setData({ submitting: true });
     try {
-      await joinParty(this.data.partyId, "user-guest-3", contactInfo);
+      await joinParty(this.data.partyId, contactInfo);
       wx.showToast({
         title: "报名成功",
         icon: "success"

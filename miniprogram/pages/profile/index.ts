@@ -1,11 +1,8 @@
+import { DEFAULT_PROFILE_AVATAR_IMAGES } from "../../constants/assets";
 import { getFavoriteParties } from "../../services/api/favorite";
 import { getMyPartyTabs } from "../../services/api/party";
-import { getCurrentUser } from "../../services/api/user";
-import { resolvePartyStatusTone } from "../../utils/party-status";
-import type { Party } from "../../types/party";
+import { getCurrentUserWithWechatProfile } from "../../services/api/user";
 import type { User } from "../../types/user";
-
-type ProfileTabKey = "hosting" | "joined" | "favorites";
 
 interface ProfileStat {
   label: string;
@@ -15,27 +12,35 @@ interface ProfileStat {
 interface ProfileView {
   nickname: string;
   avatarUrl: string;
+  gender: string;
+  genderIconUrl: string;
+  genderTone: ProfileGenderTone;
   intro: string;
   stats: ProfileStat[];
-  tags: string[];
 }
 
-interface ProfileTab {
-  key: ProfileTabKey;
+type ProfileFields = Omit<ProfileView, "stats">;
+type ProfileGenderTone = "female" | "male" | "secret";
+
+interface ProfileCounts {
+  hosting: number;
+  joined: number;
+  favorites: number;
+}
+
+interface ProfileMenuItem {
+  key: "contact";
   label: string;
-  count: number;
-}
-
-interface ProfilePartyCard extends Party {
-  displayTags: string[];
-  statusTone: string;
+  desc: string;
+  iconUrl: string;
+  contact: string;
+  actionText: string;
 }
 
 interface ProfileTapEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
-      id?: string;
-      key?: ProfileTabKey;
+      contact?: string;
       label?: string;
     };
   };
@@ -43,39 +48,40 @@ interface ProfileTapEvent extends WechatMiniprogram.BaseEvent {
 
 type UserProfileFields = User & {
   intro?: string;
-  tags?: string[];
 };
 
-const DEFAULT_CURRENT_USER_ID = "user-host";
-const DEFAULT_PROFILE_AVATAR = "/assets/images/ktv/profile-avatar.svg";
+const DEFAULT_PROFILE_AVATAR = DEFAULT_PROFILE_AVATAR_IMAGES[0];
 const DEFAULT_PROFILE_INTRO = "记录深圳K歌兴趣活动";
+const DEFAULT_PROFILE_GENDER = "保密";
 const DEFAULT_PROFILE_NICKNAME = "微信用户";
-const DEFAULT_PROFILE_TAGS = ["深圳", "K歌", "活动记录", "AA参考"];
-
-const PROFILE_TAB_LABELS: Array<Omit<ProfileTab, "count">> = [
-  { key: "hosting", label: "我发起的" },
-  { key: "joined", label: "我加入的" },
-  { key: "favorites", label: "我收藏的" }
+const PROFILE_GENDER_ICON_URLS: Record<ProfileGenderTone, string> = {
+  female: "/assets/images/ktv/gender-female.svg",
+  male: "/assets/images/ktv/gender-male.svg",
+  secret: "/assets/images/ktv/gender-secret.svg"
+};
+const PROFILE_CONTACT_WECHAT = "Hammy_Y";
+const PROFILE_MENU: ProfileMenuItem[] = [
+  {
+    key: "contact",
+    label: "联系我们",
+    desc: `微信：${PROFILE_CONTACT_WECHAT}`,
+    iconUrl: "/assets/images/ktv/profile-menu-service.svg",
+    contact: PROFILE_CONTACT_WECHAT,
+    actionText: "复制"
+  }
 ];
 
 Page({
   data: {
-    profile: createProfileView(null, createEmptyProfilePartyGroups()),
-    menu: [],
-    profileCurrentTab: "hosting" as ProfileTabKey,
-    profileEmptyDescription: "发布一条K歌活动信息，记录时间、地点和AA参考。",
-    profileEmptyTitle: "还没有发布过活动",
-    profileFavorites: [] as ProfilePartyCard[],
-    profilePartyGroups: createEmptyProfilePartyGroups(),
-    profilePartyList: [] as ProfilePartyCard[],
-    profileTabs: createProfileTabs(createEmptyProfilePartyGroups())
+    profile: createProfileView(null, createEmptyProfileCounts()),
+    menu: PROFILE_MENU
   },
 
   /**
    * 页面展示时同步底部导航高亮。
    */
   async onShow() {
-    this.getTabBar().setData({ selected: 3 });
+    this.getTabBar().setData({ selected: 2 });
     await this.refreshProfileData();
   },
 
@@ -89,62 +95,39 @@ Page({
   },
 
   /**
-   * 刷新我的资料、活动标签和列表。
+   * 刷新我的资料和真实活动统计。
    */
   async refreshProfileData() {
     const [currentUser, groupedParties, favoriteParties] = await Promise.all([
-      getCurrentUser(DEFAULT_CURRENT_USER_ID),
-      getMyPartyTabs(DEFAULT_CURRENT_USER_ID),
+      getCurrentUserWithWechatProfile(),
+      getMyPartyTabs(),
       getFavoriteParties()
     ]);
-    const profilePartyGroups = {
-      hosting: createProfilePartyCards(groupedParties.hosting),
-      joined: createProfilePartyCards([...groupedParties.joined, ...groupedParties.waitlist]),
-      favorites: createProfilePartyCards(favoriteParties)
+    const profileCounts: ProfileCounts = {
+      hosting: groupedParties.hosting.length,
+      joined: groupedParties.joined.length + groupedParties.waitlist.length,
+      favorites: favoriteParties.length
     };
-    const profileCurrentTab = this.data.profileCurrentTab;
 
     this.setData({
-      profile: createProfileView(currentUser, profilePartyGroups),
-      profileEmptyDescription: createProfileEmptyDescription(profileCurrentTab),
-      profileEmptyTitle: createProfileEmptyTitle(profileCurrentTab),
-      profileFavorites: profilePartyGroups.favorites,
-      profilePartyGroups,
-      profilePartyList: profilePartyGroups[profileCurrentTab],
-      profileTabs: createProfileTabs(profilePartyGroups)
+      profile: createProfileView(currentUser, profileCounts)
     });
   },
 
   /**
-   * 切换我的页面组局标签。
-   * @param event 点击事件
+   * 使用编辑页刚保存的云端资料即时更新我的页名片。
+   * @param currentUser 最新用户资料
    */
-  handleProfileTabTap(event: ProfileTapEvent) {
-    const { key } = event.currentTarget.dataset;
-    if (!key || key === this.data.profileCurrentTab) {
-      return;
-    }
+  applyUpdatedProfile(currentUser: User) {
+    const profileFields = createProfileFields(currentUser);
 
     this.setData({
-      profileCurrentTab: key,
-      profileEmptyDescription: createProfileEmptyDescription(key),
-      profileEmptyTitle: createProfileEmptyTitle(key),
-      profilePartyList: this.data.profilePartyGroups[key]
-    });
-  },
-
-  /**
-   * 打开我的页面活动详情。
-   * @param event 点击事件
-   */
-  handleProfilePartyTap(event: ProfileTapEvent) {
-    const { id } = event.currentTarget.dataset;
-    if (!id) {
-      return;
-    }
-
-    wx.navigateTo({
-      url: `/pages/party-detail/index?partyId=${id}`
+      "profile.nickname": profileFields.nickname,
+      "profile.avatarUrl": profileFields.avatarUrl,
+      "profile.gender": profileFields.gender,
+      "profile.genderIconUrl": profileFields.genderIconUrl,
+      "profile.genderTone": profileFields.genderTone,
+      "profile.intro": profileFields.intro
     });
   },
 
@@ -153,7 +136,18 @@ Page({
    * @param event 点击事件
    */
   handleMenuTap(event: ProfileTapEvent) {
-    const { label } = event.currentTarget.dataset;
+    const { contact, label } = event.currentTarget.dataset;
+
+    if (contact) {
+      wx.setClipboardData({
+        data: contact
+      });
+      wx.showToast({
+        title: "微信号已复制",
+        icon: "success"
+      });
+      return;
+    }
 
     wx.showToast({
       title: `${label || "功能"}待开放`,
@@ -163,105 +157,91 @@ Page({
 });
 
 /**
- * 创建空的组局分组。
- * @returns 空分组结构
+ * 创建空的我的页活动统计。
+ * @returns 空统计结构
  */
-function createEmptyProfilePartyGroups(): Record<ProfileTabKey, ProfilePartyCard[]> {
+function createEmptyProfileCounts(): ProfileCounts {
   return {
-    hosting: [],
-    joined: [],
-    favorites: []
+    hosting: 0,
+    joined: 0,
+    favorites: 0
   };
 }
 
 /**
  * 创建我的页面名片资料。
  * @param currentUser 当前用户资料
- * @param groups 当前用户活动分组
+ * @param counts 当前用户活动统计
  * @returns 我的页面名片资料
  */
 function createProfileView(
   currentUser: User | null,
-  groups: Record<ProfileTabKey, ProfilePartyCard[]>
+  counts: ProfileCounts
 ): ProfileView {
+  return {
+    ...createProfileFields(currentUser),
+    stats: createProfileStats(counts)
+  };
+}
+
+/**
+ * 创建我的页面名片基础资料。
+ * @param currentUser 当前用户资料
+ * @returns 名片基础资料
+ */
+function createProfileFields(currentUser: User | null): ProfileFields {
   const userProfile = currentUser as UserProfileFields | null;
   const nickname = currentUser ? currentUser.nickname : "";
   const avatarUrl = currentUser ? currentUser.avatarUrl : "";
-  const tags = userProfile?.tags?.length ? userProfile.tags : DEFAULT_PROFILE_TAGS;
+  const gender = userProfile?.gender || DEFAULT_PROFILE_GENDER;
 
   return {
     nickname: nickname || DEFAULT_PROFILE_NICKNAME,
-    avatarUrl: avatarUrl || DEFAULT_PROFILE_AVATAR,
-    intro: userProfile?.intro || DEFAULT_PROFILE_INTRO,
-    stats: createProfileStats(groups),
-    tags: tags.slice(0, 4)
+    avatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES.includes(avatarUrl as typeof DEFAULT_PROFILE_AVATAR_IMAGES[number])
+      ? avatarUrl
+      : DEFAULT_PROFILE_AVATAR,
+    gender,
+    genderIconUrl: createGenderIconUrl(gender),
+    genderTone: createGenderTone(gender),
+    intro: userProfile?.intro || DEFAULT_PROFILE_INTRO
   };
+}
+
+/**
+ * 根据用户性别生成我的页性别 SVG 图标地址。
+ * @param gender 用户资料里的性别文本
+ * @returns 性别 SVG 图标地址
+ */
+function createGenderIconUrl(gender: string): string {
+  return PROFILE_GENDER_ICON_URLS[createGenderTone(gender)];
+}
+
+/**
+ * 根据用户性别生成我的页性别样式状态。
+ * @param gender 用户资料里的性别文本
+ * @returns 性别样式状态
+ */
+function createGenderTone(gender: string): ProfileGenderTone {
+  if (gender === "女") {
+    return "female";
+  }
+
+  if (gender === "男") {
+    return "male";
+  }
+
+  return "secret";
 }
 
 /**
  * 创建我的页面真实活动统计。
- * @param groups 当前用户活动分组
+ * @param counts 当前用户活动统计
  * @returns 统计展示数据
  */
-function createProfileStats(groups: Record<ProfileTabKey, ProfilePartyCard[]>): ProfileStat[] {
+function createProfileStats(counts: ProfileCounts): ProfileStat[] {
   return [
-    { label: "发布活动", value: String(groups.hosting.length) },
-    { label: "参与次数", value: String(groups.joined.length) },
-    { label: "收藏", value: String(groups.favorites.length) }
+    { label: "发布活动", value: String(counts.hosting) },
+    { label: "参与次数", value: String(counts.joined) },
+    { label: "收藏", value: String(counts.favorites) }
   ];
-}
-
-/**
- * 创建我的页面标签配置。
- * @param groups 组局分组数据
- * @returns 标签配置
- */
-function createProfileTabs(groups: Record<ProfileTabKey, ProfilePartyCard[]>): ProfileTab[] {
-  return PROFILE_TAB_LABELS.map((item) => ({
-    ...item,
-    count: groups[item.key].length
-  }));
-}
-
-/**
- * 创建我的页面组局卡片数据。
- * @param parties 组局数据
- * @returns 可展示卡片数据
- */
-function createProfilePartyCards(parties: Party[]): ProfilePartyCard[] {
-  return parties.map((party) => ({
-    ...party,
-    displayTags: party.tags.slice(0, 3),
-    statusTone: resolvePartyStatusTone(party.status, party.statusText)
-  }));
-}
-
-/**
- * 创建空列表标题。
- * @param tabKey 当前标签
- * @returns 空列表标题
- */
-function createProfileEmptyTitle(tabKey: ProfileTabKey): string {
-  const titleMap: Record<ProfileTabKey, string> = {
-    hosting: "还没有发布过活动",
-    joined: "还没有报名过活动",
-    favorites: "还没有收藏过活动"
-  };
-
-  return titleMap[tabKey];
-}
-
-/**
- * 创建空列表描述。
- * @param tabKey 当前标签
- * @returns 空列表描述
- */
-function createProfileEmptyDescription(tabKey: ProfileTabKey): string {
-  const descriptionMap: Record<ProfileTabKey, string> = {
-    hosting: "发布一条K歌活动信息，记录时间、地点和AA参考。",
-    joined: "报名成功后，活动记录会出现在这里。",
-    favorites: "收藏感兴趣的活动，之后可以快速回看。"
-  };
-
-  return descriptionMap[tabKey];
 }

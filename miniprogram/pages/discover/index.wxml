@@ -1,16 +1,15 @@
 <view class="page discover-page">
   <view class="discover-panel">
-    <view class="city-row" bindtap="handleCityTap">
-      <image src="/assets/images/ktv/location_selected.svg" mode="aspectFit" />
+    <view class="city-row">
+      <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
       <text>{{cityName}}</text>
-      <text class="city-row__arrow"></text>
     </view>
 
     <view class="search">
       <text class="search__icon">⌕</text>
       <input
         class="search__input"
-        placeholder="搜索活动、门店、曲风"
+        placeholder="搜索活动标题"
         value="{{keyword}}"
         bindinput="handleKeywordInput"
         confirm-type="search"
@@ -46,13 +45,16 @@
       <view class="party-card__cover">
         <image class="party-card__image" src="{{item.coverImage}}" mode="aspectFill" />
         <text class="party-card__status party-card__status--{{item.statusClass}}">{{item.statusText}}</text>
-        <text class="party-card__ktv">活动信息</text>
       </view>
 
       <view class="party-card__content">
         <view class="party-card__headline">
           <text class="party-card__title">{{item.title}}</text>
-          <image class="party-card__favorite" src="/assets/images/ktv/star.svg" mode="aspectFit" />
+          <image
+            class="party-card__favorite {{item.isFavorited ? 'party-card__favorite--active' : ''}}"
+            src="{{item.isFavorited ? '/assets/images/ktv/star-active.svg' : '/assets/images/ktv/star.svg'}}"
+            mode="aspectFit"
+          />
         </view>
 
         <view class="party-card__tags">
@@ -67,7 +69,6 @@
         <view class="party-card__meta party-card__meta--venue">
           <image class="party-card__meta-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
           <text class="party-card__venue">{{item.venueSummary}}</text>
-          <text class="party-card__distance">{{item.distanceText}}</text>
         </view>
 
         <view class="party-card__footer">
@@ -80,7 +81,10 @@
               mode="aspectFill"
             />
           </view>
-          <text class="party-card__progress">{{item.progressText}}</text>
+          <view class="party-card__count">
+            <text class="party-card__count-current">{{item.progressCountText}}</text>
+            <text class="party-card__count-rest">{{item.progressRestText}}</text>
+          </view>
           <text class="party-card__price">AA参考 {{item.priceText}}</text>
         </view>
       </view>

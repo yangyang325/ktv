@@ -1,8 +1,8 @@
-import { MY_PARTIES_SUMMARY_BG_IMAGE } from "../../constants/assets";
+import { DISCOVER_TAB_ICONS, HOME_TAB_ICONS, MY_PARTIES_SUMMARY_BG_IMAGE, PROFILE_TAB_ICONS } from "../../constants/assets";
 import { getMyPartyTabs } from "../../services/api/party";
 import { resolvePartyStatusTone } from "../../utils/party-status";
 import type { MyPartyTabs } from "../../types/common";
-import type { Party } from "../../types/party";
+import type { Party, PartyParticipantAvatar } from "../../types/party";
 
 type MyPartyTabKey = "all" | "hosting" | "joined" | "history";
 type PartyRelation = "hosting" | "joined" | "waitlist" | "history";
@@ -33,7 +33,7 @@ interface BottomNavItem {
 
 interface MyPartyCard extends Party {
   actionText: string;
-  avatars: string[];
+  avatars: PartyParticipantAvatar[];
   displayTags: string[];
   isFinished: boolean;
   progressCountText: string;
@@ -60,8 +60,6 @@ const TAB_LABELS: Array<Omit<MyPartyTab, "count">> = [
   { key: "history", label: "已结束" }
 ];
 
-const AVATAR_NAMES = ["羊", "麦", "秋", "明", "周", "林"];
-
 Page({
   data: {
     allParties: [] as MyPartyCard[],
@@ -84,7 +82,7 @@ Page({
    * 页面展示时刷新我的活动数据。
    */
   async onShow() {
-    const groupedParties = await getMyPartyTabs("user-host");
+    const groupedParties = await getMyPartyTabs();
     const allParties = createMyPartyCards(groupedParties);
     const partyList = filterParties(allParties, this.data.currentTab);
 
@@ -130,15 +128,6 @@ Page({
   },
 
   /**
-   * 打开发布活动页面。
-   */
-  handleCreateTap() {
-    wx.navigateTo({
-      url: "/pages/launch/index"
-    });
-  },
-
-  /**
    * 切换底部导航。
    * @param event 点击事件
    */
@@ -164,33 +153,24 @@ function createBottomNav(): BottomNavItem[] {
       key: "home",
       label: "首页",
       path: "pages/home/index",
-      icon: "/assets/images/ktv/tab-home.png",
-      activeIcon: "/assets/images/ktv/tab-home-active.png",
+      icon: HOME_TAB_ICONS.default,
+      activeIcon: HOME_TAB_ICONS.active,
       active: false
     },
     {
       key: "discover",
       label: "发现",
       path: "pages/discover/index",
-      icon: "/assets/images/ktv/tab-discover.png",
-      activeIcon: "/assets/images/ktv/tab-discover-active.png",
+      icon: DISCOVER_TAB_ICONS.default,
+      activeIcon: DISCOVER_TAB_ICONS.active,
       active: false
-    },
-    {
-      key: "messages",
-      label: "消息",
-      path: "pages/messages/index",
-      icon: "/assets/images/ktv/tab-messages.png",
-      activeIcon: "/assets/images/ktv/tab-messages-active.png",
-      active: false,
-      badge: "3"
     },
     {
       key: "profile",
       label: "我的",
       path: "pages/profile/index",
-      icon: "/assets/images/ktv/tab-profile.png",
-      activeIcon: "/assets/images/ktv/tab-profile-active.png",
+      icon: PROFILE_TAB_ICONS.default,
+      activeIcon: PROFILE_TAB_ICONS.active,
       active: true
     }
   ];
@@ -279,7 +259,7 @@ function createMyPartyCard(party: Party, relation: PartyRelation, tabKeys: MyPar
   return {
     ...party,
     actionText: createActionText(relation, isFinished),
-    avatars: createAvatars(party.confirmedCount),
+    avatars: party.participantAvatars || [],
     displayTags: party.tags.slice(0, 3),
     isFinished,
     progressCountText: progressParts.count,
@@ -288,16 +268,6 @@ function createMyPartyCard(party: Party, relation: PartyRelation, tabKeys: MyPar
     statusTone: createStatusTone(party, isFinished),
     tabKeys
   };
-}
-
-/**
- * 生成人数头像占位文字。
- * @param confirmedCount 已确认人数
- * @returns 头像文字
- */
-function createAvatars(confirmedCount: number): string[] {
-  const count = Math.min(Math.max(confirmedCount, 3), 4);
-  return AVATAR_NAMES.slice(0, count);
 }
 
 /**

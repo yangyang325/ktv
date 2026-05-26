@@ -1,39 +1,125 @@
-<view class="page manage-page">
-  <view class="manage-card manage-card--summary">
-    <text class="manage-card__title">报名详情</text>
-    <text class="manage-card__desc">{{partyTitle}}</text>
-    <text class="manage-card__count">{{totalText}}</text>
-  </view>
-
-  <view class="manage-card">
-    <text class="manage-card__title">已报名</text>
-    <block wx:if="{{confirmedMembers.length}}">
-      <view class="member-card" wx:for="{{confirmedMembers}}" wx:key="entryId">
-        <view class="member-card__header">
-          <text class="member-card__name">{{item.userNickname}}</text>
-          <text class="member-card__status">{{item.statusText}}</text>
+<view class="page members-page">
+  <block wx:if="{{partySummary}}">
+    <view class="members-summary">
+      <image class="members-summary__cover" src="{{partySummary.coverImage}}" mode="aspectFill" />
+      <view class="members-summary__body">
+        <text class="members-summary__title">{{partySummary.title}}</text>
+        <view class="members-summary__line">
+          <image src="/assets/images/ktv/clock.svg" mode="aspectFit" />
+          <text>{{partySummary.timeText}}</text>
         </view>
-        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__line">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
-        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__sub">预计到达：{{item.arrivalTimeText}}</text>
-        <text wx:if="{{canViewContacts && item.note}}" class="member-card__sub">备注：{{item.note}}</text>
-      </view>
-    </block>
-    <text wx:else class="manage-card__empty">暂无报名记录</text>
-  </view>
-
-  <view class="manage-card">
-    <text class="manage-card__title">候补</text>
-    <block wx:if="{{waitlistMembers.length}}">
-      <view class="member-card" wx:for="{{waitlistMembers}}" wx:key="entryId">
-        <view class="member-card__header">
-          <text class="member-card__name">{{item.userNickname}}</text>
-          <text class="member-card__status member-card__status--waitlist">{{item.statusText}}</text>
+        <view class="members-summary__line">
+          <image src="/assets/images/ktv/location.svg" mode="aspectFit" />
+          <text>{{partySummary.venueText}}</text>
         </view>
-        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__line">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
-        <text wx:if="{{canViewContacts && item.contactValue}}" class="member-card__sub">预计到达：{{item.arrivalTimeText}}</text>
-        <text wx:if="{{canViewContacts && item.note}}" class="member-card__sub">备注：{{item.note}}</text>
+        <view class="members-summary__line members-summary__line--count">
+          <image src="/assets/images/ktv/users.svg" mode="aspectFit" />
+          <text class="members-summary__count-current">{{partySummary.confirmedCount}}</text>
+          <text>/{{partySummary.maxCapacity}}人</text>
+        </view>
       </view>
-    </block>
-    <text wx:else class="manage-card__empty">暂无候补记录</text>
-  </view>
+    </view>
+
+    <view wx:if="{{!selectedMember}}" class="entry-list-card">
+      <view class="entry-list-card__header">
+        <text class="entry-list-card__title">报名者信息（{{memberList.length}}人）</text>
+        <view class="entry-list-card__sort" bindtap="handleSortTap">
+          <text>按报名时间</text>
+        </view>
+      </view>
+
+      <block wx:if="{{memberList.length}}">
+        <view
+          class="member-entry-card"
+          wx:for="{{memberList}}"
+          wx:key="entryId"
+          data-entry-id="{{item.entryId}}"
+          bindtap="handleMemberDetailTap"
+        >
+          <view class="member-entry-card__profile">
+            <image class="member-entry-card__avatar" src="{{item.userAvatarUrl}}" mode="aspectFill" />
+            <view class="member-entry-card__meta">
+              <view class="member-entry-card__name-row">
+                <text class="member-entry-card__name">{{item.userNickname}}</text>
+              </view>
+              <text class="member-entry-card__label">报名时间</text>
+              <text class="member-entry-card__sub">{{item.submittedAtText}}</text>
+            </view>
+          </view>
+
+          <view class="member-entry-card__divider"></view>
+
+          <view class="member-entry-card__detail">
+            <view class="member-entry-card__detail-row">
+              <text class="member-entry-card__detail-label">联系方式</text>
+              <text class="member-entry-card__detail-value">{{item.contactDisplayValue}}</text>
+              <view
+                class="member-copy-button"
+                data-entry-id="{{item.entryId}}"
+                hover-class="none"
+                aria-label="复制联系方式"
+                catchtap="handleMemberCopyTap"
+              >
+                <text class="member-copy-button__icon"></text>
+              </view>
+            </view>
+            <view class="member-entry-card__detail-row">
+              <text class="member-entry-card__detail-label">到达时间</text>
+              <text class="member-entry-card__detail-value">{{item.arrivalTimeText}}</text>
+            </view>
+            <view class="member-entry-card__detail-row">
+              <text class="member-entry-card__detail-label">备注</text>
+              <text class="member-entry-card__detail-value">{{item.note}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <text wx:else class="entry-list-card__empty">暂无报名记录</text>
+    </view>
+
+    <view wx:else class="member-detail-card">
+      <text class="member-detail-card__title">报名者信息</text>
+      <view class="member-detail-card__profile">
+        <image class="member-detail-card__avatar" src="{{selectedMember.userAvatarUrl}}" mode="aspectFill" />
+        <view class="member-detail-card__profile-body">
+          <view class="member-detail-card__name-row">
+            <text class="member-detail-card__name">{{selectedMember.userNickname}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="member-info-list">
+        <view class="member-info-row">
+          <text class="member-info-row__label">联系方式</text>
+          <text class="member-info-row__value">{{selectedMember.contactDisplayValue}}</text>
+          <view
+            class="member-copy-button member-copy-button--detail"
+            hover-class="none"
+            aria-label="复制联系方式"
+            catchtap="handleSelectedMemberCopyTap"
+          >
+            <text class="member-copy-button__icon"></text>
+          </view>
+        </view>
+        <view class="member-info-row">
+          <text class="member-info-row__label">到达时间</text>
+          <text class="member-info-row__value">{{selectedMember.arrivalTimeText}}</text>
+        </view>
+        <view class="member-info-row">
+          <text class="member-info-row__label">性别</text>
+          <text class="member-info-row__value">{{selectedMember.genderText}}</text>
+        </view>
+        <view class="member-info-row">
+          <text class="member-info-row__label">备注</text>
+          <text class="member-info-row__value">{{selectedMember.note}}</text>
+        </view>
+        <view class="member-info-row">
+          <text class="member-info-row__label">报名时间</text>
+          <text class="member-info-row__value">{{selectedMember.submittedAtFullText}}</text>
+        </view>
+      </view>
+
+      <text class="member-detail-card__hint">ⓘ 提示：报名者已提交报名信息，请尽快确认以便安排。</text>
+    </view>
+  </block>
 </view>

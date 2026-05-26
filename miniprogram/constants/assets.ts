@@ -51,6 +51,63 @@ export const HOME_QUICK_ACTION_IMAGES = {
 } as const;
 
 /**
+ * 用户资料默认头像线上图片。
+ */
+export const DEFAULT_PROFILE_AVATAR_IMAGES = [
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/tkojc1mplzroo1.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/w2bg8wmplzron6.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/sr7ygrmplzrq3i.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/nlp31pmplzrq3o.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/jcftq3mplzropa.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/rlb3kzmplzroob.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/2fn4lrmplzrq45.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/tsrxlzmplzrq3d.png",
+  "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/t0tib0mplzronw.png"
+] as const;
+
+/**
+ * 随机选择一张用户资料默认头像。
+ * @returns 默认头像地址
+ */
+export function selectRandomProfileAvatarImage() {
+  const randomIndex = Math.min(
+    Math.floor(Math.random() * DEFAULT_PROFILE_AVATAR_IMAGES.length),
+    DEFAULT_PROFILE_AVATAR_IMAGES.length - 1
+  );
+  return DEFAULT_PROFILE_AVATAR_IMAGES[randomIndex];
+}
+
+/**
+ * 首页 tab 栏线上图标。
+ */
+export const HOME_TAB_ICONS = {
+  default:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/bxbwsgmplzr3b2.png",
+  active:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/ay5l8cmplzr3bp.png"
+} as const;
+
+/**
+ * 发现 tab 栏线上图标。
+ */
+export const DISCOVER_TAB_ICONS = {
+  default:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/gt92f3mplzr4ba.png",
+  active:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/vv292cmplzr3b3.png"
+} as const;
+
+/**
+ * 个人中心 tab 栏线上图标。
+ */
+export const PROFILE_TAB_ICONS = {
+  default:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/h1jgw5mplzr3br.png",
+  active:
+    "https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/0cub2nmplzr3c5.png"
+} as const;
+
+/**
  * 我的活动汇总卡片线上背景图。
  */
 export const MY_PARTIES_SUMMARY_BG_IMAGE =

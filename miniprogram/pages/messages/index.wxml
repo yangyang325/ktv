@@ -19,38 +19,10 @@
     </view>
   </view>
 
-  <view class="conversation-card">
+  <view class="conversation-card" wx:if="{{conversations.length}}">
     <view class="conversation" wx:for="{{conversations}}" wx:key="id">
       <view class="conversation__avatar conversation__avatar--{{item.avatarType}}">
-        <block wx:if="{{item.avatarType === 'single'}}">
-          <view
-            wx:for="{{item.members}}"
-            wx:key="name"
-            wx:for-item="member"
-            class="portrait portrait--{{member.tone}} portrait--{{member.shirt}}"
-          >
-            <view class="portrait__hair"></view>
-            <view class="portrait__face"></view>
-            <view class="portrait__body"></view>
-          </view>
-          <view wx:if="{{item.online}}" class="conversation__online"></view>
-        </block>
-
-        <block wx:elif="{{item.avatarType === 'group'}}">
-          <view
-            wx:for="{{item.members}}"
-            wx:key="name"
-            wx:for-item="member"
-            wx:for-index="memberIndex"
-            class="portrait portrait--mini portrait--{{member.tone}} portrait--{{member.shirt}} portrait--slot-{{memberIndex}}"
-          >
-            <view class="portrait__hair"></view>
-            <view class="portrait__face"></view>
-            <view class="portrait__body"></view>
-          </view>
-        </block>
-
-        <block wx:elif="{{item.avatarType === 'notice'}}">
+        <block wx:if="{{item.avatarType === 'notice'}}">
           <view class="notice-bell">
             <view class="notice-bell__cap"></view>
             <view class="notice-bell__body"></view>
@@ -80,5 +52,10 @@
         </view>
       </view>
     </view>
+  </view>
+
+  <view class="messages-empty" wx:else>
+    <text class="messages-empty__title">{{loading ? '正在读取通知' : '暂无通知'}}</text>
+    <text class="messages-empty__desc">报名、候补和活动变更通知会出现在这里。</text>
   </view>
 </view>

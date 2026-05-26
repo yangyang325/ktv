@@ -22,22 +22,30 @@ test("主包页面已注册", () => {
   ]);
 });
 
-test("底部导航按 UI 图包含四个入口", () => {
-  assert.equal(appConfig.tabBar.list.length, 4);
+test("底部导航暂时隐藏消息入口但保留消息页注册", () => {
+  assert.equal(appConfig.pages.includes("pages/messages/index"), true);
+  assert.equal(appConfig.tabBar.list.length, 3);
   assert.deepEqual(
     appConfig.tabBar.list.map((item) => item.text),
-    ["首页", "发现", "消息", "我的"]
+    ["首页", "发现", "我的"]
   );
   assert.deepEqual(
     appConfig.tabBar.list.map((item) => item.pagePath),
-    ["pages/home/index", "pages/discover/index", "pages/messages/index", "pages/profile/index"]
+    ["pages/home/index", "pages/discover/index", "pages/profile/index"]
   );
 });
 
-test("首页和发布活动位置选择声明位置权限", () => {
+test("创建活动子包不再注册接龙预览页", () => {
+  const createPackage = appConfig.subpackages.find((subpackage) => subpackage.root === "packageCreate");
+
+  assert.deepEqual(createPackage.pages, ["pages/venue-picker/index", "pages/party-form/index"]);
+  assert.equal(JSON.stringify(appConfig.subpackages).includes("party-preview"), false);
+});
+
+test("发布活动位置选择声明位置权限", () => {
   const permissionDesc = appConfig.permission["scope.userLocation"].desc;
 
-  assert.equal(permissionDesc.includes("首页"), true);
+  assert.equal(permissionDesc.includes("首页"), false);
   assert.equal(permissionDesc.includes("K歌活动地点"), true);
   assert.deepEqual(new Set(appConfig.requiredPrivateInfos), new Set(["chooseLocation"]));
 });

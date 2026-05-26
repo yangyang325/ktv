@@ -6,10 +6,9 @@
       mode="aspectFill"
     />
     <view class="hero__top">
-      <view class="hero__city" bindtap="handleCityTap">
+      <view class="hero__city">
         <image class="hero__city-icon" src="/assets/images/ktv/location.svg" mode="aspectFit" />
-        <text>{{cityPicking ? '选择中' : cityName}}</text>
-        <text class="hero__city-arrow"></text>
+        <text>{{cityName}}</text>
       </view>
     </view>
     <text class="hero__title">K歌兴趣活动</text>

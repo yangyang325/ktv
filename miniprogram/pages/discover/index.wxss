@@ -26,18 +26,6 @@
   margin-right: 8rpx;
 }
 
-.city-row__arrow {
-  display: block;
-  width: 10rpx;
-  height: 10rpx;
-  margin-left: 10rpx;
-  margin-top: -4rpx;
-  box-sizing: border-box;
-  border-right: 3rpx solid #796bff;
-  border-bottom: 3rpx solid #796bff;
-  transform: rotate(45deg);
-}
-
 .search {
   display: flex;
   align-items: center;
@@ -201,17 +189,6 @@
   background: rgba(25, 27, 42, 0.72);
 }
 
-.party-card__ktv {
-  position: absolute;
-  z-index: 2;
-  left: 28rpx;
-  bottom: 36rpx;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 32rpx;
-  font-weight: 900;
-  letter-spacing: 0;
-}
-
 .party-card__content {
   min-width: 0;
   flex: 1;
@@ -241,6 +218,10 @@
   height: 32rpx;
   flex: 0 0 32rpx;
   margin-left: 10rpx;
+}
+
+.party-card__favorite--active {
+  filter: drop-shadow(0 4rpx 8rpx rgba(255, 176, 45, 0.24));
 }
 
 .party-card__tags {
@@ -331,10 +312,20 @@
   background: #eef1ff;
 }
 
-.party-card__progress {
-  color: #7d8296;
-  font-size: 21rpx;
+.party-card__count {
+  display: flex;
+  align-items: baseline;
+  color: #8e96aa;
+  font-size: 24rpx;
   font-weight: 700;
+}
+
+.party-card__count-current {
+  color: #ff5a6e;
+}
+
+.party-card__count-rest {
+  color: #8e96aa;
 }
 
 .party-card__price {

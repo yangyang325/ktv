@@ -9,7 +9,6 @@ export const ROUTES = {
   partyDetail: "/pages/party-detail/index",
   venuePicker: "/packageCreate/pages/venue-picker/index",
   partyForm: "/packageCreate/pages/party-form/index",
-  partyPreview: "/packageCreate/pages/party-preview/index",
   partyMembers: "/packageManage/pages/party-members/index",
   settlement: "/packageManage/pages/settlement/index",
   notifications: "/packageManage/pages/notifications/index",

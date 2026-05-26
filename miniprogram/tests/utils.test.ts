@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { entryList } from "../mock/entries";
-import { partyList } from "../mock/parties";
-import { userList } from "../mock/users";
 import { calculateEstimatedPerPerson, formatCurrencyYuan, parseDurationHourToMinutes } from "../utils/format";
 import { buildPartyRecruitmentText } from "../utils/party-text";
 import { validatePartyForm } from "../utils/validators";
 import { buildActivityTimeText } from "../utils/date";
+import type { Entry } from "../types/entry";
+import type { Party } from "../types/party";
+import type { User } from "../types/user";
 
 test("金额格式化输出人民币文案", () => {
   assert.equal(formatCurrencyYuan(16800), "¥168");
@@ -116,11 +116,57 @@ test("活动时间文案按日期和时间组合", () => {
 });
 
 test("活动分享文案包含活动信息与报名位", () => {
+  const party: Party = {
+    partyId: "party-test-001",
+    title: "测试活动",
+    venueId: "venue-test-001",
+    venueCustom: "",
+    hostId: "user-test-host",
+    startTime: "2026-05-23T19:30:00+08:00",
+    durationMin: 180,
+    roomFee: 240000,
+    maxCapacity: 8,
+    status: "recruiting",
+    isPublic: true,
+    notes: "",
+    tags: ["流行"],
+    coverImage: "",
+    createdAt: "2026-05-20T10:00:00+08:00",
+    confirmedCount: 1,
+    waitlistCount: 0,
+    estimatedPerPerson: 30000,
+    hostSummary: "真实用户",
+    venueSummary: "真实KTV",
+    progressText: "1 / 8",
+    statusText: "报名中",
+    priceText: "¥300/人",
+    timeSummary: "05-23 周六 19:30 · 3小时",
+    participantAvatars: []
+  };
+  const entries: Entry[] = [
+    {
+      entryId: "entry-test-001",
+      partyId: party.partyId,
+      userId: "user-test-host",
+      userNickname: "真实用户",
+      entryType: "confirmed",
+      seqNo: 1,
+      waitlistNo: null,
+      createdAt: "2026-05-20T10:00:00+08:00",
+      confirmedAt: "2026-05-20T10:00:00+08:00"
+    }
+  ];
+  const host: User = {
+    userId: "user-test-host",
+    nickname: "真实用户",
+    avatarUrl: "cloud://avatar",
+    createdAt: "2026-05-20T10:00:00+08:00"
+  };
   const text = buildPartyRecruitmentText(
-    partyList[0],
-    entryList.filter((item) => item.partyId === "party-001"),
-    userList[0]
+    party,
+    entries,
+    host
   );
   assert.match(text, /K歌活动信息/);
-  assert.match(text, /1\. 羊羊（发起人）/);
+  assert.match(text, /1\. 真实用户（发起人）/);
 });

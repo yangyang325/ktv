@@ -16,8 +16,7 @@
       "root": "packageCreate",
       "pages": [
         "pages/venue-picker/index",
-        "pages/party-form/index",
-        "pages/party-preview/index"
+        "pages/party-form/index"
       ]
     },
     {
@@ -40,7 +39,7 @@
   },
   "permission": {
     "scope.userLocation": {
-      "desc": "用于首页选择当前位置，并在发布活动时选择K歌活动地点"
+      "desc": "用于发布活动时选择K歌活动地点"
     }
   },
   "requiredPrivateInfos": ["chooseLocation"],
@@ -53,26 +52,14 @@
     "list": [
       {
         "pagePath": "pages/home/index",
-        "iconPath": "assets/images/ktv/tab-home.png",
-        "selectedIconPath": "assets/images/ktv/tab-home-active.png",
         "text": "首页"
       },
       {
         "pagePath": "pages/discover/index",
-        "iconPath": "assets/images/ktv/tab-discover.png",
-        "selectedIconPath": "assets/images/ktv/tab-discover-active.png",
         "text": "发现"
       },
       {
-        "pagePath": "pages/messages/index",
-        "iconPath": "assets/images/ktv/tab-messages.png",
-        "selectedIconPath": "assets/images/ktv/tab-messages-active.png",
-        "text": "消息"
-      },
-      {
         "pagePath": "pages/profile/index",
-        "iconPath": "assets/images/ktv/tab-profile.png",
-        "selectedIconPath": "assets/images/ktv/tab-profile-active.png",
         "text": "我的"
       }
     ]

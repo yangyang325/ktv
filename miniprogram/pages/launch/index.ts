@@ -2,6 +2,7 @@ import { createPartyDraft, publishParty } from "../../services/api/party";
 import { uploadPartyCover } from "../../services/api/upload";
 import { buildActivityTimeText, getTodayDate } from "../../utils/date";
 import { parseDurationHourToMinutes } from "../../utils/format";
+import { ensureLoggedInForAction } from "../../utils/auth";
 import { validatePartyForm } from "../../utils/validators";
 
 interface LaunchForm {
@@ -367,6 +368,11 @@ Page({
         title: "封面正在上传",
         icon: "none"
       });
+      return;
+    }
+
+    const hasLoggedIn = await ensureLoggedInForAction("发布活动");
+    if (!hasLoggedIn) {
       return;
     }
 

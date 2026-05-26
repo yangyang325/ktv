@@ -1,3 +1,6 @@
+import { getNotificationList } from "../../services/api/notify";
+import type { Notification } from "../../types/notification";
+
 type MessageTabKey = "notice";
 
 interface MessageTab {
@@ -6,23 +9,15 @@ interface MessageTab {
   hasDot?: boolean;
 }
 
-interface PortraitMember {
-  name: string;
-  tone: string;
-  shirt: string;
-}
-
 interface ConversationItem {
   id: string;
-  avatarType: "single" | "group" | "notice" | "activity";
-  members?: PortraitMember[];
+  avatarType: "notice" | "activity";
   name: string;
   role?: string;
-  roleType?: "plain" | "official";
+  roleType?: "official";
   preview: string;
   time: string;
   unread: number;
-  online?: boolean;
 }
 
 interface TabChangeEvent extends WechatMiniprogram.BaseEvent {
@@ -33,41 +28,22 @@ interface TabChangeEvent extends WechatMiniprogram.BaseEvent {
   };
 }
 
-const noticeConversations: ConversationItem[] = [
-  {
-    id: "notice-system",
-    avatarType: "notice",
-    name: "系统通知",
-    role: "官方",
-    roleType: "official",
-    preview: "您的活动报名已确认，可以准备选歌啦。",
-    time: "昨天",
-    unread: 1
-  },
-  {
-    id: "notice-activity",
-    avatarType: "activity",
-    name: "活动助手",
-    preview: "报名成功通知：您已成功报名活动",
-    time: "周三",
-    unread: 0
-  }
-];
-
 Page({
   data: {
     activeTab: "notice" as MessageTabKey,
     tabs: [
-      { key: "notice", label: "通知", hasDot: true }
+      { key: "notice", label: "通知", hasDot: false }
     ] as MessageTab[],
-    conversations: noticeConversations
+    conversations: [] as ConversationItem[],
+    loading: true
   },
 
   /**
-   * 页面展示时同步底部导航高亮。
+   * 页面展示时同步底部导航高亮并读取云端通知。
    */
-  onShow() {
+  async onShow() {
     this.getTabBar().setData({ selected: 2 });
+    await this.refreshNotifications();
   },
 
   /**
@@ -81,17 +57,80 @@ Page({
     }
 
     this.setData({
-      activeTab: key,
-      conversations: this.getConversationsByTab(key)
+      activeTab: key
     });
   },
 
   /**
-   * 根据当前分页返回需要展示的会话数据。
-   * @param tab 当前选中的消息分页。
-   * @returns 当前分页下的会话列表。
+   * 从云端刷新当前用户通知。
    */
-  getConversationsByTab(_tab: MessageTabKey) {
-    return noticeConversations;
+  async refreshNotifications() {
+    try {
+      const notifications = await getNotificationList();
+      const conversations = createConversations(notifications);
+      this.setData({
+        conversations,
+        loading: false,
+        tabs: [
+          {
+            key: "notice",
+            label: "通知",
+            hasDot: conversations.some((item) => item.unread > 0)
+          }
+        ]
+      });
+    } catch (error) {
+      this.setData({
+        conversations: [],
+        loading: false,
+        tabs: [{ key: "notice", label: "通知", hasDot: false }]
+      });
+      wx.showToast({
+        title: error instanceof Error ? error.message : "通知加载失败",
+        icon: "none"
+      });
+    }
   }
 });
+
+/**
+ * 将云端通知转换为消息列表展示项。
+ * @param notifications 云端通知列表
+ * @returns 消息列表展示项
+ */
+function createConversations(notifications: Notification[]): ConversationItem[] {
+  return notifications.map((notification) => ({
+    id: notification.notificationId,
+    avatarType: notification.type === "activity" ? "activity" : "notice",
+    name: notification.title || "通知",
+    role: notification.type === "system" ? "官方" : undefined,
+    roleType: notification.type === "system" ? "official" : undefined,
+    preview: notification.content || "你有一条新的活动通知",
+    time: formatNotificationTime(notification.createdAt),
+    unread: notification.read ? 0 : 1
+  }));
+}
+
+/**
+ * 格式化通知时间。
+ * @param createdAt 通知创建时间
+ * @returns 页面展示时间
+ */
+function formatNotificationTime(createdAt: string): string {
+  if (!createdAt) {
+    return "";
+  }
+
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
+
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
