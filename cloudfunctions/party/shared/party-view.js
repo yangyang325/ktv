@@ -1,6 +1,7 @@
 const PARTY_STATUS_TEXT = {
   draft: "草稿",
   recruiting: "报名中",
+  ongoing: "活动中",
   full: "已满员",
   closed: "已截止",
   cancelled: "已取消",

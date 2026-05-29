@@ -1,0 +1,117 @@
+.profile-achievements-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 7%, rgba(127, 118, 255, 0.12) 0, rgba(127, 118, 255, 0) 28%),
+    linear-gradient(180deg, #fbfcff 0%, #f4f6ff 62%, #ffffff 100%);
+  box-sizing: border-box;
+}
+
+.achievement-scroll {
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.achievement-content {
+  padding: 34rpx 28rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  min-height: 150rpx;
+  padding: 26rpx 30rpx;
+  border: 1rpx solid rgba(112, 79, 255, 0.1);
+  border-radius: 24rpx;
+  background: linear-gradient(180deg, #fbf8ff 0%, #f6f1ff 100%);
+  box-shadow: 0 14rpx 38rpx rgba(42, 48, 100, 0.07);
+  box-sizing: border-box;
+}
+
+.achievement-card + .achievement-card {
+  margin-top: 22rpx;
+}
+
+.achievement-card--locked {
+  opacity: 0.48;
+}
+
+.achievement-card--purple {
+  border-color: rgba(112, 79, 255, 0.18);
+  background: linear-gradient(180deg, #fbf8ff 0%, #f4efff 100%);
+}
+
+.achievement-card--gold {
+  border-color: rgba(242, 159, 35, 0.18);
+  background: linear-gradient(180deg, #fffaf4 0%, #fff3e6 100%);
+}
+
+.achievement-card--blue {
+  border-color: rgba(60, 147, 255, 0.18);
+  background: linear-gradient(180deg, #f8fbff 0%, #edf6ff 100%);
+}
+
+.achievement-card--pink {
+  border-color: rgba(236, 83, 151, 0.18);
+  background: linear-gradient(180deg, #fff8fb 0%, #ffedf5 100%);
+}
+
+.achievement-card__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 124rpx;
+  height: 124rpx;
+  flex: 0 0 124rpx;
+  background: transparent;
+}
+
+.achievement-card__icon {
+  display: block;
+  width: 124rpx;
+  height: 124rpx;
+}
+
+.achievement-card__body {
+  min-width: 0;
+  flex: 1;
+  margin-left: 24rpx;
+}
+
+.achievement-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.achievement-card__title {
+  overflow: hidden;
+  color: #202238;
+  font-size: 31rpx;
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.achievement-card__state {
+  flex: 0 0 auto;
+  margin-left: 20rpx;
+  color: #704fff;
+  font-size: 24rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.achievement-card__desc {
+  display: block;
+  overflow: hidden;
+  margin-top: 14rpx;
+  color: #747b91;
+  font-size: 25rpx;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

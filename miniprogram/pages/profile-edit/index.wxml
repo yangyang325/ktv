@@ -58,7 +58,12 @@
         </view>
       </view>
 
-      <button class="save-button" bindtap="handleSave">完成修改</button>
+      <button
+        class="save-button"
+        loading="{{saving}}"
+        disabled="{{saving}}"
+        bindtap="handleSave"
+      >{{saving ? '保存中...' : '完成修改'}}</button>
     </view>
   </scroll-view>
 </view>

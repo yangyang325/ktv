@@ -16,12 +16,12 @@ export function resolvePartyStatusTone(status?: PartyStatus | string, statusText
     return "finished";
   }
 
-  if (status === "full") {
-    return "full";
+  if (status === "ongoing" || statusText.includes("活动中") || statusText.includes("进行中")) {
+    return "active";
   }
 
-  if (statusText.includes("进行中")) {
-    return "active";
+  if (status === "full") {
+    return "full";
   }
 
   return "signup";

@@ -29,8 +29,8 @@ Page({
       {
         key: "favorites",
         iconUrl: HOME_QUICK_ACTION_IMAGES.favorites,
-        title: "活动收藏",
-        desc: "稍后回看"
+        title: "我的收藏",
+        desc: "收藏和关注"
       }
     ]
   },
@@ -78,5 +78,27 @@ Page({
    */
   handleMoreTap() {
     wx.switchTab({ url: "/pages/discover/index" });
+  },
+
+  /**
+   * 构建首页分享给朋友的卡片信息。
+   * @returns 分享配置
+   */
+  onShareAppMessage() {
+    return {
+      title: "深圳K歌兴趣活动",
+      path: "/pages/home/index"
+    };
+  },
+
+  /**
+   * 构建首页分享到朋友圈的信息。
+   * @returns 分享配置
+   */
+  onShareTimeline() {
+    return {
+      title: "深圳K歌兴趣活动",
+      query: ""
+    };
   }
 });

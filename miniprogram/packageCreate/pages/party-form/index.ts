@@ -1,14 +1,16 @@
 import { getVenueList } from "../../../services/api/venue";
 import { createPartyDraft, publishParty } from "../../../services/api/party";
-import { uploadPartyCover } from "../../../services/api/upload";
 import { getTodayDate } from "../../../utils/date";
 import { parseDurationHourToMinutes } from "../../../utils/format";
+import { createSubmitGuard } from "../../../utils/submit-guard";
 import { validatePartyForm } from "../../../utils/validators";
 
 interface PartyTagOption {
   name: string;
   selected: boolean;
 }
+
+const runPartyFormPublish = createSubmitGuard();
 
 interface TagTapEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
@@ -61,9 +63,6 @@ Page({
     venueAddress: "",
     venueLatitude: undefined as number | undefined,
     venueLongitude: undefined as number | undefined,
-    coverImage: "",
-    coverPreviewPath: "",
-    uploadingCover: false,
     publishing: false,
     todayDate: getTodayDate(),
     preferenceIndex: 0,
@@ -220,80 +219,10 @@ Page({
   },
 
   /**
-   * 选择并上传组局封面。
-   */
-  async handleCoverTap() {
-    if (this.data.uploadingCover) {
-      return;
-    }
-
-    try {
-      const result = await wx.chooseMedia({
-        count: 1,
-        mediaType: ["image"],
-        sourceType: ["album", "camera"],
-        sizeType: ["compressed"]
-      });
-      const tempFilePath = result.tempFiles[0]?.tempFilePath;
-
-      if (!tempFilePath) {
-        return;
-      }
-
-      const previousCoverImage = this.data.coverImage;
-      const previousCoverPreviewPath = this.data.coverPreviewPath;
-
-      this.setData({
-        coverPreviewPath: tempFilePath,
-        uploadingCover: true
-      });
-
-      try {
-        const coverImage = await uploadPartyCover(tempFilePath);
-        this.setData({
-          coverImage,
-          coverPreviewPath: coverImage,
-          uploadingCover: false
-        });
-        wx.showToast({
-          title: "封面已上传",
-          icon: "success"
-        });
-      } catch (error) {
-        this.setData({
-          coverImage: previousCoverImage,
-          coverPreviewPath: previousCoverPreviewPath,
-          uploadingCover: false
-        });
-        wx.showToast({
-          title: "封面上传失败",
-          icon: "none"
-        });
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (!message.includes("cancel")) {
-        wx.showToast({
-          title: "未选择图片",
-          icon: "none"
-        });
-      }
-    }
-  },
-
-  /**
    * 发布活动。
    */
   async handlePublish() {
     if (this.data.publishing) {
-      return;
-    }
-
-    if (this.data.uploadingCover) {
-      wx.showToast({
-        title: "封面正在上传",
-        icon: "none"
-      });
       return;
     }
 
@@ -315,8 +244,7 @@ Page({
       roomFee: Number(this.data.form.roomFee) * 100,
       maxCapacity: Number(this.data.form.maxCapacity),
       notes: this.data.form.notes,
-      tags: selectedTags,
-      coverImage: this.data.coverImage
+      tags: selectedTags
     };
     const validation = validatePartyForm(draft);
 
@@ -328,25 +256,31 @@ Page({
       return;
     }
 
-    this.setData({ publishing: true });
+    await runPartyFormPublish.run(async () => {
+      if (this.data.publishing) {
+        return;
+      }
 
-    try {
-      const createdParty = await createPartyDraft(draft);
-      const publishedParty = await publishParty(createdParty.partyId);
+      this.setData({ publishing: true });
 
-      wx.showToast({
-        title: "活动已发布",
-        icon: "success"
-      });
-      wx.redirectTo({
-        url: `/pages/party-detail/index?partyId=${publishedParty.partyId}`
-      });
-    } catch (error) {
-      wx.showToast({
-        title: "发布失败，请稍后重试",
-        icon: "none"
-      });
-      this.setData({ publishing: false });
-    }
+      try {
+        const createdParty = await createPartyDraft(draft);
+        const publishedParty = await publishParty(createdParty.partyId);
+
+        wx.showToast({
+          title: "活动已发布",
+          icon: "success"
+        });
+        wx.redirectTo({
+          url: `/pages/party-detail/index?partyId=${publishedParty.partyId}`
+        });
+      } catch (error) {
+        wx.showToast({
+          title: "发布失败，请稍后重试",
+          icon: "none"
+        });
+        this.setData({ publishing: false });
+      }
+    });
   }
 });

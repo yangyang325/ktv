@@ -42,27 +42,10 @@
               <view class="member-entry-card__name-row">
                 <text class="member-entry-card__name">{{item.userNickname}}</text>
               </view>
-              <text class="member-entry-card__label">报名时间</text>
-              <text class="member-entry-card__sub">{{item.submittedAtText}}</text>
             </view>
           </view>
 
-          <view class="member-entry-card__divider"></view>
-
           <view class="member-entry-card__detail">
-            <view class="member-entry-card__detail-row">
-              <text class="member-entry-card__detail-label">联系方式</text>
-              <text class="member-entry-card__detail-value">{{item.contactDisplayValue}}</text>
-              <view
-                class="member-copy-button"
-                data-entry-id="{{item.entryId}}"
-                hover-class="none"
-                aria-label="复制联系方式"
-                catchtap="handleMemberCopyTap"
-              >
-                <text class="member-copy-button__icon"></text>
-              </view>
-            </view>
             <view class="member-entry-card__detail-row">
               <text class="member-entry-card__detail-label">到达时间</text>
               <text class="member-entry-card__detail-value">{{item.arrivalTimeText}}</text>
@@ -78,13 +61,25 @@
     </view>
 
     <view wx:else class="member-detail-card">
-      <text class="member-detail-card__title">报名者信息</text>
+      <view class="member-detail-card__header">
+        <text class="member-detail-card__title">报名者信息</text>
+        <view class="member-detail-card__back" bindtap="handleBackToMemberList">返回列表</view>
+      </view>
       <view class="member-detail-card__profile">
         <image class="member-detail-card__avatar" src="{{selectedMember.userAvatarUrl}}" mode="aspectFill" />
         <view class="member-detail-card__profile-body">
           <view class="member-detail-card__name-row">
             <text class="member-detail-card__name">{{selectedMember.userNickname}}</text>
           </view>
+        </view>
+        <view
+          wx:if="{{canViewContacts}}"
+          class="member-detail-card__status {{selectedMember.entryType === 'waitlist' ? 'member-detail-card__status--pending' : 'member-detail-card__status--confirmed'}}"
+          data-entry-id="{{selectedMember.entryId}}"
+          catchtap="handleSelectedMemberStatusTap"
+        >
+          <text>{{promotingEntryId === selectedMember.entryId ? '处理中' : (selectedMember.entryType === 'waitlist' ? '待确认' : '确认')}}</text>
+          <text wx:if="{{selectedMember.entryType === 'waitlist'}}" class="member-detail-card__status-arrow"></text>
         </view>
       </view>
 
@@ -119,7 +114,7 @@
         </view>
       </view>
 
-      <text class="member-detail-card__hint">ⓘ 提示：报名者已提交报名信息，请尽快确认以便安排。</text>
+      <text class="member-detail-card__hint">ⓘ 提示：报名者已提交报名信息。活动开始前成员名单可能调整，请以发起者最终联系通知为准。</text>
     </view>
   </block>
 </view>

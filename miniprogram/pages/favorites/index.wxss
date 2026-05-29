@@ -50,17 +50,17 @@ page {
 .favorites-stats {
   display: flex;
   flex-wrap: nowrap;
-  gap: 12rpx;
+  gap: 14rpx;
   margin-top: 36rpx;
 }
 
 .favorites-stats__item {
   display: flex;
   align-items: center;
-  width: 214rpx;
+  width: 172rpx;
   min-width: 0;
-  height: 112rpx;
-  padding: 0 18rpx;
+  height: 116rpx;
+  padding: 0 16rpx;
   border-radius: 18rpx;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 12rpx 24rpx rgba(68, 58, 145, 0.08);
@@ -72,25 +72,32 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42rpx;
-  height: 42rpx;
-  flex: 0 0 42rpx;
+  width: 44rpx;
+  height: 44rpx;
+  flex: 0 0 44rpx;
   border-radius: 999rpx;
-  color: #ffffff;
-  font-size: 20rpx;
-  font-weight: 900;
-  line-height: 1;
+}
+
+.favorites-stats__icon-image {
+  width: 24rpx;
+  height: 24rpx;
 }
 
 .favorites-stats__icon--purple {
   background: linear-gradient(145deg, #8263ff 0%, #5c42eb 100%);
 }
 
+.favorites-stats__icon--orange {
+  background: linear-gradient(145deg, #ff9a4a 0%, #ff702d 100%);
+}
+
 .favorites-stats__copy {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
   min-width: 0;
-  margin-left: 10rpx;
+  margin-left: 12rpx;
   white-space: nowrap;
 }
 
@@ -103,7 +110,7 @@ page {
 }
 
 .favorites-stats__value {
-  margin-left: 12rpx;
+  margin-top: 6rpx;
   font-size: 40rpx;
   font-weight: 900;
   line-height: 1;
@@ -113,10 +120,142 @@ page {
   color: #6650ff;
 }
 
+.favorites-stats__value--orange {
+  color: #ff7b35;
+}
+
+.favorites-tabs {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: 96rpx;
+  margin-top: 28rpx;
+  overflow: hidden;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16rpx 34rpx rgba(51, 54, 91, 0.08);
+}
+
+.favorites-tabs__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e2334;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.favorites-tabs__item--active {
+  color: #6048ff;
+}
+
+.favorites-tabs__item--active::after {
+  position: absolute;
+  left: 50%;
+  bottom: 14rpx;
+  width: 56rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #815eff 0%, #5438f5 100%);
+  content: "";
+  transform: translateX(-50%);
+}
+
 .favorites-list {
   position: relative;
   z-index: 1;
   margin-top: 28rpx;
+}
+
+.favorite-users {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+
+.favorite-user-card {
+  display: flex;
+  align-items: center;
+  min-height: 152rpx;
+  padding: 24rpx;
+  border: 1rpx solid rgba(226, 229, 242, 0.9);
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16rpx 36rpx rgba(51, 54, 91, 0.08);
+  box-sizing: border-box;
+}
+
+.favorite-user-card__avatar {
+  width: 96rpx;
+  height: 96rpx;
+  flex: 0 0 96rpx;
+  border-radius: 50%;
+  background: #edefff;
+}
+
+.favorite-user-card__body {
+  min-width: 0;
+  margin-left: 22rpx;
+  flex: 1;
+}
+
+.favorite-user-card__name {
+  display: block;
+  overflow: hidden;
+  color: #20263a;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favorite-user-card__intro {
+  display: block;
+  overflow: hidden;
+  margin-top: 8rpx;
+  color: #80879b;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favorite-user-card__tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10rpx;
+  margin-top: 14rpx;
+  overflow: hidden;
+}
+
+.favorite-user-card__tag {
+  max-width: 180rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #f1ecff;
+  color: #6048ff;
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favorite-user-card__arrow {
+  margin-left: 16rpx;
+  color: #b9bfd0;
+  font-size: 48rpx;
+  font-weight: 300;
+  line-height: 1;
 }
 
 .favorites-empty {

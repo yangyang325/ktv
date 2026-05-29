@@ -5,8 +5,14 @@ const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
 const { buildPartyView } = require("./shared/party-view");
 const { selectRandomPartyCoverImage } = require("./shared/assets");
+const {
+  isPartyAtCapacity,
+  isPartyBeforeStart,
+  isPartyVisibleInList,
+  syncPartyTimedStatus
+} = require("./shared/party-status");
 
-const VISIBLE_PARTY_STATUSES = new Set(["recruiting", "full", "closed"]);
+const MIN_PARTY_START_LEAD_MS = 5 * 60 * 1000;
 
 /**
  * 创建临时业务 ID。
@@ -123,7 +129,7 @@ function assertPayloadUserMatches(currentUser, userId) {
 /**
  * 查询可收藏的活动。
  * @param {string} partyId 活动 ID
- * @param {{ store: object }} runtime 云函数运行时
+ * @param {{ store: object, now: Function }} runtime 云函数运行时
  * @returns {Promise<object>} 活动数据
  */
 async function findFavoriteParty(partyId, runtime) {
@@ -135,7 +141,7 @@ async function findFavoriteParty(partyId, runtime) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "活动不存在");
   }
 
-  return party;
+  return syncPartyTimedStatus(runtime, party);
 }
 
 /**
@@ -176,6 +182,32 @@ function isValidStartDate(startDate) {
  */
 function isValidStartTime(startTime) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(startTime);
+}
+
+/**
+ * 构建活动开始时间文本。
+ * @param {string} startDate 开始日期
+ * @param {string} startTime 开始时间
+ * @returns {string} 带时区的开始时间文本
+ */
+function buildPartyStartTime(startDate, startTime) {
+  return `${startDate}T${startTime}:00+08:00`;
+}
+
+/**
+ * 校验活动开始时间是否晚于当前时间 5 分钟。
+ * @param {string} startTime 活动开始时间
+ * @param {string} nowISOString 当前时间
+ */
+function assertPartyStartAfterMinimumLead(startTime, nowISOString) {
+  const startAt = new Date(startTime).getTime();
+  const nowAt = new Date(nowISOString).getTime();
+
+  assertCondition(
+    Number.isFinite(startAt) && Number.isFinite(nowAt) && startAt > nowAt + MIN_PARTY_START_LEAD_MS,
+    ERROR_CODES.VALIDATION_ERROR,
+    "活动开始时间需晚于当前时间 5 分钟"
+  );
 }
 
 /**
@@ -284,8 +316,17 @@ async function attachEntryUserProfiles(runtime, entries) {
  * @returns {Promise<object[]>} 组局卡片列表
  */
 async function list(payload, runtime) {
-  const parties = await runtime.store.list("parties", (party) => VISIBLE_PARTY_STATUSES.has(party.status));
-  return Promise.all(parties.map((party) => attachPartyView(runtime, party)));
+  const parties = await runtime.store.list("parties");
+  const visibleParties = [];
+
+  for (const party of parties) {
+    const timedParty = await syncPartyTimedStatus(runtime, party);
+    if (isPartyVisibleInList(timedParty)) {
+      visibleParties.push(timedParty);
+    }
+  }
+
+  return Promise.all(visibleParties.map((party) => attachPartyView(runtime, party)));
 }
 
 /**
@@ -297,12 +338,13 @@ async function list(payload, runtime) {
 async function detail(payload, runtime) {
   assertRequired(payload.partyId, "partyId", "请选择组局");
 
-  const party = await runtime.store.findOne("parties", { partyId: payload.partyId });
+  const foundParty = await runtime.store.findOne("parties", { partyId: payload.partyId });
 
-  if (!party) {
+  if (!foundParty) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "组局不存在");
   }
 
+  const party = await syncPartyTimedStatus(runtime, foundParty);
   const viewer = await findAuthenticatedUser(runtime);
 
   if (party.status === "draft" && (!viewer || viewer.userId !== party.hostId)) {
@@ -354,18 +396,19 @@ async function myTabs(payload, runtime) {
   };
 
   for (const party of parties) {
-    const isHistory = party.status === "finished" || party.status === "cancelled";
-    const userEntry = entryByPartyId.get(party.partyId);
+    const timedParty = await syncPartyTimedStatus(runtime, party);
+    const isHistory = timedParty.status === "finished" || timedParty.status === "cancelled";
+    const userEntry = entryByPartyId.get(timedParty.partyId);
 
-    if (party.hostId !== currentUser.userId && !userEntry) {
+    if (timedParty.hostId !== currentUser.userId && !userEntry) {
       continue;
     }
 
-    const partyView = await attachPartyView(runtime, party);
+    const partyView = await attachPartyView(runtime, timedParty);
 
     if (isHistory) {
       tabs.history.push(partyView);
-    } else if (party.hostId === currentUser.userId) {
+    } else if (timedParty.hostId === currentUser.userId) {
       tabs.hosting.push(partyView);
     } else if (userEntry.entryType === "confirmed") {
       tabs.joined.push(partyView);
@@ -476,17 +519,24 @@ async function favoriteList(payload, runtime) {
     }
 
     seenPartyIds.add(favorite.partyId);
-    const party = await runtime.store.findOne("parties", { partyId: favorite.partyId });
+    const foundParty = await runtime.store.findOne("parties", { partyId: favorite.partyId });
 
-    if (!party) {
+    if (!foundParty) {
       continue;
     }
 
-    if (party.status === "draft" && party.hostId !== currentUser.userId) {
+    const party = await syncPartyTimedStatus(runtime, foundParty);
+
+    if (party.status === "draft") {
+      if (party.hostId === currentUser.userId) {
+        parties.push(await attachPartyView(runtime, party));
+      }
       continue;
     }
 
-    parties.push(await attachPartyView(runtime, party));
+    if (isPartyVisibleInList(party)) {
+      parties.push(await attachPartyView(runtime, party));
+    }
   }
 
   return parties;
@@ -515,13 +565,16 @@ async function createDraft(payload, runtime) {
   assertCondition(Number(payload.maxCapacity) >= 2, ERROR_CODES.VALIDATION_ERROR, "至少需要 2 人成局");
   assertCondition(Number(payload.durationMin) > 0, ERROR_CODES.VALIDATION_ERROR, "请填写有效欢唱时长");
 
+  const partyStartTime = buildPartyStartTime(payload.startDate, payload.startTime);
+  assertPartyStartAfterMinimumLead(partyStartTime, timestamp);
+
   const party = await runtime.store.insert("parties", {
     partyId: createId("party"),
     title: payload.title,
     venueId: payload.venueId,
     venueCustom: payload.venueSummary || "",
     hostId: currentUser.userId,
-    startTime: `${payload.startDate}T${payload.startTime}:00+08:00`,
+    startTime: partyStartTime,
     durationMin: Number(payload.durationMin) || 0,
     roomFee: Number(payload.roomFee),
     maxCapacity: Number(payload.maxCapacity),
@@ -579,11 +632,85 @@ async function publish(payload, runtime) {
   }
 
   assertCondition(party.status === "draft", ERROR_CODES.VALIDATION_ERROR, "只有草稿可以发布");
+  assertPartyStartAfterMinimumLead(party.startTime, timestamp);
 
   const updatedParty = await runtime.store.updateOne("parties", { partyId: payload.partyId }, () => ({
     status: "recruiting",
     updatedAt: timestamp,
     publishedAt: timestamp
+  }));
+
+  return attachPartyView(runtime, updatedParty);
+}
+
+/**
+ * 校验活动状态切换目标。
+ * @param {unknown} targetStatus 目标状态
+ * @returns {string} 目标状态
+ */
+function normalizeStatusSwitchTarget(targetStatus) {
+  assertRequired(targetStatus, "targetStatus", "请选择活动状态");
+  assertCondition(
+    targetStatus === "recruiting" || targetStatus === "finished",
+    ERROR_CODES.VALIDATION_ERROR,
+    "请选择有效活动状态"
+  );
+
+  return targetStatus;
+}
+
+/**
+ * 校验已结束活动能否恢复报名。
+ * @param {object} party 活动数据
+ * @param {string} nowISOString 当前时间
+ */
+function assertCanRestoreRecruiting(party, nowISOString) {
+  if (party.status === "ongoing") {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "活动中不能恢复报名");
+  }
+
+  assertCondition(party.status === "finished", ERROR_CODES.VALIDATION_ERROR, "只有已结束的活动可以恢复报名");
+
+  if (isPartyAtCapacity(party)) {
+    throw new AppError(ERROR_CODES.PARTY_FULL, "报名人数已满，不能恢复报名");
+  }
+
+  assertCondition(isPartyBeforeStart(party, nowISOString), ERROR_CODES.VALIDATION_ERROR, "活动已经开始，不能恢复报名");
+}
+
+/**
+ * 切换发起人维护的活动报名状态。
+ * @param {{ partyId?: string, targetStatus?: string, userId?: string }} payload 状态切换参数
+ * @param {{ store: object, openid: string, hasExplicitOpenid?: boolean, now: Function }} runtime 云函数运行时
+ * @returns {Promise<object>} 切换后的组局展示数据
+ */
+async function statusSwitch(payload, runtime) {
+  assertRequired(payload.partyId, "partyId", "请选择组局");
+
+  const targetStatus = normalizeStatusSwitchTarget(payload.targetStatus);
+  const currentUser = await getCurrentUser(runtime);
+  assertPayloadUserMatches(currentUser, payload.userId);
+
+  const foundParty = await runtime.store.findOne("parties", { partyId: payload.partyId });
+  if (!foundParty) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, "组局不存在");
+  }
+
+  const party = await syncPartyTimedStatus(runtime, foundParty);
+  if (party.hostId !== currentUser.userId) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有发起人可以调整活动状态");
+  }
+
+  const timestamp = runtime.now();
+  if (targetStatus === "finished") {
+    assertCondition(party.status === "recruiting", ERROR_CODES.VALIDATION_ERROR, "只有报名中的活动可以结束报名");
+  } else {
+    assertCanRestoreRecruiting(party, timestamp);
+  }
+
+  const updatedParty = await runtime.store.updateOne("parties", { partyId: party.partyId }, () => ({
+    status: targetStatus,
+    updatedAt: timestamp
   }));
 
   return attachPartyView(runtime, updatedParty);
@@ -597,7 +724,8 @@ const handlers = {
   favoriteToggle,
   favoriteList,
   createDraft,
-  publish
+  publish,
+  statusSwitch
 };
 
 /**

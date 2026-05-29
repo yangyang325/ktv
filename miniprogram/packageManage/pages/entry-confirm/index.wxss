@@ -366,6 +366,17 @@
   color: #6048ff;
 }
 
+.confirm-entry-notice {
+  margin: 6rpx 0 0;
+  padding: 18rpx 22rpx;
+  border-radius: 16rpx;
+  background: #fff8ed;
+  color: #a06418;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .confirm-bottom-card {
   display: flex;
   align-items: center;
@@ -421,4 +432,10 @@
   line-height: 88rpx;
   text-align: center;
   box-shadow: 0 16rpx 30rpx rgba(91, 61, 245, 0.26);
+}
+
+.confirm-submit[disabled] {
+  background: linear-gradient(135deg, #9a72ff 0%, #4f36f4 100%);
+  color: #ffffff;
+  opacity: 1;
 }

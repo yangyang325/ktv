@@ -157,6 +157,12 @@ picker + .edit-row,
   box-shadow: 0 18rpx 34rpx rgba(98, 66, 255, 0.24);
 }
 
+.save-button[disabled] {
+  background: linear-gradient(135deg, #875cff 0%, #573ef5 100%);
+  color: #ffffff !important;
+  opacity: 1;
+}
+
 .save-button::after {
   border: 0;
 }

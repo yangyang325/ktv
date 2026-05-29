@@ -127,6 +127,9 @@
         <text class="confirm-agreement__link" catchtap="openAgreement">《K歌活动参与须知》</text>
       </view>
     </view>
+    <view class="confirm-entry-notice">
+      <text>活动开始前成员名单可能调整，请以发起者最终联系通知为准</text>
+    </view>
 
     <view class="confirm-bottom-card">
       <view class="confirm-total">
@@ -139,9 +142,10 @@
       <button
         class="confirm-submit"
         hover-class="none"
+        loading="{{submitting}}"
         disabled="{{submitting}}"
         bindtap="handleConfirm"
-      >确认报名</button>
+      >{{submitting ? '提交中' : (entryMode === 'waitlist' ? '确认候补' : '确认报名')}}</button>
     </view>
   </block>
 </view>

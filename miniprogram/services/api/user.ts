@@ -1,4 +1,4 @@
-import type { User } from "../../types/user";
+import type { PublicUserProfile, User } from "../../types/user";
 import { callCloudFunction } from "./cloud";
 
 /**
@@ -9,6 +9,7 @@ export interface UserProfileUpdate {
   gender?: string;
   intro?: string;
   nickname?: string;
+  tags?: string[];
 }
 
 interface WechatProfileUserInfo {
@@ -79,6 +80,16 @@ export async function getUserById() {
 }
 
 /**
+ * 读取指定用户的公开资料。
+ * @param userId 用户 ID
+ * @returns 用户公开资料
+ */
+export async function getPublicUserProfile(userId: string) {
+  const profile = await callCloudFunction<PublicUserProfile>("auth", "publicProfile", { userId });
+  return clonePlainValue(profile);
+}
+
+/**
  * 拉取微信头像昵称资料。
  * @returns 可写入云端的用户资料或空值
  */
@@ -132,7 +143,27 @@ function normalizeUserProfileUpdate(profile: UserProfileUpdate): UserProfileUpda
     profileUpdate.nickname = profile.nickname;
   }
 
+  if (Array.isArray(profile.tags)) {
+    profileUpdate.tags = normalizeUserTags(profile.tags);
+  }
+
   return profileUpdate;
+}
+
+/**
+ * 规范化用户标签。
+ * @param tags 原始标签列表
+ * @returns 去重后的用户标签列表
+ */
+function normalizeUserTags(tags: string[]): string[] {
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 6)
+    )
+  );
 }
 
 /**
@@ -157,6 +188,10 @@ function pickCloudProfilePayload(profileUpdate: UserProfileUpdate): Record<strin
 
   if (Object.prototype.hasOwnProperty.call(profileUpdate, "intro")) {
     payload.intro = profileUpdate.intro;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(profileUpdate, "tags")) {
+    payload.tags = profileUpdate.tags;
   }
 
   return payload;

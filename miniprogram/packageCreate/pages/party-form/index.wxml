@@ -1,25 +1,9 @@
 <view class="page form-page">
   <view class="title-card">
-    <view class="upload-box" bindtap="handleCoverTap">
-      <image
-        wx:if="{{coverPreviewPath}}"
-        class="upload-box__image"
-        src="{{coverPreviewPath}}"
-        mode="aspectFill"
-      />
-      <view wx:else class="upload-box__placeholder">
-        <text class="upload-box__plus">＋</text>
-        <text class="upload-box__text">上传封面</text>
-      </view>
-      <view wx:if="{{uploadingCover}}" class="upload-box__mask">
-        <text>上传中</text>
-      </view>
-      <text wx:if="{{coverImage && !uploadingCover}}" class="upload-box__change">更换</text>
-    </view>
     <view class="title-card__body">
       <input
         class="title-card__input"
-        placeholder="给活动起个清晰标题吧"
+        placeholder="给活动起个清晰标题吧。例：周五下班后K歌放松局"
         value="{{form.title}}"
         data-field="title"
         bindinput="handleFieldChange"

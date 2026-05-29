@@ -23,7 +23,7 @@ function createRuntime(context = {}) {
       store: context.store,
       openid: context.openid || "openid-host",
       hasExplicitOpenid,
-      now: context.now || (() => new Date().toISOString())
+      now: context.now || (() => "2026-04-24T00:00:00.000Z")
     };
   }
 

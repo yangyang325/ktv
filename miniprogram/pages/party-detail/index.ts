@@ -1,23 +1,23 @@
 import { ROUTES } from "../../constants/routes";
 import { DEFAULT_PROFILE_AVATAR_IMAGES } from "../../constants/assets";
 import { isPartyFavorited, togglePartyFavorite } from "../../services/api/favorite";
-import { getPartyDetail, joinWaitlist } from "../../services/api/party";
+import { isUserFollowing, toggleUserFollow } from "../../services/api/follow";
+import { getPartyDetail, quitParty, togglePartyStatus } from "../../services/api/party";
+import type { PartyStatus } from "../../types/common";
 import { ensureLoggedInForAction } from "../../utils/auth";
 import { resolvePartyStatusTone } from "../../utils/party-status";
+import { createSubmitGuard } from "../../utils/submit-guard";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
 type DisplayTag = {
   label: string;
 };
-type ContactEntry = {
-  entryId: string;
-  userNickname: string;
-  entryStatusText: string;
-  contactMethodLabel: string;
-  contactValue: string;
-  arrivalTimeText: string;
-  note: string;
-};
+
+const runFavoriteSubmit = createSubmitGuard();
+const runFollowSubmit = createSubmitGuard();
+const runWaitlistSubmit = createSubmitGuard();
+const runStatusSwitchSubmit = createSubmitGuard();
+const runQuitPartySubmit = createSubmitGuard();
 
 Page({
   data: {
@@ -25,14 +25,25 @@ Page({
     detail: null as PartyDetail | null,
     confirmedUsers: [] as string[],
     waitlistUsers: [] as string[],
-    contactEntries: [] as ContactEntry[],
     canViewContacts: false,
     displayTags: [] as DisplayTag[],
     remainingCount: 0,
     isFavorited: false,
     statusTone: "signup",
+    canSwitchPartyStatus: false,
+    statusSwitchText: "",
+    statusSwitchTarget: "" as Extract<PartyStatus, "recruiting" | "finished"> | "",
+    isFollowingHost: false,
+    canFollowHost: false,
+    canQuitParty: false,
+    canWaitlistParty: false,
     durationHourText: "3",
     defaultHostAvatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES[0],
+    favoriteSubmitting: false,
+    followSubmitting: false,
+    waitlistSubmitting: false,
+    statusSwitchSubmitting: false,
+    quitSubmitting: false,
     statusBarHeight: 0
   },
 
@@ -86,16 +97,21 @@ Page({
       detail,
       confirmedUsers: detail.confirmedEntries.map((item) => item.userNickname),
       waitlistUsers: detail.waitlistEntries.map((item) => item.userNickname),
-      contactEntries: this.buildContactEntries(detail),
       canViewContacts: Boolean(detail.canViewContacts),
       displayTags: this.buildDisplayTags(detail.party.tags),
       remainingCount: Math.max(detail.party.maxCapacity - detail.party.confirmedCount, 0),
       isFavorited: false,
       statusTone: resolvePartyStatusTone(detail.party.status, detail.party.statusText),
+      ...this.buildStatusSwitchState(detail),
+      canFollowHost: this.canFollowHost(detail),
+      isFollowingHost: false,
+      canQuitParty: this.canQuitCurrentParty(detail),
+      canWaitlistParty: this.canJoinWaitlist(detail),
       durationHourText: this.formatDurationHour(detail.party.durationMin)
     });
 
     void this.refreshFavoriteStatus(detail.party.partyId);
+    void this.refreshFollowStatus(detail.host?.userId || "");
   },
 
   /**
@@ -112,6 +128,24 @@ Page({
   },
 
   /**
+   * 后台刷新发起人关注状态，失败时按未关注展示。
+   * @param hostUserId 发起人用户 ID
+   */
+  async refreshFollowStatus(hostUserId: string) {
+    if (!hostUserId || !this.data.canFollowHost) {
+      this.setData({ isFollowingHost: false });
+      return;
+    }
+
+    try {
+      const isFollowingHost = await isUserFollowing(hostUserId);
+      this.setData({ isFollowingHost });
+    } catch {
+      this.setData({ isFollowingHost: false });
+    }
+  },
+
+  /**
    * 生成带视觉色调的标签列表。
    * @param tags 原始标签列表
    * @returns 详情页展示标签
@@ -123,25 +157,6 @@ Page({
   },
 
   /**
-   * 构建发起人可见的报名联系信息列表。
-   * @param detail 活动详情
-   * @returns 联系信息展示列表
-   */
-  buildContactEntries(detail: PartyDetail) {
-    return [...detail.confirmedEntries, ...detail.waitlistEntries]
-      .filter((entry) => Boolean(entry.contactInfo?.value))
-      .map((entry) => ({
-        entryId: entry.entryId,
-        userNickname: entry.userNickname,
-        entryStatusText: entry.entryType === "waitlist" ? `候补 ${entry.waitlistNo || ""}`.trim() : `已报名 ${entry.seqNo || ""}`.trim(),
-        contactMethodLabel: entry.contactInfo?.method === "phone" ? "手机号" : "微信号",
-        contactValue: entry.contactInfo?.value || "",
-        arrivalTimeText: entry.contactInfo?.arrivalTime || "未填写",
-        note: entry.contactInfo?.note || ""
-      }));
-  },
-
-  /**
    * 格式化活动小时数。
    * @param durationMin 活动时长分钟数
    * @returns 小时展示文案
@@ -149,6 +164,80 @@ Page({
   formatDurationHour(durationMin: number) {
     const durationHour = durationMin / 60;
     return Number.isInteger(durationHour) ? String(durationHour) : durationHour.toFixed(1);
+  },
+
+  /**
+   * 构建发起人状态切换按钮状态。
+   * @param detail 活动详情
+   * @returns 状态切换按钮数据
+   */
+  buildStatusSwitchState(detail: PartyDetail) {
+    if (!detail.canViewContacts) {
+      return {
+        canSwitchPartyStatus: false,
+        statusSwitchText: "",
+        statusSwitchTarget: "" as const
+      };
+    }
+
+    if (detail.party.status === "recruiting") {
+      return {
+        canSwitchPartyStatus: true,
+        statusSwitchText: "结束报名",
+        statusSwitchTarget: "finished" as const
+      };
+    }
+
+    if (detail.party.status !== "finished") {
+      return {
+        canSwitchPartyStatus: false,
+        statusSwitchText: "",
+        statusSwitchTarget: "" as const
+      };
+    }
+
+    const startAt = new Date(detail.party.startTime).getTime();
+    const hasRemainingSeat = detail.party.confirmedCount < detail.party.maxCapacity;
+    const canRestore = hasRemainingSeat && Number.isFinite(startAt) && Date.now() < startAt;
+
+    return {
+      canSwitchPartyStatus: canRestore,
+      statusSwitchText: canRestore ? "恢复报名" : "",
+      statusSwitchTarget: canRestore ? ("recruiting" as const) : ("" as const)
+    };
+  },
+
+  /**
+   * 判断当前查看者是否可以关注发起人。
+   * @param detail 活动详情
+   * @returns 是否展示关注入口
+   */
+  canFollowHost(detail: PartyDetail) {
+    return Boolean(detail.host?.userId && !detail.canViewContacts);
+  },
+
+  /**
+   * 判断当前查看者是否可以退出报名。
+   * @param detail 活动详情
+   * @returns 是否展示退出报名入口
+   */
+  canQuitCurrentParty(detail: PartyDetail) {
+    return Boolean(
+      detail.viewerEntry &&
+      !detail.canViewContacts &&
+      detail.party.status !== "finished" &&
+      detail.party.status !== "cancelled"
+    );
+  },
+
+  /**
+   * 判断当前查看者是否可以候补报名。
+   * @param detail 活动详情
+   * @returns 是否展示候补报名入口
+   */
+  canJoinWaitlist(detail: PartyDetail) {
+    const isFull = detail.party.status === "full" || detail.party.confirmedCount >= detail.party.maxCapacity;
+    return Boolean(!detail.viewerEntry && !detail.canViewContacts && isFull);
   },
 
   /**
@@ -232,19 +321,154 @@ Page({
       return;
     }
 
-    try {
-      const isFavorited = await togglePartyFavorite(this.data.partyId);
-      this.setData({ isFavorited });
-      wx.showToast({
-        title: isFavorited ? "已收藏" : "已取消收藏",
-        icon: "none"
-      });
-    } catch (error) {
-      wx.showToast({
-        title: "收藏失败，请稍后再试",
-        icon: "none"
-      });
+    await runFavoriteSubmit.run(async () => {
+      if (this.data.favoriteSubmitting) {
+        return;
+      }
+
+      this.setData({ favoriteSubmitting: true });
+      try {
+        const isFavorited = await togglePartyFavorite(this.data.partyId);
+        this.setData({ isFavorited });
+        wx.showToast({
+          title: isFavorited ? "已收藏" : "已取消收藏",
+          icon: "none"
+        });
+      } catch (error) {
+        wx.showToast({
+          title: "收藏失败，请稍后再试",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ favoriteSubmitting: false });
+      }
+    });
+  },
+
+  /**
+   * 切换对活动发起人的关注状态。
+   */
+  async handleFollowHostTap() {
+    const hostUserId = this.data.detail?.host?.userId || "";
+    if (!hostUserId || !this.data.canFollowHost) {
+      return;
     }
+
+    const hasLoggedIn = await ensureLoggedInForAction("关注用户");
+    if (!hasLoggedIn) {
+      return;
+    }
+
+    await runFollowSubmit.run(async () => {
+      if (this.data.followSubmitting) {
+        return;
+      }
+
+      this.setData({ followSubmitting: true });
+      try {
+        const isFollowingHost = await toggleUserFollow(hostUserId);
+        this.setData({ isFollowingHost });
+        wx.showToast({
+          title: isFollowingHost ? "已关注" : "已取消关注",
+          icon: "none"
+        });
+      } catch (error) {
+        wx.showToast({
+          title: error instanceof Error ? error.message : "关注失败，请稍后再试",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ followSubmitting: false });
+      }
+    });
+  },
+
+  /**
+   * 切换发起人维护的活动报名状态。
+   */
+  async handleStatusSwitchTap() {
+    if (!this.data.partyId || !this.data.statusSwitchTarget) {
+      return;
+    }
+
+    await runStatusSwitchSubmit.run(async () => {
+      if (this.data.statusSwitchSubmitting) {
+        return;
+      }
+
+      this.setData({ statusSwitchSubmitting: true });
+      try {
+        const targetStatus = this.data.statusSwitchTarget;
+        if (targetStatus !== "recruiting" && targetStatus !== "finished") {
+          return;
+        }
+
+        await togglePartyStatus(this.data.partyId, targetStatus);
+        await this.refreshDetail();
+        wx.showToast({
+          title: targetStatus === "finished" ? "已结束报名" : "已恢复报名",
+          icon: "none"
+        });
+      } catch (error) {
+        wx.showToast({
+          title: error instanceof Error ? error.message : "状态切换失败",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ statusSwitchSubmitting: false });
+      }
+    });
+  },
+
+  /**
+   * 当前报名者主动退出活动报名。
+   */
+  async handleQuitPartyTap() {
+    if (!this.data.partyId || this.data.quitSubmitting) {
+      return;
+    }
+
+    wx.showModal({
+      title: "确认退出报名",
+      content: "退出后你的报名信息会从本次活动中移除，名额可能顺延给候补报名者。",
+      confirmText: "退出",
+      confirmColor: "#ff443f",
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+
+        void this.submitQuitParty();
+      }
+    });
+  },
+
+  /**
+   * 提交退出报名请求并刷新详情。
+   */
+  async submitQuitParty() {
+    await runQuitPartySubmit.run(async () => {
+      if (this.data.quitSubmitting) {
+        return;
+      }
+
+      this.setData({ quitSubmitting: true });
+      try {
+        await quitParty(this.data.partyId);
+        await this.refreshDetail();
+        wx.showToast({
+          title: "已退出报名",
+          icon: "none"
+        });
+      } catch (error) {
+        wx.showToast({
+          title: error instanceof Error ? error.message : "退出失败",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ quitSubmitting: false });
+      }
+    });
   },
 
   /**
@@ -253,6 +477,24 @@ Page({
   handleOpenEntryDetails() {
     wx.navigateTo({
       url: `${ROUTES.partyMembers}?partyId=${this.data.partyId}`
+    });
+  },
+
+  /**
+   * 打开发起者公开资料页。
+   */
+  handleOpenHostProfile() {
+    const hostUserId = this.data.detail?.host?.userId || "";
+    if (!hostUserId) {
+      wx.showToast({
+        title: "暂无发起者资料",
+        icon: "none"
+      });
+      return;
+    }
+
+    wx.navigateTo({
+      url: `${ROUTES.hostProfile}?userId=${hostUserId}`
     });
   },
 
@@ -279,11 +521,8 @@ Page({
       return;
     }
 
-    const waitEntry = await joinWaitlist(this.data.partyId);
-    await this.refreshDetail();
-    wx.showToast({
-      title: `已成为候补第 ${waitEntry.waitlistNo} 位`,
-      icon: "none"
+    wx.navigateTo({
+      url: `${ROUTES.entryConfirm}?partyId=${this.data.partyId}&mode=waitlist`
     });
   },
 

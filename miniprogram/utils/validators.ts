@@ -1,5 +1,7 @@
 import type { PartyDraftInput } from "../types/party";
 
+const MIN_PARTY_START_LEAD_MS = 5 * 60 * 1000;
+
 /**
  * 字段校验错误。
  */
@@ -15,6 +17,13 @@ export interface ValidationResult {
   valid: boolean;
   message: string;
   errors: ValidationError[];
+}
+
+/**
+ * 局表单校验选项。
+ */
+export interface PartyFormValidationOptions {
+  now?: Date;
 }
 
 /**
@@ -81,6 +90,30 @@ function isValidPartyTime(value: unknown): boolean {
 }
 
 /**
+ * 构建组局开始时间戳。
+ * @param startDate 开始日期
+ * @param startTime 开始时间
+ * @returns 开始时间戳
+ */
+function buildPartyStartAt(startDate: string, startTime: string): number {
+  return new Date(`${startDate}T${startTime}:00+08:00`).getTime();
+}
+
+/**
+ * 判断开始时间是否晚于当前时间 5 分钟。
+ * @param startDate 开始日期
+ * @param startTime 开始时间
+ * @param now 当前时间
+ * @returns 是否满足最小提前量
+ */
+function isPartyStartAfterMinimumLead(startDate: string, startTime: string, now: Date): boolean {
+  const startAt = buildPartyStartAt(startDate, startTime);
+  const nowAt = now.getTime();
+
+  return Number.isFinite(startAt) && Number.isFinite(nowAt) && startAt > nowAt + MIN_PARTY_START_LEAD_MS;
+}
+
+/**
  * 校验正数表单字段。
  * @param value 待校验的表单值
  * @returns 是否为正数
@@ -93,10 +126,13 @@ function isPositiveNumber(value: unknown): boolean {
 /**
  * 校验局表单的关键字段。
  * @param input 局表单输入
+ * @param options 校验选项
  * @returns 校验结果
  */
-export function validatePartyForm(input: Partial<PartyDraftInput>): ValidationResult {
+export function validatePartyForm(input: Partial<PartyDraftInput>, options: PartyFormValidationOptions = {}): ValidationResult {
   const errors: ValidationError[] = [];
+  let hasValidStartDate = false;
+  let hasValidStartTime = false;
 
   if (isBlankText(input.title)) {
     errors.push({ field: "title", message: "请填写活动标题" });
@@ -112,12 +148,24 @@ export function validatePartyForm(input: Partial<PartyDraftInput>): ValidationRe
     errors.push({ field: "startDate", message: "请选择开始日期" });
   } else if (!isValidPartyDate(input.startDate)) {
     errors.push({ field: "startDate", message: "请选择有效开始日期" });
+  } else {
+    hasValidStartDate = true;
   }
 
   if (isBlankText(input.startTime)) {
     errors.push({ field: "startTime", message: "请选择开始时间" });
   } else if (!isValidPartyTime(input.startTime)) {
     errors.push({ field: "startTime", message: "请选择有效开始时间" });
+  } else {
+    hasValidStartTime = true;
+  }
+
+  if (
+    hasValidStartDate
+    && hasValidStartTime
+    && !isPartyStartAfterMinimumLead(input.startDate as string, input.startTime as string, options.now || new Date())
+  ) {
+    errors.push({ field: "startTime", message: "活动开始时间需晚于当前时间 5 分钟" });
   }
 
   if (input.durationMin === undefined || input.durationMin === null) {

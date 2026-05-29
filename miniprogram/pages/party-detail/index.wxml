@@ -65,7 +65,7 @@
 
     <view class="detail-section">
       <text class="detail-section__title">发起人</text>
-      <view class="host">
+      <view class="host host--tapable" bindtap="handleOpenHostProfile">
         <image wx:if="{{detail.host.avatarUrl}}" class="host__avatar" src="{{detail.host.avatarUrl}}" mode="aspectFill" />
         <image wx:else class="host__avatar" src="{{defaultHostAvatarUrl}}" mode="aspectFill" />
         <view class="host__body">
@@ -74,23 +74,13 @@
           </view>
           <text class="host__intro">K歌爱好者，活动信息由发起人自行维护。</text>
         </view>
-        <text class="host__arrow">›</text>
-      </view>
-    </view>
-
-    <view class="detail-section detail-section--contacts" wx:if="{{canViewContacts && contactEntries.length}}">
-      <text class="detail-section__title">报名联系信息</text>
-      <text class="detail-section__hint">仅发起人可见，用于本次活动建群、集合和包厢通知</text>
-      <view class="detail-contact-list">
-        <view class="detail-contact" wx:for="{{contactEntries}}" wx:key="entryId">
-          <view class="detail-contact__header">
-            <text class="detail-contact__name">{{item.userNickname}}</text>
-            <text class="detail-contact__status">{{item.entryStatusText}}</text>
-          </view>
-          <text class="detail-contact__main">{{item.contactMethodLabel}}：{{item.contactValue}}</text>
-          <text class="detail-contact__sub">预计到达：{{item.arrivalTimeText}}</text>
-          <text class="detail-contact__sub" wx:if="{{item.note}}">备注：{{item.note}}</text>
-        </view>
+        <button
+          wx:if="{{canFollowHost}}"
+          class="host__follow {{(isFollowingHost || followSubmitting) ? 'host__follow--active' : ''}}"
+          hover-class="none"
+          disabled="{{followSubmitting}}"
+          catchtap="handleFollowHostTap"
+        >{{followSubmitting ? '处理中' : (isFollowingHost ? '已关注' : '关注')}}</button>
       </view>
     </view>
 
@@ -103,12 +93,35 @@
       <button
         class="actions__favorite {{isFavorited ? 'actions__favorite--active' : ''}}"
         hover-class="none"
+        disabled="{{favoriteSubmitting}}"
         bindtap="handleFavoriteTap"
       >
         <image src="{{isFavorited ? '/assets/images/ktv/star-active.svg' : '/assets/images/ktv/star.svg'}}" mode="aspectFit" />
-        <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
+        <text>{{favoriteSubmitting ? '处理中' : (isFavorited ? '已收藏' : '收藏')}}</text>
       </button>
+      <button class="actions__share" hover-class="none" open-type="share">分享</button>
+      <button
+        wx:if="{{canSwitchPartyStatus}}"
+        class="actions__status"
+        hover-class="none"
+        disabled="{{statusSwitchSubmitting}}"
+        bindtap="handleStatusSwitchTap"
+      >{{statusSwitchSubmitting ? '处理中' : statusSwitchText}}</button>
       <button wx:if="{{canViewContacts}}" class="actions__primary" hover-class="none" bindtap="handleOpenEntryDetails">报名详情</button>
+      <button
+        wx:elif="{{canQuitParty}}"
+        class="actions__primary actions__primary--danger"
+        hover-class="none"
+        disabled="{{quitSubmitting}}"
+        bindtap="handleQuitPartyTap"
+      >{{quitSubmitting ? '处理中' : '退出报名'}}</button>
+      <button
+        wx:elif="{{canWaitlistParty}}"
+        class="actions__primary actions__primary--waitlist"
+        hover-class="none"
+        disabled="{{waitlistSubmitting}}"
+        bindtap="handleWaitlist"
+      >{{waitlistSubmitting ? '处理中' : '候补报名'}}</button>
       <button wx:else class="actions__primary" hover-class="none" bindtap="handleJoin">立即报名</button>
     </view>
   </block>

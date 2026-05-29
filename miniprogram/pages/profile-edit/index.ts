@@ -1,6 +1,7 @@
 import { DEFAULT_PROFILE_AVATAR_IMAGES, selectRandomProfileAvatarImage } from "../../constants/assets";
 import { getCurrentUser, updateCurrentUser } from "../../services/api/user";
 import type { User } from "../../types/user";
+import { createSubmitGuard } from "../../utils/submit-guard";
 
 interface ProfileForm {
   avatarUrl: string;
@@ -35,11 +36,14 @@ type ProfileEditUser = User & {
   intro?: string;
 };
 
+const runProfileSave = createSubmitGuard();
+
 Page({
   data: {
     avatarOptions: DEFAULT_PROFILE_AVATAR_IMAGES,
     genderOptions: ["女", "男", "保密"],
     genderIndex: 0,
+    saving: false,
     form: {
       avatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES[0],
       nickname: "微信用户",
@@ -119,22 +123,31 @@ Page({
    * 保存编辑资料。
    */
   async handleSave() {
-    try {
-      const updatedUser = await updateCurrentUser(this.data.form);
-      notifyPreviousProfilePage(updatedUser);
-      wx.showToast({
-        title: "保存成功",
-        icon: "success"
-      });
-      wx.navigateBack({
-        delta: 1
-      });
-    } catch {
-      wx.showToast({
-        title: "保存失败，请稍后再试",
-        icon: "none"
-      });
-    }
+    await runProfileSave.run(async () => {
+      if (this.data.saving) {
+        return;
+      }
+
+      this.setData({ saving: true });
+      try {
+        const updatedUser = await updateCurrentUser(this.data.form);
+        notifyPreviousProfilePage(updatedUser);
+        wx.showToast({
+          title: "保存成功",
+          icon: "success"
+        });
+        wx.navigateBack({
+          delta: 1
+        });
+      } catch {
+        wx.showToast({
+          title: "保存失败，请稍后再试",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ saving: false });
+      }
+    });
   }
 });
 
@@ -170,7 +183,7 @@ function createProfileForm(
   defaultForm: ProfileForm,
   currentUser: User | null
 ): ProfileForm {
-  const profileUser = currentUser as ProfileEditUser | null;
+const profileUser = currentUser as ProfileEditUser | null;
 
   return {
     ...defaultForm,

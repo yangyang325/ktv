@@ -1,0 +1,82 @@
+<view class="page host-profile-page">
+  <scroll-view class="host-profile-scroll" scroll-y enhanced>
+    <view class="host-profile-content" wx:if="{{profile}}">
+      <view class="host-profile-card host-profile-hero {{canFollowUser ? 'host-profile-hero--followable' : ''}}">
+        <image class="host-profile-hero__avatar" src="{{profile.user.avatarUrl || defaultAvatarUrl}}" mode="aspectFill" />
+        <view class="host-profile-hero__body">
+          <view class="host-profile-hero__name-row">
+            <text class="host-profile-hero__name">{{profile.user.nickname}}</text>
+          </view>
+          <text class="host-profile-hero__subtitle">K歌爱好者</text>
+          <text class="host-profile-hero__desc">活动信息由发起人自行维护</text>
+        </view>
+        <button
+          wx:if="{{canFollowUser}}"
+          class="host-profile-follow {{(isFollowingUser || followSubmitting) ? 'host-profile-follow--active' : ''}}"
+          hover-class="none"
+          loading="{{followSubmitting}}"
+          disabled="{{followSubmitting}}"
+          bindtap="handleFollowTap"
+        >{{followSubmitting ? '处理中' : (isFollowingUser ? '已关注' : '关注')}}</button>
+        <view class="host-profile-tags" wx:if="{{profile.tags.length}}">
+          <text
+            class="host-profile-tag host-profile-tag--{{item.tone}}"
+            wx:for="{{profile.tags}}"
+            wx:key="label"
+          >{{item.label}}</text>
+        </view>
+      </view>
+
+      <view class="host-profile-card">
+        <text class="host-profile-card__title">个人简介</text>
+        <text class="host-profile-card__text">{{profile.introText}}</text>
+      </view>
+
+      <view class="host-profile-card">
+        <text class="host-profile-card__title">组局数据</text>
+        <view class="host-stat-grid">
+          <view class="host-stat">
+            <view class="host-stat__head">
+              <image class="host-stat__icon" src="/assets/images/ktv/host-profile-stat-launch.svg" mode="aspectFit" />
+              <text class="host-stat__label">发起活动</text>
+            </view>
+            <text class="host-stat__value">{{profile.stats[0].value}}</text>
+          </view>
+          <view class="host-stat">
+            <view class="host-stat__head">
+              <image class="host-stat__icon" src="/assets/images/ktv/host-profile-stat-success.svg" mode="aspectFit" />
+              <text class="host-stat__label">成功成团</text>
+            </view>
+            <text class="host-stat__value">{{profile.stats[1].value}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="host-profile-card host-recent-card" wx:if="{{profile.recentParty}}">
+        <text class="host-profile-card__title">最近发起</text>
+        <view
+          class="host-recent-party"
+          data-party-id="{{profile.recentParty.partyId}}"
+          bindtap="handleRecentPartyTap"
+        >
+          <image class="host-recent-party__cover" src="{{profile.recentParty.coverImage}}" mode="aspectFill" />
+          <view class="host-recent-party__body">
+            <text class="host-recent-party__title">{{profile.recentParty.title}}</text>
+            <text class="host-recent-party__line">时间 {{profile.recentParty.timeSummary}}</text>
+            <text class="host-recent-party__line">地点 {{profile.recentParty.venueSummary}}</text>
+            <text class="host-recent-party__line">AA参考 {{profile.recentParty.priceText}}</text>
+          </view>
+          <text class="host-recent-party__arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="host-profile-loading" wx:elif="{{loading}}">
+      <text>正在读取资料</text>
+    </view>
+
+    <view class="host-profile-loading" wx:else>
+      <text>暂无资料</text>
+    </view>
+  </scroll-view>
+</view>

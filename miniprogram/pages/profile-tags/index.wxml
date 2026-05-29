@@ -1,0 +1,39 @@
+<view class="page profile-tags-page">
+  <scroll-view class="tag-scroll" scroll-y enhanced>
+    <view class="tag-content">
+      <view class="tag-card">
+        <view class="tag-card__header">
+          <text class="tag-card__title">选择你的K歌标签</text>
+          <text class="tag-card__count">{{selectedTags.length}}/{{maxTagCount}}</text>
+        </view>
+        <view
+          class="tag-category"
+          wx:for="{{tagGroups}}"
+          wx:for-item="group"
+          wx:key="title"
+        >
+          <text class="tag-category__title">{{group.title}}</text>
+          <view class="tag-option-grid">
+            <button
+              class="tag-option tag-option--{{tag.tone}} {{tag.selected ? 'tag-option--active' : ''}}"
+              wx:for="{{group.options}}"
+              wx:for-item="tag"
+              wx:key="label"
+              data-label="{{tag.label}}"
+              bindtap="handleTagToggle"
+            >
+              <text class="tag-option__text">{{tag.label}}</text>
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <button
+        class="tag-save-button"
+        loading="{{saving}}"
+        disabled="{{saving}}"
+        bindtap="handleSave"
+      >{{saving ? '保存中...' : '保存标签'}}</button>
+    </view>
+  </scroll-view>
+</view>

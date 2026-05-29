@@ -191,7 +191,7 @@ test("我的活动和活动收藏底部 tab 隐藏消息后按三个入口均分
     assert.equal(styleBlock.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
     assert.equal(styleBlock.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), false);
   });
-  assert.equal(favoritesStyle.includes(".favorites-tabs"), false);
+  assert.equal(favoritesStyle.includes(".favorites-tabs"), true);
   assert.equal(myPartiesCategoryTabStyle.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), true);
 });
 
@@ -272,7 +272,7 @@ test("运行时页面和服务不再使用本地 mock 展示数据", () => {
   assert.equal(runtimeSource.includes('src="{{avatar.avatarUrl}}"'), true);
 });
 
-test("发起组局页面提供封面上传入口", () => {
+test("发起组局页面不提供封面上传入口并使用默认封面", () => {
   const formPage = fs.readFileSync(
     path.join(root, "miniprogram", "packageCreate", "pages", "party-form", "index.wxml"),
     "utf8"
@@ -282,13 +282,19 @@ test("发起组局页面提供封面上传入口", () => {
     "utf8"
   );
 
-  assert.equal(formPage.includes('bindtap="handleCoverTap"'), true);
-  assert.equal(formPage.includes("coverImage"), true);
-  assert.equal(formLogic.includes("wx.chooseMedia"), true);
-  assert.equal(formLogic.includes("uploadPartyCover"), true);
+  assert.equal(formPage.includes('bindtap="handleCoverTap"'), false);
+  assert.equal(formPage.includes("上传封面"), false);
+  assert.equal(formPage.includes("coverImage"), false);
+  assert.equal(formPage.includes("coverPreviewPath"), false);
+  assert.equal(formPage.includes("给活动起个清晰标题吧。例：周五下班后K歌放松局"), true);
+  assert.equal(formLogic.includes("handleCoverTap"), false);
+  assert.equal(formLogic.includes("wx.chooseMedia"), false);
+  assert.equal(formLogic.includes("uploadPartyCover"), false);
+  assert.equal(formLogic.includes("uploadingCover"), false);
+  assert.equal(formLogic.includes("coverImage"), false);
 });
 
-test("首页发起组局入口页提供封面上传入口", () => {
+test("首页发起组局入口页不提供封面上传入口并使用默认封面", () => {
   const launchPage = fs.readFileSync(
     path.join(root, "miniprogram", "pages", "launch", "index.wxml"),
     "utf8"
@@ -298,10 +304,16 @@ test("首页发起组局入口页提供封面上传入口", () => {
     "utf8"
   );
 
-  assert.equal(launchPage.includes('bindtap="handleCoverTap"'), true);
-  assert.equal(launchPage.includes("coverImage"), true);
-  assert.equal(launchLogic.includes("wx.chooseMedia"), true);
-  assert.equal(launchLogic.includes("uploadPartyCover"), true);
+  assert.equal(launchPage.includes('bindtap="handleCoverTap"'), false);
+  assert.equal(launchPage.includes("上传封面"), false);
+  assert.equal(launchPage.includes("coverImage"), false);
+  assert.equal(launchPage.includes("coverPreviewPath"), false);
+  assert.equal(launchPage.includes("给活动起个清晰标题吧。例：周五下班后K歌放松局"), true);
+  assert.equal(launchLogic.includes("handleCoverTap"), false);
+  assert.equal(launchLogic.includes("wx.chooseMedia"), false);
+  assert.equal(launchLogic.includes("uploadPartyCover"), false);
+  assert.equal(launchLogic.includes("uploadingCover"), false);
+  assert.equal(launchLogic.includes("coverImage"), false);
 });
 
 test("首页快捷入口和默认局封面使用线上图片", () => {
@@ -533,7 +545,7 @@ test("发布活动页支持手动填写包厢费用参考", () => {
   assert.equal(feeHintStyle.includes("仅作线下AA参考"), false);
 });
 
-test("发布活动按钮 loading 时保持白色文字", () => {
+test("提交和保存按钮 loading 时保持白色文字", () => {
   const launchPage = fs.readFileSync(
     path.join(root, "miniprogram", "pages", "launch", "index.wxml"),
     "utf8"
@@ -550,14 +562,36 @@ test("发布活动按钮 loading 时保持白色文字", () => {
     path.join(root, "miniprogram", "packageCreate", "pages", "party-form", "index.wxss"),
     "utf8"
   );
+  const profileEditPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-edit", "index.wxml"),
+    "utf8"
+  );
+  const profileEditStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-edit", "index.wxss"),
+    "utf8"
+  );
+  const profileTagsPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.wxml"),
+    "utf8"
+  );
+  const profileTagsStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.wxss"),
+    "utf8"
+  );
   const launchDisabledStyle = readClassBlock(launchStyle, ".launch-submit__button[disabled]");
   const formDisabledStyle = readClassBlock(formStyle, ".submit-button[disabled]");
+  const profileEditDisabledStyle = readClassBlock(profileEditStyle, ".save-button[disabled]");
+  const profileTagsDisabledStyle = readClassBlock(profileTagsStyle, ".tag-save-button[disabled]");
 
   assert.equal(launchPage.includes('loading="{{publishing}}"'), true);
   assert.equal(launchPage.includes('disabled="{{publishing}}"'), true);
   assert.equal(formPage.includes('loading="{{publishing}}"'), true);
   assert.equal(formPage.includes('disabled="{{publishing}}"'), true);
-  [launchDisabledStyle, formDisabledStyle].forEach((styleBlock) => {
+  assert.equal(profileEditPage.includes('loading="{{saving}}"'), true);
+  assert.equal(profileEditPage.includes('disabled="{{saving}}"'), true);
+  assert.equal(profileTagsPage.includes('loading="{{saving}}"'), true);
+  assert.equal(profileTagsPage.includes('disabled="{{saving}}"'), true);
+  [launchDisabledStyle, formDisabledStyle, profileEditDisabledStyle, profileTagsDisabledStyle].forEach((styleBlock) => {
     assert.equal(styleBlock.includes("color: #ffffff"), true);
     assert.equal(styleBlock.includes("background: linear-gradient"), true);
     assert.equal(styleBlock.includes("opacity: 1"), true);
@@ -932,11 +966,21 @@ test("我的页面名片使用当前用户资料和真实活动统计", () => {
     path.join(root, "miniprogram", "services", "api", "user.ts"),
     "utf8"
   );
+  const routes = fs.readFileSync(path.join(root, "miniprogram", "constants", "routes.ts"), "utf8");
 
   assert.equal(profileLogic.includes("getCurrentUserWithWechatProfile"), true);
   assert.equal(profileLogic.includes("refreshProfileData"), true);
   assert.equal(profileLogic.includes("createProfileView"), true);
   assert.equal(profileLogic.includes("createProfileStats"), true);
+  assert.equal(profilePage.includes('data-target="{{item.target}}"'), true);
+  assert.equal(profilePage.includes('bindtap="handleStatTap"'), true);
+  assert.equal(profilePage.includes("stats__item--tap"), true);
+  assert.equal(profileLogic.includes("handleStatTap"), true);
+  assert.equal(profileLogic.includes("ROUTES.myParties"), true);
+  assert.equal(profileLogic.includes("ROUTES.favorites"), true);
+  assert.equal(routes.includes('favorites: "/pages/favorites/index"'), true);
+  assert.equal(profileLogic.includes('target: "myParties"'), true);
+  assert.equal(profileLogic.includes('target: "favorites"'), true);
   assert.equal(profileLogic.includes("currentUser.nickname"), true);
   assert.equal(profileLogic.includes("currentUser.avatarUrl"), true);
   assert.equal(profileLogic.includes("userProfile?.gender"), true);
@@ -968,6 +1012,457 @@ test("我的页面名片使用当前用户资料和真实活动统计", () => {
   assert.equal(profileLogic.includes('value: "12"'), false);
   assert.equal(profileLogic.includes('value: "28"'), false);
   assert.equal(profileLogic.includes('value: "36"'), false);
+});
+
+test("我的页面支持云端标签和实时成就入口", () => {
+  const appConfig = JSON.parse(fs.readFileSync(path.join(root, "miniprogram", "app.json"), "utf8"));
+  const profilePage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.wxml"),
+    "utf8"
+  );
+  const profileLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.ts"),
+    "utf8"
+  );
+  const profileStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.wxss"),
+    "utf8"
+  );
+  const profileTagsLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.ts"),
+    "utf8"
+  );
+  const profileTagsPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.wxml"),
+    "utf8"
+  );
+  const profileTagsStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.wxss"),
+    "utf8"
+  );
+  const profileAchievementsLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-achievements", "index.ts"),
+    "utf8"
+  );
+  const profileAchievementsPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-achievements", "index.wxml"),
+    "utf8"
+  );
+  const profileAchievementsUtil = fs.readFileSync(
+    path.join(root, "miniprogram", "utils", "profile-achievements.ts"),
+    "utf8"
+  );
+  const userService = fs.readFileSync(
+    path.join(root, "miniprogram", "services", "api", "user.ts"),
+    "utf8"
+  );
+  const authFunction = fs.readFileSync(path.join(root, "cloudfunctions", "auth", "index.js"), "utf8");
+
+  assert.equal(appConfig.pages.includes("pages/profile-tags/index"), true);
+  assert.equal(appConfig.pages.includes("pages/profile-achievements/index"), true);
+  assert.equal(profilePage.includes("我的标签"), true);
+  assert.equal(profilePage.includes("编辑标签"), true);
+  assert.equal(profilePage.includes("我的成就"), true);
+  assert.equal(profilePage.includes("全部成就"), true);
+  assert.equal(profilePage.includes("/assets/images/ktv/profile-section-tags.svg"), true);
+  assert.equal(profilePage.includes("/assets/images/ktv/profile-section-achievement.svg"), true);
+  assert.equal(profilePage.includes('wx:for="{{profile.userTags}}"'), true);
+  assert.equal(profilePage.includes('wx:for="{{profile.achievements}}"'), true);
+  assert.equal(profilePage.includes('src="{{item.iconUrl}}"'), true);
+  assert.equal(profilePage.includes("profile-achievement__icon"), true);
+  assert.equal(profileLogic.includes("createProfileTags"), true);
+  assert.equal(profileLogic.includes("createProfileAchievements"), true);
+  assert.equal(profileLogic.includes("handleEditTags"), true);
+  assert.equal(profileLogic.includes("handleViewAchievements"), true);
+  assert.equal(profileLogic.includes("userProfile?.tags"), true);
+  assert.equal(profileStyle.includes(".profile-tags-card"), true);
+  assert.equal(profileStyle.includes(".profile-achievement-card"), true);
+  assert.equal(profileStyle.includes(".profile-achievement--purple"), true);
+  assert.equal(profileStyle.includes(".profile-achievement--gold"), true);
+  assert.equal(profileStyle.includes(".profile-achievement--blue"), true);
+  assert.equal(profileStyle.includes(".profile-achievement--pink"), true);
+  assert.equal(
+    fs.existsSync(path.join(root, "miniprogram", "assets", "images", "ktv", "profile-section-tags.svg")),
+    true
+  );
+  assert.equal(
+    fs.existsSync(path.join(root, "miniprogram", "assets", "images", "ktv", "profile-section-achievement.svg")),
+    true
+  );
+  assert.equal(profileTagsPage.includes("tag-option__text"), true);
+  assert.equal(profileTagsPage.includes('wx:for="{{tagGroups}}"'), true);
+  assert.equal(profileTagsPage.includes("tag-category__title"), true);
+  assert.equal(profileTagsStyle.includes("width: 100%"), true);
+  assert.equal(profileTagsStyle.includes("max-width: 100%"), true);
+  assert.equal(profileTagsStyle.includes(".tag-option__text"), true);
+  assert.equal(profileTagsLogic.includes("PROFILE_TAG_GROUPS"), true);
+  [
+    "通用好感标签",
+    "唱歌风格标签",
+    "组局社交标签",
+    "偏有趣一点的标签",
+    'labels: [\n      "I人",\n      "E人"',
+    "气氛组",
+    "情歌稳定发挥",
+    "局里不尴尬",
+    "周末在线",
+    "下班后开麦",
+    "夜猫场",
+    "随时可冲",
+    "麦克风临时住户"
+  ].forEach((tagText) => {
+    assert.equal(profileTagsLogic.includes(tagText), true, tagText);
+  });
+  assert.equal(readClassBlock(profileTagsStyle, ".tag-option-grid").includes("repeat(2, minmax(0, 1fr))"), true);
+  assert.equal(readClassBlock(profileTagsStyle, ".tag-option").includes("background: #ffffff"), true);
+  assert.equal(readClassBlock(profileTagsStyle, ".tag-option--active").includes("background: #704fff"), true);
+  assert.equal(readClassBlock(profileTagsStyle, ".tag-option--active").includes("color: #ffffff"), true);
+  assert.equal(profileTagsStyle.includes(".tag-category"), true);
+  assert.equal(profileTagsLogic.includes("handleTagToggle"), true);
+  assert.equal(profileTagsLogic.includes("updateCurrentUser({ tags"), true);
+  assert.equal(profileTagsLogic.includes("notifyPreviousProfilePage"), true);
+  assert.equal(profileAchievementsLogic.includes("createProfileAchievements"), true);
+  assert.equal(profileAchievementsLogic.includes("getMyPartyTabs"), true);
+  assert.equal(profileAchievementsLogic.includes("getFollowStats"), true);
+  assert.equal(profileAchievementsPage.includes('src="{{item.iconUrl}}"'), true);
+  assert.equal(profileAchievementsPage.includes("achievement-card__icon"), true);
+  [
+    "64lxztmpqjhtqe.png",
+    "8nktgompqjhtpu.png",
+    "225caimpqjhtpr.png",
+    "x12efjmpqjhtpu.png"
+  ].forEach((fileName) => {
+    assert.equal(profileAchievementsUtil.includes(fileName), true, fileName);
+  });
+  assert.equal(profileAchievementsUtil.includes("iconUrl"), true);
+  assert.equal(profileAchievementsUtil.includes("首次发布活动"), true);
+  assert.equal(profileAchievementsUtil.includes("被关注100+"), true);
+  assert.equal(profileAchievementsUtil.includes("发布活动100+"), true);
+  assert.equal(profileAchievementsUtil.includes("参加活动100+"), true);
+  assert.equal(
+    /title: "K歌达人"[\s\S]*tone: "blue"[\s\S]*title: "组局达人"[\s\S]*tone: "pink"/.test(
+      profileAchievementsUtil
+    ),
+    true
+  );
+  assert.equal(profileAchievementsUtil.includes("累计发布3次"), false);
+  assert.equal(profileAchievementsUtil.includes("首次参与活动"), false);
+  assert.equal(profileAchievementsUtil.includes("首次收藏活动"), false);
+  assert.equal(profileAchievementsUtil.includes("累计参与5次"), false);
+  assert.equal(profileAchievementsUtil.includes("累计参与20次"), false);
+  assert.equal(profileAchievementsUtil.includes("累计收藏10场"), false);
+  assert.equal(userService.includes("tags?: string[]"), true);
+  assert.equal(userService.includes("Array.isArray(profile.tags)"), true);
+  assert.equal(userService.includes("payload.tags"), true);
+  assert.equal(authFunction.includes("normalizeProfileTags"), true);
+  assert.equal(authFunction.includes("updates.tags"), true);
+});
+
+test("提交和保存云端接口入口使用防抖锁", () => {
+  const submitGuard = fs.readFileSync(path.join(root, "miniprogram", "utils", "submit-guard.ts"), "utf8");
+  const profileEditPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-edit", "index.wxml"),
+    "utf8"
+  );
+  const profileEditLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-edit", "index.ts"),
+    "utf8"
+  );
+  const profileTagsPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.wxml"),
+    "utf8"
+  );
+  const profileTagsLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-tags", "index.ts"),
+    "utf8"
+  );
+  const launchLogic = fs.readFileSync(path.join(root, "miniprogram", "pages", "launch", "index.ts"), "utf8");
+  const formLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "packageCreate", "pages", "party-form", "index.ts"),
+    "utf8"
+  );
+  const confirmLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "packageManage", "pages", "entry-confirm", "index.ts"),
+    "utf8"
+  );
+  const detailPage = fs.readFileSync(path.join(root, "miniprogram", "pages", "party-detail", "index.wxml"), "utf8");
+  const detailLogic = fs.readFileSync(path.join(root, "miniprogram", "pages", "party-detail", "index.ts"), "utf8");
+  const partyService = fs.readFileSync(path.join(root, "miniprogram", "services", "api", "party.ts"), "utf8");
+
+  assert.equal(submitGuard.includes("createSubmitGuard"), true);
+  assert.equal(submitGuard.includes("running"), true);
+  assert.equal(submitGuard.includes("lastRunAt"), true);
+  assert.equal(submitGuard.includes("cooldownMs"), true);
+  assert.equal(profileEditLogic.includes("createSubmitGuard"), true);
+  assert.equal(profileEditLogic.includes("runProfileSave"), true);
+  assert.equal(profileEditLogic.includes("saving:"), true);
+  assert.equal(profileEditPage.includes('loading="{{saving}}"'), true);
+  assert.equal(profileEditPage.includes('disabled="{{saving}}"'), true);
+  assert.equal(profileTagsLogic.includes("createSubmitGuard"), true);
+  assert.equal(profileTagsLogic.includes("runTagSave"), true);
+  assert.equal(profileTagsLogic.includes("saving:"), true);
+  assert.equal(profileTagsPage.includes('loading="{{saving}}"'), true);
+  assert.equal(profileTagsPage.includes('disabled="{{saving}}"'), true);
+  assert.equal(launchLogic.includes("runLaunchSubmit"), true);
+  assert.equal(formLogic.includes("runPartyFormPublish"), true);
+  assert.equal(confirmLogic.includes("runEntryConfirmSubmit"), true);
+  assert.equal(detailLogic.includes("runFavoriteSubmit"), true);
+  assert.equal(detailLogic.includes("favoriteSubmitting:"), true);
+  assert.equal(detailPage.includes('disabled="{{favoriteSubmitting}}"'), true);
+  assert.equal(detailLogic.includes("runWaitlistSubmit"), true);
+  assert.equal(detailLogic.includes("waitlistSubmitting:"), true);
+  assert.equal(detailPage.includes('disabled="{{waitlistSubmitting}}"'), true);
+  assert.equal(detailLogic.includes("runStatusSwitchSubmit"), true);
+  assert.equal(detailLogic.includes("statusSwitchSubmitting:"), true);
+  assert.equal(detailPage.includes('disabled="{{statusSwitchSubmitting}}"'), true);
+  assert.equal(detailLogic.includes("runQuitPartySubmit"), true);
+  assert.equal(detailLogic.includes("quitSubmitting:"), true);
+  assert.equal(detailPage.includes('disabled="{{quitSubmitting}}"'), true);
+  assert.equal(partyService.includes("export async function togglePartyStatus"), true);
+  assert.equal(partyService.includes('"party", "statusSwitch"'), true);
+  assert.equal(partyService.includes("export async function quitParty"), true);
+  assert.equal(partyService.includes("export async function removePartyEntry"), true);
+  assert.equal(partyService.includes("export async function promoteWaitlistEntry"), true);
+  assert.equal(partyService.includes('"entry", "quit"'), true);
+  assert.equal(partyService.includes('"entry", "remove"'), true);
+  assert.equal(partyService.includes('"entry", "promoteWaitlist"'), true);
+});
+
+test("用户关注使用云端关系并在活动详情和我的页展示", () => {
+  const followService = fs.readFileSync(
+    path.join(root, "miniprogram", "services", "api", "follow.ts"),
+    "utf8"
+  );
+  const detailPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.wxml"),
+    "utf8"
+  );
+  const detailLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.ts"),
+    "utf8"
+  );
+  const detailStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.wxss"),
+    "utf8"
+  );
+  const hostProfilePage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.wxml"),
+    "utf8"
+  );
+  const hostProfileLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.ts"),
+    "utf8"
+  );
+  const hostProfileStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.wxss"),
+    "utf8"
+  );
+  const profileLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.ts"),
+    "utf8"
+  );
+  const profileStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.wxss"),
+    "utf8"
+  );
+  const profileAchievementsLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile-achievements", "index.ts"),
+    "utf8"
+  );
+  const profileAchievementsUtil = fs.readFileSync(
+    path.join(root, "miniprogram", "utils", "profile-achievements.ts"),
+    "utf8"
+  );
+  const authFunction = fs.readFileSync(path.join(root, "cloudfunctions", "auth", "index.js"), "utf8");
+  const statsCardStyle = readClassBlock(profileStyle, ".stats-card");
+
+  assert.equal(followService.includes('"auth", "followStatus"'), true);
+  assert.equal(followService.includes('"auth", "followToggle"'), true);
+  assert.equal(followService.includes('"auth", "followStats"'), true);
+  assert.equal(followService.includes('"auth", "followList"'), true);
+  assert.equal(followService.includes("isUserFollowing"), true);
+  assert.equal(followService.includes("toggleUserFollow"), true);
+  assert.equal(followService.includes("getFollowStats"), true);
+  assert.equal(followService.includes("getFollowingUsers"), true);
+  assert.equal(detailPage.includes("host__follow"), true);
+  assert.equal(detailPage.includes("handleFollowHostTap"), true);
+  assert.equal(detailPage.includes("(isFollowingHost || followSubmitting)"), true);
+  assert.equal(detailLogic.includes("runFollowSubmit"), true);
+  assert.equal(detailLogic.includes("followSubmitting"), true);
+  assert.equal(detailLogic.includes("isUserFollowing"), true);
+  assert.equal(detailLogic.includes("toggleUserFollow"), true);
+  assert.equal(detailLogic.includes('ensureLoggedInForAction("关注用户")'), true);
+  assert.equal(detailStyle.includes(".host__follow"), true);
+  assert.equal(detailStyle.includes(".host__follow[disabled]"), true);
+  assert.equal(hostProfilePage.includes("host-profile-follow"), true);
+  assert.equal(hostProfilePage.includes("handleFollowTap"), true);
+  assert.equal(hostProfilePage.includes('loading="{{followSubmitting}}"'), true);
+  assert.equal(hostProfileLogic.includes("runHostProfileFollowSubmit"), true);
+  assert.equal(hostProfileLogic.includes("refreshFollowState"), true);
+  assert.equal(hostProfileLogic.includes("getUserById"), true);
+  assert.equal(hostProfileLogic.includes("isUserFollowing"), true);
+  assert.equal(hostProfileLogic.includes("toggleUserFollow"), true);
+  assert.equal(hostProfileLogic.includes('ensureLoggedInForAction("关注用户")'), true);
+  assert.equal(hostProfilePage.includes("host-profile-hero--followable"), true);
+  assert.equal(hostProfileStyle.includes(".host-profile-follow--active"), true);
+  assert.equal(hostProfileStyle.includes(".host-profile-follow[disabled]"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-hero").includes("position: relative"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-hero--followable .host-profile-hero__body").includes("padding-right"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("position: absolute"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("top: 34rpx"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("right: 30rpx"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("min-width: 0"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("max-width: 128rpx"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-profile-follow").includes("box-sizing: border-box"), true);
+  assert.equal(profileLogic.includes("getFollowStats"), true);
+  assert.equal(profileLogic.includes('label: "粉丝"'), true);
+  assert.equal(statsCardStyle.includes("repeat(4, 1fr)"), true);
+  assert.equal(profileAchievementsLogic.includes("getFollowStats"), true);
+  assert.equal(profileAchievementsUtil.includes("followers"), true);
+  assert.equal(authFunction.includes("followStatus"), true);
+  assert.equal(authFunction.includes("followToggle"), true);
+  assert.equal(authFunction.includes("followStats"), true);
+  assert.equal(authFunction.includes("followList"), true);
+  assert.equal(authFunction.includes('"follows"'), true);
+});
+
+test("活动详情可点击发起者查看公开资料页", () => {
+  const appConfig = JSON.parse(fs.readFileSync(path.join(root, "miniprogram", "app.json"), "utf8"));
+  const routes = fs.readFileSync(path.join(root, "miniprogram", "constants", "routes.ts"), "utf8");
+  const detailPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.wxml"),
+    "utf8"
+  );
+  const detailLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.ts"),
+    "utf8"
+  );
+  const hostProfilePage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.wxml"),
+    "utf8"
+  );
+  const hostProfileLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.ts"),
+    "utf8"
+  );
+  const hostProfileStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "host-profile", "index.wxss"),
+    "utf8"
+  );
+  const hostProfileConfig = JSON.parse(
+    fs.readFileSync(path.join(root, "miniprogram", "pages", "host-profile", "index.json"), "utf8")
+  );
+  const userService = fs.readFileSync(path.join(root, "miniprogram", "services", "api", "user.ts"), "utf8");
+  const authFunction = fs.readFileSync(path.join(root, "cloudfunctions", "auth", "index.js"), "utf8");
+
+  assert.equal(appConfig.pages.includes("pages/host-profile/index"), true);
+  assert.equal(routes.includes("hostProfile"), true);
+  assert.equal(hostProfileConfig.navigationStyle, "default");
+  assert.equal(hostProfileConfig.navigationBarTitleText, "发起者资料");
+  assert.equal(detailPage.includes('bindtap="handleOpenHostProfile"'), true);
+  assert.equal(detailLogic.includes("handleOpenHostProfile"), true);
+  assert.equal(detailLogic.includes("ROUTES.hostProfile"), true);
+  assert.equal(hostProfilePage.includes("发起者资料"), false);
+  assert.equal(hostProfilePage.includes("个人简介"), true);
+  assert.equal(hostProfilePage.includes("组局数据"), true);
+  assert.equal(hostProfilePage.includes("发起活动"), true);
+  assert.equal(hostProfilePage.includes("成功成团"), true);
+  assert.equal(hostProfilePage.includes("最近发起"), true);
+  assert.equal(hostProfilePage.includes("profile.recentParty"), true);
+  assert.equal(hostProfilePage.includes("handleRecentPartyTap"), true);
+  assert.equal(hostProfilePage.includes("AA参考"), true);
+  assert.equal(hostProfileLogic.includes("handleRecentPartyTap"), true);
+  assert.equal(hostProfileLogic.includes("ROUTES.partyDetail"), true);
+  assert.equal(hostProfileLogic.includes("recentParty: publicProfile.recentParty || null"), true);
+  assert.equal(hostProfileStyle.includes(".host-recent-party"), true);
+  ["基本信息", "实名认证", "回应及时", "爱唱流行歌", "打招呼", "邀请组局"].forEach((hiddenText) => {
+    assert.equal(hostProfilePage.includes(hiddenText), false, hiddenText);
+  });
+  assert.equal(hostProfilePage.includes("host-profile-stat-launch.svg"), true);
+  assert.equal(hostProfilePage.includes("host-profile-stat-success.svg"), true);
+  assert.equal(hostProfilePage.includes('class="host-stat__head"'), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-stat__head").includes("display: flex"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-stat__head").includes("align-items: center"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-stat__icon").includes("width: 32rpx"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-stat__icon").includes("flex: 0 0 32rpx"), true);
+  assert.equal(readClassBlock(hostProfileStyle, ".host-stat__label").includes("margin-top: 0"), true);
+  assert.equal(hostProfileLogic.includes("getPublicUserProfile"), true);
+  assert.equal(hostProfileLogic.includes("createHostProfileTags"), true);
+  assert.equal(hostProfileStyle.includes(".host-stat-grid"), true);
+  assert.equal(userService.includes("getPublicUserProfile"), true);
+  assert.equal(userService.includes('"auth", "publicProfile"'), true);
+  assert.equal(authFunction.includes("publicProfile"), true);
+  assert.equal(authFunction.includes("buildPublicProfileStats"), true);
+  assert.equal(authFunction.includes("buildRecentHostedParty"), true);
+  assert.equal(authFunction.includes("recentParty"), true);
+  ["host-profile-stat-launch.svg", "host-profile-stat-success.svg"].forEach((fileName) => {
+    assert.equal(fs.existsSync(path.join(root, "miniprogram", "assets", "images", "ktv", fileName)), true, fileName);
+  });
+});
+
+test("首页发现我的页面支持微信分享", () => {
+  const homeLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "home", "index.ts"),
+    "utf8"
+  );
+  const discoverLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "discover", "index.ts"),
+    "utf8"
+  );
+  const profileLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "profile", "index.ts"),
+    "utf8"
+  );
+
+  [
+    {
+      source: homeLogic,
+      path: "/pages/home/index",
+      title: "深圳K歌兴趣活动"
+    },
+    {
+      source: discoverLogic,
+      path: "/pages/discover/index",
+      title: "发现深圳K歌活动"
+    },
+    {
+      source: profileLogic,
+      path: "/pages/profile/index",
+      title: "深圳K歌兴趣活动工具"
+    }
+  ].forEach(({ source, path: sharePath, title }) => {
+    assert.equal(source.includes("onShareAppMessage"), true, sharePath);
+    assert.equal(source.includes("onShareTimeline"), true, sharePath);
+    assert.equal(source.includes(`path: "${sharePath}"`), true, sharePath);
+    assert.equal(source.includes(`query: ""`), true, sharePath);
+    assert.equal(source.includes(title), true, title);
+  });
+});
+
+test("活动详情底部提供原生分享按钮", () => {
+  const detailPage = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.wxml"),
+    "utf8"
+  );
+  const detailLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.ts"),
+    "utf8"
+  );
+  const detailStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "pages", "party-detail", "index.wxss"),
+    "utf8"
+  );
+
+  assert.equal(detailPage.includes('class="actions__share"'), true);
+  assert.equal(detailPage.includes('open-type="share"'), true);
+  assert.equal(detailPage.includes(">分享</button>"), true);
+  assert.equal(detailLogic.includes("onShareAppMessage"), true);
+  assert.equal(detailLogic.includes("detail?.party.title || \"深圳K歌兴趣活动\""), true);
+  assert.equal(detailStyle.includes(".actions__share"), true);
+  assert.equal(readClassBlock(detailStyle, ".actions__share").includes("height: 82rpx"), true);
+  assert.equal(readClassBlock(detailStyle, ".actions__share").includes("border-radius: 16rpx"), true);
+  assert.equal(readClassBlock(detailStyle, ".actions__share").includes("font-size: 27rpx"), true);
+  assert.equal(readClassBlock(detailStyle, ".actions__share").includes("flex: 0 0 168rpx"), true);
 });
 
 test("未登录时发布活动和报名活动会先引导去我的页登录", () => {
@@ -1087,17 +1582,43 @@ test("我的收藏页面按设计图展示空状态并从首页进入", () => {
   assert.equal(favoritesPage.includes('class="favorites-empty__image"'), true);
   assert.equal(favoritesPage.includes("https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/"), true);
   assert.equal(favoritesSource.includes("收藏活动"), true);
-  ["收藏歌单", "收藏用户", "全部", "歌单", "用户", "currentTab", "handleTabTap", "createTabs"].forEach((text) => {
+  assert.equal(favoritesSource.includes("关注用户"), true);
+  assert.equal(favoritesSource.includes("/assets/images/ktv/collection-activity.svg"), true);
+  assert.equal(favoritesSource.includes("/assets/images/ktv/follow-user.svg"), true);
+  assert.equal(favoritesPage.includes('src="{{item.icon}}"'), true);
+  assert.equal(favoritesPage.includes("favorites-stats__icon-image"), true);
+  assert.equal(favoritesLogic.includes('icon: "书"'), false);
+  assert.equal(favoritesLogic.includes('icon: "人"'), false);
+  assert.equal(favoritesSource.includes("currentTab"), true);
+  assert.equal(favoritesSource.includes("handleTabTap"), true);
+  assert.equal(favoritesSource.includes("createTabs"), true);
+  assert.equal(favoritesSource.includes("getFollowingUsers"), true);
+  assert.equal(favoritesSource.includes("followedUsers"), true);
+  assert.equal(favoritesSource.includes("showFollowedUsers"), true);
+  assert.equal(favoritesSource.includes("handleUserTap"), true);
+  assert.equal(favoritesSource.includes("ROUTES.hostProfile"), true);
+  assert.equal(favoritesPage.includes('data-tab="{{item.key}}"'), true);
+  assert.equal(favoritesPage.includes('wx:if="{{currentTab === \'activities\'}}"'), true);
+  assert.equal(favoritesPage.includes('wx:for="{{followedUsers}}"'), true);
+  assert.equal(favoritesPage.includes('data-user-id="{{item.userId}}"'), true);
+  ["收藏歌单", "收藏用户", "全部", "歌单"].forEach((text) => {
     assert.equal(favoritesSource.includes(text), false, text);
   });
-  assert.equal(favoritesPage.includes("favorites-tabs"), false);
-  assert.equal(favoritesStyle.includes(".favorites-tabs"), false);
+  assert.equal(favoritesPage.includes("favorites-tabs"), true);
+  assert.equal(favoritesStyle.includes(".favorites-tabs"), true);
+  assert.equal(favoritesStyle.includes(".favorite-user-card"), true);
   assert.equal(readClassBlock(favoritesStyle, ".favorites-stats").includes("flex-wrap: nowrap"), true);
   assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__item").includes("white-space: nowrap"), true);
+  assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__item").includes("height: 116rpx"), true);
+  assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__icon").includes("width: 44rpx"), true);
+  assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__icon-image").includes("width: 24rpx"), true);
+  assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__copy").includes("flex-direction: column"), true);
   assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__copy").includes("white-space: nowrap"), true);
   assert.equal(readClassBlock(favoritesStyle, ".favorites-stats__label").includes("white-space: nowrap"), true);
-  assert.equal(favoritesPage.includes("这里还没有收藏记录"), true);
+  assert.equal(favoritesPage.includes("这里还没有收藏活动"), true);
+  assert.equal(favoritesPage.includes("这里还没有关注用户"), true);
   assert.equal(favoritesPage.includes("去发现页逛逛，收藏你感兴趣的活动。"), true);
+  assert.equal(favoritesPage.includes("去活动详情页关注你感兴趣的发起者。"), true);
   assert.equal(favoritesLogic.includes("createBottomNav"), true);
   assert.equal(favoritesStyle.includes(".favorites-hero"), true);
   assert.equal(favoritesStyle.includes(".favorites-nav"), false);
@@ -1179,7 +1700,7 @@ test("活动详情收藏按钮写入收藏并在我的收藏页展示", () => {
   assert.equal(detailPage.includes('bindtap="handleFavoriteTap"'), true);
   assert.equal(detailPage.includes("actions__favorite--active"), true);
   assert.equal(detailPage.includes("isFavorited ? '/assets/images/ktv/star-active.svg' : '/assets/images/ktv/star.svg'"), true);
-  assert.equal(detailPage.includes("{{isFavorited ? '已收藏' : '收藏'}}"), true);
+  assert.equal(detailPage.includes("{{favoriteSubmitting ? '处理中' : (isFavorited ? '已收藏' : '收藏')}}"), true);
   assert.equal(fs.existsSync(path.join(root, "miniprogram", "assets", "images", "ktv", "star-active.svg")), true);
   assert.equal(detailLogic.includes("isPartyFavorited"), true);
   assert.equal(detailLogic.includes("togglePartyFavorite"), true);
@@ -1207,7 +1728,7 @@ test("活动详情收藏按钮写入收藏并在我的收藏页展示", () => {
   assert.equal(favoritesLogic.includes("getFavoriteParties"), true);
   assert.equal(favoritesLogic.includes("refreshFavorites"), true);
   assert.equal(favoritesLogic.includes("showFavoriteParties"), true);
-  assert.equal(favoritesLogic.includes("createStats(favoriteParties.length)"), true);
+  assert.equal(favoritesLogic.includes("createStats(favoriteParties.length, followedUsers.length)"), true);
   assert.equal(favoritesStyle.includes(".favorites-list"), true);
 });
 
@@ -1249,7 +1770,7 @@ test("K歌活动参与须知页面使用微信原生顶部标题", () => {
   assert.equal(entryConfirmLogic.includes("K歌活动参与须知"), true);
 });
 
-test("我的页面名片不展示资料标签", () => {
+test("我的页面名片不在顶部展示资料标签", () => {
   const profilePage = fs.readFileSync(
     path.join(root, "miniprogram", "pages", "profile", "index.wxml"),
     "utf8"
@@ -1264,9 +1785,8 @@ test("我的页面名片不展示资料标签", () => {
   );
 
   assert.equal(profilePage.includes("profile-banner__tags"), false);
-  assert.equal(profilePage.includes("profile.tags"), false);
+  assert.equal(profilePage.includes("profile.userTags"), true);
   assert.equal(profileLogic.includes("DEFAULT_PROFILE_TAGS"), false);
-  assert.equal(profileLogic.includes("tags: string[]"), false);
   assert.equal(profileStyle.includes(".profile-banner__tags"), false);
 });
 
@@ -1631,6 +2151,10 @@ test("报名确认使用单次入群联系信息并仅给发起人展示", () =>
     path.join(root, "miniprogram", "packageManage", "pages", "entry-confirm", "index.ts"),
     "utf8"
   );
+  const confirmStyle = fs.readFileSync(
+    path.join(root, "miniprogram", "packageManage", "pages", "entry-confirm", "index.wxss"),
+    "utf8"
+  );
   const detailPage = fs.readFileSync(
     path.join(root, "miniprogram", "pages", "party-detail", "index.wxml"),
     "utf8"
@@ -1648,16 +2172,23 @@ test("报名确认使用单次入群联系信息并仅给发起人展示", () =>
   assert.equal(confirmPage.includes("入群联系信息"), true);
   assert.equal(confirmPage.includes("只有发起人可见"), true);
   assert.equal(confirmPage.includes("仅用于本次K歌活动建群、集合和包厢通知"), true);
+  assert.equal(confirmPage.includes("活动开始前成员名单可能调整，请以发起者最终联系通知为准"), true);
+  assert.equal(confirmPage.includes('loading="{{submitting}}"'), true);
+  assert.equal(confirmPage.includes("{{submitting ? '提交中'"), true);
   assert.equal(confirmPage.includes('bindinput="handleContactValueInput"'), true);
   assert.equal(confirmPage.includes('bindchange="handleArrivalTimeChange"'), true);
   assert.equal(confirmPage.includes('bindinput="handleContactNoteInput"'), true);
+  assert.equal(readClassBlock(confirmStyle, ".confirm-entry-notice").includes("margin: 6rpx 0 0"), true);
+  assert.equal(readClassBlock(confirmStyle, ".confirm-submit[disabled]").includes("color: #ffffff"), true);
+  assert.equal(readClassBlock(confirmStyle, ".confirm-submit[disabled]").includes("opacity: 1"), true);
   assert.equal(confirmLogic.includes("buildContactInfo"), true);
   assert.equal(confirmLogic.includes('title: "请填写入群联系信息"'), true);
   assert.equal(confirmLogic.includes("joinParty(this.data.partyId, contactInfo)"), true);
-  assert.equal(detailPage.includes("报名联系信息"), true);
-  assert.equal(detailPage.includes("contactEntries"), true);
+  assert.equal(detailPage.includes("报名联系信息"), false);
+  assert.equal(detailPage.includes("detail-section--contacts"), false);
+  assert.equal(detailPage.includes("contactEntries"), false);
   assert.equal(detailLogic.includes("canViewContacts"), true);
-  assert.equal(detailLogic.includes("buildContactEntries"), true);
+  assert.equal(detailLogic.includes("buildContactEntries"), false);
   assert.equal(entryType.includes("EntryContactInfo"), true);
   assert.equal(entryType.includes("contactInfo?: EntryContactInfo | null"), true);
   assert.equal(partyService.includes("contactInfo?: EntryContactInfo"), true);
@@ -1687,15 +2218,33 @@ test("发起人查看活动详情底部进入报名详情", () => {
   const membersConfig = JSON.parse(
     fs.readFileSync(path.join(root, "miniprogram", "packageManage", "pages", "party-members", "index.json"), "utf8")
   );
+  const confirmLogic = fs.readFileSync(
+    path.join(root, "miniprogram", "packageManage", "pages", "entry-confirm", "index.ts"),
+    "utf8"
+  );
   const entryType = fs.readFileSync(path.join(root, "miniprogram", "types", "entry.ts"), "utf8");
   const cloudParty = fs.readFileSync(path.join(root, "cloudfunctions", "party", "index.js"), "utf8");
 
   assert.equal(detailPage.includes('wx:if="{{canViewContacts}}"'), true);
   assert.equal(detailPage.includes('bindtap="handleOpenEntryDetails"'), true);
   assert.equal(detailPage.includes(">报名详情</button>"), true);
+  assert.equal(detailPage.includes('wx:elif="{{canQuitParty}}"'), true);
+  assert.equal(detailPage.includes('bindtap="handleQuitPartyTap"'), true);
+  assert.equal(detailPage.includes("退出报名"), true);
+  assert.equal(detailPage.includes('wx:elif="{{canWaitlistParty}}"'), true);
+  assert.equal(detailPage.includes('bindtap="handleWaitlist"'), true);
+  assert.equal(detailPage.includes("候补报名"), true);
   assert.equal(detailPage.includes('wx:else class="actions__primary"'), true);
   assert.equal(detailPage.includes('bindtap="handleJoin"'), true);
   assert.equal(detailLogic.includes("handleOpenEntryDetails"), true);
+  assert.equal(detailLogic.includes("handleQuitPartyTap"), true);
+  assert.equal(detailLogic.includes("quitParty(this.data.partyId)"), true);
+  assert.equal(detailLogic.includes("canQuitParty"), true);
+  assert.equal(detailLogic.includes("canWaitlistParty"), true);
+  assert.equal(detailLogic.includes("&mode=waitlist"), true);
+  assert.equal(detailLogic.includes("const hostUserId = detail.host?.userId ||"), false);
+  assert.equal(detailLogic.includes("entryStatusText: `已报名 ${index + 1}`"), false);
+  assert.equal(confirmLogic.includes("joinWaitlist(this.data.partyId, contactInfo)"), true);
   assert.equal(detailLogic.includes("ROUTES.partyMembers"), true);
   assert.equal(detailLogic.includes("?partyId=${this.data.partyId}"), true);
   assert.equal(membersConfig.navigationStyle, "default");
@@ -1705,10 +2254,31 @@ test("发起人查看活动详情底部进入报名详情", () => {
   assert.equal(membersPage.includes("entry-list-card"), true);
   assert.equal(membersPage.includes('wx:else class="member-detail-card"'), true);
   assert.equal(membersPage.includes("member-detail-card"), true);
+  assert.equal(membersPage.includes("handleBackToMemberList"), true);
+  assert.equal(membersPage.includes("返回列表"), true);
+  assert.equal(membersPage.includes("{{item.arrivalTimeText}}"), true);
+  assert.equal(membersPage.includes("{{item.note}}"), true);
+  assert.equal(membersPage.includes("{{item.contactDisplayValue}}"), false);
+  assert.equal(membersPage.includes("{{item.submittedAtText}}"), false);
   assert.equal(membersPage.includes("contactDisplayValue"), true);
   assert.equal(membersPage.includes("member-copy-button"), true);
-  assert.equal(membersPage.includes("handleMemberCopyTap"), true);
+  assert.equal(membersPage.includes("handleMemberCopyTap"), false);
   assert.equal(membersPage.includes("handleSelectedMemberCopyTap"), true);
+  assert.equal(membersPage.includes("handleMemberRemoveTap"), false);
+  assert.equal(membersPage.includes("handleSelectedMemberRemoveTap"), false);
+  assert.equal(membersPage.includes("handleMemberPromoteTap"), false);
+  assert.equal(membersPage.includes("handleSelectedMemberPromoteTap"), false);
+  assert.equal(membersPage.includes("handleSelectedMemberStatusTap"), true);
+  assert.equal(membersPage.includes("member-detail-card__status"), true);
+  assert.equal(membersPage.includes("member-detail-card__status--pending"), true);
+  assert.equal(membersPage.includes("member-detail-card__status--confirmed"), true);
+  assert.equal(membersPage.includes("member-remove-button"), false);
+  assert.equal(membersPage.includes("member-promote-button"), false);
+  assert.equal(membersPage.includes("移除"), false);
+  assert.equal(membersPage.includes("转正式"), false);
+  assert.equal(membersPage.includes("待确认"), true);
+  assert.equal(membersPage.includes("确认"), true);
+  assert.equal(membersPage.includes("活动开始前成员名单可能调整，请以发起者最终联系通知为准"), true);
   assert.equal(membersPage.includes('<button\n                class="member-copy-button"'), false);
   assert.equal(membersPage.includes('<button\n            class="member-copy-button member-copy-button--detail"'), false);
   assert.equal(membersPage.includes("wechat-icon"), false);
@@ -1733,10 +2303,22 @@ test("发起人查看活动详情底部进入报名详情", () => {
   assert.equal(membersLogic.includes("selectedMember"), true);
   assert.equal(membersLogic.includes("buildPartySummary"), true);
   assert.equal(membersLogic.includes("buildMemberItems"), true);
+  assert.equal(membersLogic.includes("filterViewerEntries"), true);
+  assert.equal(membersLogic.includes("detail.viewerEntry"), true);
+  assert.equal(membersLogic.includes("entry.userId !== viewerEntry.userId"), true);
   assert.equal(membersLogic.includes("maskContactValue"), true);
   assert.equal(membersLogic.includes("handleMemberDetailTap"), true);
-  assert.equal(membersLogic.includes("handleMemberCopyTap"), true);
+  assert.equal(membersLogic.includes("handleBackToMemberList"), true);
+  assert.equal(membersLogic.includes("handleMemberCopyTap"), false);
   assert.equal(membersLogic.includes("handleSelectedMemberCopyTap"), true);
+  assert.equal(membersLogic.includes("handleMemberRemoveTap"), false);
+  assert.equal(membersLogic.includes("handleSelectedMemberRemoveTap"), false);
+  assert.equal(membersLogic.includes("handleMemberPromoteTap"), false);
+  assert.equal(membersLogic.includes("handleSelectedMemberPromoteTap"), false);
+  assert.equal(membersLogic.includes("handleSelectedMemberStatusTap"), true);
+  assert.equal(membersLogic.includes("removePartyEntry(this.data.partyId"), false);
+  assert.equal(membersLogic.includes("promoteWaitlistEntry(this.data.partyId"), true);
+  assert.equal(membersLogic.includes("wx.showModal"), true);
   assert.equal(membersLogic.includes("handleMemberContactTap"), false);
   assert.equal(membersLogic.includes("formatEntryCode"), false);
   assert.equal(membersLogic.includes("entryCode"), false);
@@ -1748,6 +2330,12 @@ test("发起人查看活动详情底部进入报名详情", () => {
   assert.equal(membersStyle.includes(".members-summary"), true);
   assert.equal(membersStyle.includes(".member-detail-card"), true);
   assert.equal(membersStyle.includes(".member-copy-button"), true);
+  assert.equal(membersStyle.includes(".member-promote-button"), false);
+  assert.equal(membersStyle.includes(".member-remove-button"), false);
+  assert.equal(membersStyle.includes(".member-detail-card__status"), true);
+  assert.equal(readClassBlock(membersStyle, ".member-detail-card__status--confirmed").includes("color: #18a861"), true);
+  assert.equal(readClassBlock(membersStyle, ".member-entry-card__sub").includes("white-space: nowrap"), true);
+  assert.equal(readClassBlock(membersStyle, ".member-entry-card__sub").includes("text-overflow: ellipsis"), true);
   assert.equal(membersStyle.includes(".member-copy-button::after"), false);
   assert.equal(membersStyle.includes(".wechat-icon"), false);
   assert.equal(membersStyle.includes(".member-status"), false);

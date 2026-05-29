@@ -1,6 +1,7 @@
-import { getPartyDetail, joinParty } from "../../../services/api/party";
+import { getPartyDetail, joinParty, joinWaitlist } from "../../../services/api/party";
 import type { EntryContactInfo, EntryContactMethod } from "../../../types/entry";
 import { ensureLoggedInForAction } from "../../../utils/auth";
+import { createSubmitGuard } from "../../../utils/submit-guard";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
 type ContactMethodOption = {
@@ -27,10 +28,12 @@ const CONTACT_METHOD_OPTIONS: ContactMethodOption[] = [
     placeholder: "填写手机号，便于发起人集合通知"
   }
 ];
+const runEntryConfirmSubmit = createSubmitGuard();
 
 Page({
   data: {
     partyId: "",
+    entryMode: "join" as "join" | "waitlist",
     detail: null as PartyDetail | null,
     displayTitle: "",
     displayTags: [] as string[],
@@ -67,7 +70,10 @@ Page({
       });
       return;
     }
-    this.setData({ partyId });
+    this.setData({
+      partyId,
+      entryMode: options.mode === "waitlist" ? "waitlist" : "join"
+    });
     await this.refreshDetail();
   },
 
@@ -264,23 +270,33 @@ Page({
       return;
     }
 
-    this.setData({ submitting: true });
-    try {
-      await joinParty(this.data.partyId, contactInfo);
-      wx.showToast({
-        title: "报名成功",
-        icon: "success"
-      });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 600);
-    } catch (error) {
-      wx.showToast({
-        title: error instanceof Error ? error.message : "报名失败",
-        icon: "none"
-      });
-    } finally {
-      this.setData({ submitting: false });
-    }
+    await runEntryConfirmSubmit.run(async () => {
+      if (this.data.submitting) {
+        return;
+      }
+
+      this.setData({ submitting: true });
+      try {
+        if (this.data.entryMode === "waitlist") {
+          await joinWaitlist(this.data.partyId, contactInfo);
+        } else {
+          await joinParty(this.data.partyId, contactInfo);
+        }
+        wx.showToast({
+          title: this.data.entryMode === "waitlist" ? "候补成功" : "报名成功",
+          icon: "success"
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 600);
+      } catch (error) {
+        wx.showToast({
+          title: error instanceof Error ? error.message : "报名失败",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ submitting: false });
+      }
+    });
   }
 });

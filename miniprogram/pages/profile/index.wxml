@@ -26,9 +26,64 @@
 
     <view class="profile-content">
       <view class="stats-card">
-        <view class="stats__item" wx:for="{{profile.stats}}" wx:key="label">
+        <view
+          class="stats__item {{item.target ? 'stats__item--tap' : ''}}"
+          wx:for="{{profile.stats}}"
+          wx:key="label"
+          data-target="{{item.target}}"
+          bindtap="handleStatTap"
+        >
           <text class="stats__value">{{item.value}}</text>
           <text class="stats__label">{{item.label}}</text>
+        </view>
+      </view>
+
+      <view class="profile-section-card profile-tags-card">
+        <view class="profile-section-card__header">
+          <view class="profile-section-card__title">
+            <image class="profile-section-card__icon" src="/assets/images/ktv/profile-section-tags.svg" mode="aspectFit" />
+            <text>我的标签</text>
+          </view>
+          <button class="profile-section-card__link" bindtap="handleEditTags">
+            <text>编辑标签</text>
+            <text class="profile-section-card__arrow">›</text>
+          </button>
+        </view>
+        <view class="profile-tags-grid" wx:if="{{profile.userTags.length}}">
+          <text
+            class="profile-tag profile-tag--{{item.tone}}"
+            wx:for="{{profile.userTags}}"
+            wx:key="label"
+          >{{item.label}}</text>
+        </view>
+        <view class="profile-tags-empty" wx:else>
+          <text>选择适合你的K歌标签</text>
+        </view>
+      </view>
+
+      <view class="profile-section-card profile-achievement-card">
+        <view class="profile-section-card__header">
+          <view class="profile-section-card__title">
+            <image class="profile-section-card__icon" src="/assets/images/ktv/profile-section-achievement.svg" mode="aspectFit" />
+            <text>我的成就</text>
+          </view>
+          <button class="profile-section-card__link" bindtap="handleViewAchievements">
+            <text>全部成就</text>
+            <text class="profile-section-card__arrow">›</text>
+          </button>
+        </view>
+        <view class="profile-achievement-list">
+          <view
+            class="profile-achievement profile-achievement--{{item.tone}} {{item.unlocked ? '' : 'profile-achievement--locked'}}"
+            wx:for="{{profile.achievements}}"
+            wx:key="key"
+          >
+            <view class="profile-achievement__badge">
+              <image class="profile-achievement__icon" src="{{item.iconUrl}}" mode="aspectFit" />
+            </view>
+            <text class="profile-achievement__title">{{item.title}}</text>
+            <text class="profile-achievement__desc">{{item.desc}}</text>
+          </view>
         </view>
       </view>
 

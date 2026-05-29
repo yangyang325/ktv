@@ -7,13 +7,18 @@ import {
   getPartyList,
   joinParty,
   joinWaitlist,
-  publishParty
+  quitParty,
+  promoteWaitlistEntry,
+  removePartyEntry,
+  publishParty,
+  togglePartyStatus
 } from "../services/api/party";
 import {
   getFavoriteParties,
   isPartyFavorited,
   togglePartyFavorite
 } from "../services/api/favorite";
+import { getFollowingUsers } from "../services/api/follow";
 import { getNotificationList, markNotificationRead } from "../services/api/notify";
 import { unwrapCloudResult } from "../services/api/cloud";
 import {
@@ -24,6 +29,7 @@ import { uploadPartyCover } from "../services/api/upload";
 import {
   getCurrentUser,
   getCurrentUserWithWechatProfile,
+  getPublicUserProfile,
   getUserById,
   updateCurrentUser
 } from "../services/api/user";
@@ -173,6 +179,30 @@ test("活动详情和收藏列表读取云端收藏数据", async () => {
   }
 });
 
+test("我的收藏页读取云端关注用户列表", async () => {
+  const cloud = installCloudCallMock(() => [
+    {
+      userId: "user-cloud-host",
+      nickname: "云端发起者",
+      avatarUrl: defaultProfileAvatarUrl,
+      gender: "女",
+      intro: "周末常组局",
+      tags: ["I人", "会接歌"],
+      createdAt: "2026-05-20T10:00:00+08:00"
+    }
+  ]);
+
+  try {
+    const users = await getFollowingUsers();
+
+    assert.equal(users[0].userId, "user-cloud-host");
+    assert.deepEqual(cloud.calls.map((call) => `${call.name}.${call.data.action}`), ["auth.followList"]);
+    assert.deepEqual(cloud.calls[0].data.payload, {});
+  } finally {
+    cloud.restore();
+  }
+});
+
 test("当前用户活动聚合不向云端传 mock 用户 ID", async () => {
   const cloud = installCloudCallMock(() => ({
     hosting: [],
@@ -233,15 +263,48 @@ test("发起报名候补流程只提交云端真实载荷", async () => {
       venueLongitude: 113.934
     });
     await publishParty(sampleParty.partyId);
+    await togglePartyStatus(sampleParty.partyId, "finished");
     await joinParty(sampleParty.partyId, contactInfo);
-    await joinWaitlist(sampleParty.partyId);
+    await joinWaitlist(sampleParty.partyId, contactInfo);
 
     assert.deepEqual(
       cloud.calls.map((call) => `${call.name}.${call.data.action}`),
-      ["party.createDraft", "party.publish", "entry.join", "entry.waitlist"]
+      ["party.createDraft", "party.publish", "party.statusSwitch", "entry.join", "entry.waitlist"]
     );
     assert.equal(cloud.calls.some((call) => "userId" in call.data.payload), false);
+    assert.equal(cloud.calls.find((call) => call.data.action === "statusSwitch")?.data.payload.targetStatus, "finished");
     assert.deepEqual(cloud.calls.find((call) => call.data.action === "join")?.data.payload.contactInfo, contactInfo);
+    assert.deepEqual(cloud.calls.find((call) => call.data.action === "waitlist")?.data.payload.contactInfo, contactInfo);
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("退出报名、移除报名者和候补转正提交云端真实载荷", async () => {
+  const cloud = installCloudCallMock((call) => ({
+    quitEntryId: call.data.payload.entryId || "entry-cloud-current",
+    removedEntryId: call.data.payload.entryId || "",
+    promotedEntry: call.data.action === "promoteWaitlist" ? { entryId: call.data.payload.entryId } : null
+  }));
+
+  try {
+    await quitParty(sampleParty.partyId);
+    await removePartyEntry(sampleParty.partyId, "entry-cloud-guest");
+    await promoteWaitlistEntry(sampleParty.partyId, "entry-cloud-waitlist");
+
+    assert.deepEqual(
+      cloud.calls.map((call) => `${call.name}.${call.data.action}`),
+      ["entry.quit", "entry.remove", "entry.promoteWaitlist"]
+    );
+    assert.deepEqual(cloud.calls[0].data.payload, { partyId: sampleParty.partyId });
+    assert.deepEqual(cloud.calls[1].data.payload, {
+      partyId: sampleParty.partyId,
+      entryId: "entry-cloud-guest"
+    });
+    assert.deepEqual(cloud.calls[2].data.payload, {
+      partyId: sampleParty.partyId,
+      entryId: "entry-cloud-waitlist"
+    });
   } finally {
     cloud.restore();
   }
@@ -277,6 +340,65 @@ test("当前用户资料从云端登录接口读取并保存", async () => {
       cloud.calls.map((call) => call.data.payload),
       [{}, { nickname: "真实昵称", avatarUrl: defaultProfileAvatarUrl, gender: "女", intro: "喜欢粤语老歌" }]
     );
+  } finally {
+    cloud.restore();
+  }
+});
+
+test("发起者公开资料从云端公开资料接口读取", async () => {
+  const cloud = installCloudCallMock((call) => ({
+    user: {
+      userId: call.data.payload.userId,
+      nickname: "云端发起者",
+      avatarUrl: defaultProfileAvatarUrl,
+      gender: "保密",
+      intro: "喜欢流行歌",
+      tags: ["流行歌曲"],
+      createdAt: "2026-05-20T10:00:00+08:00"
+    },
+    stats: {
+      hostingCount: 12,
+      successfulCount: 10
+    },
+    recentParty: {
+      partyId: "party-cloud-recent",
+      title: "周末嗨唱放松局",
+      venueId: "venue-cloud",
+      venueCustom: "",
+      hostId: "user-cloud-host",
+      startTime: "2026-05-25T19:30:00+08:00",
+      durationMin: 180,
+      roomFee: 30000,
+      maxCapacity: 8,
+      status: "recruiting",
+      isPublic: true,
+      notes: "",
+      tags: [],
+      coverImage: "https://example.com/recent.jpg",
+      createdAt: "2026-05-20T10:00:00+08:00",
+      confirmedCount: 2,
+      waitlistCount: 0,
+      estimatedPerPerson: 3750,
+      hostSummary: "云端发起者",
+      venueSummary: "MUSE KTV · 南山",
+      progressText: "2/8人",
+      statusText: "报名中",
+      priceText: "¥37.50/人",
+      timeSummary: "05-25 19:30-22:30 · 3 小时",
+      participantAvatars: []
+    }
+  }));
+
+  try {
+    const profile = await getPublicUserProfile("user-cloud-host");
+
+    assert.equal(profile.user.nickname, "云端发起者");
+    assert.equal(profile.stats.hostingCount, 12);
+    assert.equal(profile.stats.successfulCount, 10);
+    assert.equal(profile.recentParty?.partyId, "party-cloud-recent");
+    assert.equal(profile.recentParty?.title, "周末嗨唱放松局");
+    assert.deepEqual(cloud.calls.map((call) => `${call.name}.${call.data.action}`), ["auth.publicProfile"]);
+    assert.deepEqual(cloud.calls[0].data.payload, { userId: "user-cloud-host" });
   } finally {
     cloud.restore();
   }

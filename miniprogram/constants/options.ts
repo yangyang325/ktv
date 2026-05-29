@@ -47,6 +47,7 @@ export const DURATION_OPTIONS = [
 export const PARTY_STATUS_TEXT = {
   draft: "待发布",
   recruiting: "招募中",
+  ongoing: "活动中",
   full: "已满员",
   closed: "已截止",
   cancelled: "已取消",

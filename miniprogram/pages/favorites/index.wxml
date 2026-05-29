@@ -10,7 +10,7 @@
       <view class="favorites-stats">
         <view class="favorites-stats__item" wx:for="{{stats}}" wx:key="key">
           <view class="favorites-stats__icon favorites-stats__icon--{{item.tone}}">
-            <text>{{item.icon}}</text>
+            <image class="favorites-stats__icon-image" src="{{item.icon}}" mode="aspectFit" />
           </view>
           <view class="favorites-stats__copy">
             <text class="favorites-stats__label">{{item.label}}</text>
@@ -21,19 +21,65 @@
     </view>
   </view>
 
-  <view wx:if="{{showFavoriteParties}}" class="favorites-list">
-    <party-card wx:for="{{favoriteParties}}" wx:key="partyId" party="{{item}}" />
+  <view class="favorites-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="favorites-tabs__item {{item.active ? 'favorites-tabs__item--active' : ''}}"
+      data-tab="{{item.key}}"
+      bindtap="handleTabTap"
+    >
+      <text>{{item.label}}</text>
+    </view>
   </view>
 
-  <view wx:else class="favorites-empty">
-    <text class="favorites-empty__title">这里还没有收藏记录</text>
-    <text class="favorites-empty__desc">去发现页逛逛，收藏你感兴趣的活动。</text>
-    <image
-      class="favorites-empty__image"
-      src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/q4ed2ampkznpsu.png"
-      mode="aspectFit"
-    />
-  </view>
+  <block wx:if="{{currentTab === 'activities'}}">
+    <view wx:if="{{showFavoriteParties}}" class="favorites-list">
+      <party-card wx:for="{{favoriteParties}}" wx:key="partyId" party="{{item}}" />
+    </view>
+
+    <view wx:else class="favorites-empty">
+      <text class="favorites-empty__title">这里还没有收藏活动</text>
+      <text class="favorites-empty__desc">去发现页逛逛，收藏你感兴趣的活动。</text>
+      <image
+        class="favorites-empty__image"
+        src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/q4ed2ampkznpsu.png"
+        mode="aspectFit"
+      />
+    </view>
+  </block>
+
+  <block wx:else>
+    <view wx:if="{{showFollowedUsers}}" class="favorite-users">
+      <view
+        wx:for="{{followedUsers}}"
+        wx:key="userId"
+        class="favorite-user-card"
+        data-user-id="{{item.userId}}"
+        bindtap="handleUserTap"
+      >
+        <image class="favorite-user-card__avatar" src="{{item.avatarUrl || defaultAvatarUrl}}" mode="aspectFill" />
+        <view class="favorite-user-card__body">
+          <text class="favorite-user-card__name">{{item.nickname}}</text>
+          <text class="favorite-user-card__intro">{{item.intro || 'K歌爱好者'}}</text>
+          <view wx:if="{{item.tags && item.tags.length}}" class="favorite-user-card__tags">
+            <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" class="favorite-user-card__tag">{{tag}}</text>
+          </view>
+        </view>
+        <text class="favorite-user-card__arrow">›</text>
+      </view>
+    </view>
+
+    <view wx:else class="favorites-empty">
+      <text class="favorites-empty__title">这里还没有关注用户</text>
+      <text class="favorites-empty__desc">去活动详情页关注你感兴趣的发起者。</text>
+      <image
+        class="favorites-empty__image"
+        src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/q4ed2ampkznpsu.png"
+        mode="aspectFit"
+      />
+    </view>
+  </block>
 
   <view class="page-tabbar">
     <view

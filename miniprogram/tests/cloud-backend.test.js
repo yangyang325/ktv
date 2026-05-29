@@ -192,7 +192,8 @@ test("auth.login creates default user for new openid", async () => {
         payload: {
           nickname: "新朋友",
           gender: "女",
-          intro: "喜欢粤语老歌"
+          intro: "喜欢粤语老歌",
+          tags: ["麦霸", "周末常驻", "麦霸"]
         }
       },
       { store, openid: "openid-new" }
@@ -204,6 +205,7 @@ test("auth.login creates default user for new openid", async () => {
     assert.equal(result.data.user.avatarUrl, DEFAULT_PROFILE_AVATAR_IMAGES[8]);
     assert.equal(result.data.user.gender, "女");
     assert.equal(result.data.user.intro, "喜欢粤语老歌");
+    assert.deepEqual(result.data.user.tags, ["麦霸", "周末常驻"]);
   } finally {
     Math.random = originalRandom;
   }
@@ -244,10 +246,114 @@ test("auth.profile returns current user and null for unknown openid", async () =
   assert.equal(missing.data, null);
 });
 
+test("auth.publicProfile returns public user fields and host stats", async () => {
+  const store = createMemoryStore(createSeedData());
+  await authFunction.main(
+    { action: "login", payload: { tags: ["流行歌曲", "欢迎新人"] } },
+    { store, openid: "openid-host", now: () => "2026-05-21T07:00:00.000Z" }
+  );
+
+  const result = await authFunction.main(
+    { action: "publicProfile", payload: { userId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.user.userId, "user-host");
+  assert.equal(result.data.user.nickname, "羊羊");
+  assert.deepEqual(result.data.user.tags, ["流行歌曲", "欢迎新人"]);
+  assert.equal("openid" in result.data.user, false);
+  assert.deepEqual(result.data.stats, {
+    hostingCount: 3,
+    successfulCount: 3
+  });
+  assert.equal(result.data.recentParty.partyId, "party-002");
+  assert.equal(result.data.recentParty.hostSummary, "羊羊");
+  assert.equal(result.data.recentParty.venueSummary.includes("纯K"), true);
+  assert.equal(result.data.recentParty.timeSummary.includes("04-26"), true);
+  assert.equal("openid" in result.data.recentParty, false);
+});
+
+test("auth follow toggle creates active relation and follow stats count followers", async () => {
+  const store = createMemoryStore(createSeedData());
+  const beforeStatus = await authFunction.main(
+    { action: "followStatus", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const followed = await authFunction.main(
+    { action: "followToggle", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-21T10:00:00.000Z" }
+  );
+  const afterStatus = await authFunction.main(
+    { action: "followStatus", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const hostStats = await authFunction.main(
+    { action: "followStats", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-host" }
+  );
+  const guestStats = await authFunction.main(
+    { action: "followStats", payload: {} },
+    { store, openid: "openid-guest-1" }
+  );
+  const followingList = await authFunction.main(
+    { action: "followList", payload: {} },
+    { store, openid: "openid-guest-1" }
+  );
+  const storedFollow = await store.findOne("follows", {
+    followerId: "user-guest-1",
+    targetUserId: "user-host"
+  });
+
+  assert.equal(beforeStatus.ok, true);
+  assert.equal(beforeStatus.data.isFollowing, false);
+  assert.equal(followed.ok, true);
+  assert.equal(followed.data.isFollowing, true);
+  assert.equal(afterStatus.data.isFollowing, true);
+  assert.equal(storedFollow.active, true);
+  assert.equal(storedFollow.createdAt, "2026-05-21T10:00:00.000Z");
+  assert.equal(hostStats.data.followerCount, 1);
+  assert.equal(hostStats.data.followingCount, 0);
+  assert.equal(guestStats.data.followerCount, 0);
+  assert.equal(guestStats.data.followingCount, 1);
+  assert.equal(followingList.ok, true);
+  assert.equal(followingList.data.length, 1);
+  assert.equal(followingList.data[0].userId, "user-host");
+  assert.equal("openid" in followingList.data[0], false);
+});
+
+test("auth follow toggle can unfollow and rejects following self", async () => {
+  const store = createMemoryStore(createSeedData());
+  await authFunction.main(
+    { action: "followToggle", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-21T10:00:00.000Z" }
+  );
+  const unfollowed = await authFunction.main(
+    { action: "followToggle", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-21T10:05:00.000Z" }
+  );
+  const selfFollow = await authFunction.main(
+    { action: "followToggle", payload: { targetUserId: "user-host" } },
+    { store, openid: "openid-host" }
+  );
+  const storedFollow = await store.findOne("follows", {
+    followerId: "user-guest-1",
+    targetUserId: "user-host"
+  });
+
+  assert.equal(unfollowed.ok, true);
+  assert.equal(unfollowed.data.isFollowing, false);
+  assert.equal(storedFollow.active, false);
+  assert.equal(storedFollow.updatedAt, "2026-05-21T10:05:00.000Z");
+  assert.equal(selfFollow.ok, false);
+  assert.equal(selfFollow.code, "VALIDATION_ERROR");
+  assert.equal(selfFollow.message, "不能关注自己");
+});
+
 test("auth.login preserves profile fields when payload omits them", async () => {
   const store = createMemoryStore(createSeedData());
   await authFunction.main(
-    { action: "login", payload: { gender: "女", intro: "喜欢粤语老歌" } },
+    { action: "login", payload: { gender: "女", intro: "喜欢粤语老歌", tags: ["粤语歌单"] } },
     { store, openid: "openid-host", now: () => "2026-05-21T07:00:00.000Z" }
   );
   const result = await authFunction.main(
@@ -260,6 +366,7 @@ test("auth.login preserves profile fields when payload omits them", async () => 
   assert.equal(result.data.user.avatarUrl, "https://example.com/avatar-host.png");
   assert.equal(result.data.user.gender, "女");
   assert.equal(result.data.user.intro, "喜欢粤语老歌");
+  assert.deepEqual(result.data.user.tags, ["粤语歌单"]);
   assert.equal(result.data.user.updatedAt, "2026-05-21T08:00:00.000Z");
 });
 
@@ -399,6 +506,114 @@ test("party.list returns visible party cards with display fields", async () => {
   );
 });
 
+test("party.detail auto marks ongoing and party.list hides auto-finished cards", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-001" }, () => ({
+    startTime: "2026-05-30T19:00:00+08:00",
+    durationMin: 180,
+    status: "recruiting",
+    confirmedCount: 3,
+    maxCapacity: 12
+  }));
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    startTime: "2026-06-01T20:00:00+08:00",
+    durationMin: 120,
+    status: "recruiting",
+    confirmedCount: 1,
+    maxCapacity: 8
+  }));
+
+  const ongoingResult = await partyFunction.main(
+    { action: "detail", payload: { partyId: "party-001" } },
+    { store, openid: "openid-host", now: () => "2026-05-30T12:30:00.000Z" }
+  );
+  const storedOngoingParty = await store.findOne("parties", { partyId: "party-001" });
+  const listAfterEnd = await partyFunction.main(
+    { action: "list", payload: {} },
+    { store, now: () => "2026-05-30T15:05:00.000Z" }
+  );
+
+  assert.equal(ongoingResult.ok, true);
+  assert.equal(ongoingResult.data.party.status, "ongoing");
+  assert.equal(ongoingResult.data.party.statusText, "活动中");
+  assert.equal(storedOngoingParty.status, "ongoing");
+  assert.equal(listAfterEnd.ok, true);
+  assert.equal(listAfterEnd.data.some((party) => party.partyId === "party-001"), false);
+  assert.equal(listAfterEnd.data.some((party) => party.partyId === "party-002"), true);
+});
+
+test("party.statusSwitch lets host close recruiting and restore before start when not full", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    startTime: "2026-06-01T20:00:00+08:00",
+    durationMin: 120,
+    status: "recruiting",
+    confirmedCount: 1,
+    maxCapacity: 8
+  }));
+
+  const closed = await partyFunction.main(
+    { action: "statusSwitch", payload: { partyId: "party-002", targetStatus: "finished" } },
+    { store, openid: "openid-host", now: () => "2026-05-30T10:00:00.000Z" }
+  );
+  const restored = await partyFunction.main(
+    { action: "statusSwitch", payload: { partyId: "party-002", targetStatus: "recruiting" } },
+    { store, openid: "openid-host", now: () => "2026-05-30T10:05:00.000Z" }
+  );
+
+  assert.equal(closed.ok, true);
+  assert.equal(closed.data.status, "finished");
+  assert.equal(closed.data.statusText, "已结束");
+  assert.equal(restored.ok, true);
+  assert.equal(restored.data.status, "recruiting");
+  assert.equal(restored.data.statusText, "报名中");
+});
+
+test("party.statusSwitch rejects non-host restore, full restore, and ongoing restore", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    startTime: "2026-06-01T20:00:00+08:00",
+    durationMin: 120,
+    status: "finished",
+    confirmedCount: 1,
+    maxCapacity: 8
+  }));
+  const nonHost = await partyFunction.main(
+    { action: "statusSwitch", payload: { partyId: "party-002", targetStatus: "recruiting" } },
+    { store, openid: "openid-guest-1", now: () => "2026-05-30T10:00:00.000Z" }
+  );
+
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    status: "finished",
+    confirmedCount: 8,
+    maxCapacity: 8
+  }));
+  const fullRestore = await partyFunction.main(
+    { action: "statusSwitch", payload: { partyId: "party-002", targetStatus: "recruiting" } },
+    { store, openid: "openid-host", now: () => "2026-05-30T10:05:00.000Z" }
+  );
+
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    startTime: "2026-06-01T20:00:00+08:00",
+    durationMin: 120,
+    status: "finished",
+    confirmedCount: 1,
+    maxCapacity: 8
+  }));
+  const ongoingRestore = await partyFunction.main(
+    { action: "statusSwitch", payload: { partyId: "party-002", targetStatus: "recruiting" } },
+    { store, openid: "openid-host", now: () => "2026-06-01T12:30:00.000Z" }
+  );
+
+  assert.equal(nonHost.ok, false);
+  assert.equal(nonHost.code, "UNAUTHORIZED");
+  assert.equal(fullRestore.ok, false);
+  assert.equal(fullRestore.code, "PARTY_FULL");
+  assert.equal(ongoingRestore.ok, false);
+  assert.equal(ongoingRestore.code, "VALIDATION_ERROR");
+  assert.equal(ongoingRestore.message, "活动中不能恢复报名");
+});
+
 test("party.detail returns host entries and viewer entry", async () => {
   const store = createMemoryStore(createSeedData());
   const result = await partyFunction.main(
@@ -463,6 +678,11 @@ test("party.myTabs groups hosting joined waitlist and history", async () => {
 
 test("party favorites are stored in cloud store per current user", async () => {
   const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-001" }, () => ({
+    startTime: "2026-06-01T19:30:00+08:00",
+    durationMin: 180,
+    status: "recruiting"
+  }));
   const emptyList = await partyFunction.main({ action: "favoriteList", payload: {} }, { store, openid: "openid-guest-1" });
   const beforeStatus = await partyFunction.main(
     { action: "favoriteStatus", payload: { partyId: "party-001" } },
@@ -612,6 +832,45 @@ test("party.publish changes draft to recruiting", async () => {
 
   assert.equal(result.ok, true);
   assert.equal(result.data.status, "recruiting");
+});
+
+test("party.publish rejects draft that starts within 5 minutes", async () => {
+  const store = createMemoryStore(createSeedData());
+  const draft = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "临近开始的 K 局",
+        venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
+        startDate: "2026-05-23",
+        startTime: "18:05",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 12,
+        notes: "欢迎新人，不限歌路。",
+        tags: ["欢迎新人"]
+      }
+    },
+    {
+      store,
+      openid: "openid-host",
+      now: () => "2026-05-23T09:00:00.000Z"
+    }
+  );
+  const result = await partyFunction.main(
+    { action: "publish", payload: { partyId: draft.data.partyId } },
+    {
+      store,
+      openid: "openid-host",
+      now: () => "2026-05-23T10:00:00.000Z"
+    }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+  assert.equal(result.message, "活动开始时间需晚于当前时间 5 分钟");
 });
 
 test("party.createDraft rejects spoofed payload userId", async () => {
@@ -876,6 +1135,37 @@ test("party.createDraft rejects invalid start date or time without inserting dat
   assert.equal(afterEntries.length, beforeEntries.length);
 });
 
+test("party.createDraft rejects start time within 5 minutes from now", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await partyFunction.main(
+    {
+      action: "createDraft",
+      payload: {
+        userId: "user-host",
+        title: "太近的 K 局",
+        venueId: "venue-001",
+        venueSummary: "MUSE KTV · 南山",
+        startDate: "2026-05-23",
+        startTime: "18:05",
+        durationMin: 180,
+        roomFee: 240000,
+        maxCapacity: 8,
+        notes: "测试时间限制",
+        tags: ["欢迎新人"]
+      }
+    },
+    {
+      store,
+      openid: "openid-host",
+      now: () => "2026-05-23T10:00:00.000Z"
+    }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+  assert.equal(result.message, "活动开始时间需晚于当前时间 5 分钟");
+});
+
 test("entry.join creates confirmed entry and updates party count", async () => {
   const store = createMemoryStore(createSeedData());
   const contactInfo = {
@@ -933,6 +1223,41 @@ test("entry.join blocks full party", async () => {
   assert.equal(result.code, "PARTY_FULL");
 });
 
+test("entry.join blocks parties that auto-resolve outside recruiting time", async () => {
+  const store = createMemoryStore(createSeedData());
+  const contactInfo = {
+    method: "wechat",
+    value: "guest-join",
+    arrivalTime: "19:20",
+    note: ""
+  };
+  await store.updateOne("parties", { partyId: "party-002" }, () => ({
+    startTime: "2026-06-01T20:00:00+08:00",
+    durationMin: 120,
+    status: "recruiting",
+    confirmedCount: 1,
+    maxCapacity: 8
+  }));
+
+  const ongoingResult = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", contactInfo } },
+    { store, openid: "openid-guest-3", now: () => "2026-06-01T12:30:00.000Z" }
+  );
+  const storedOngoingParty = await store.findOne("parties", { partyId: "party-002" });
+  const endedResult = await entryFunction.main(
+    { action: "join", payload: { partyId: "party-002", contactInfo } },
+    { store, openid: "openid-guest-3", now: () => "2026-06-01T15:00:00.000Z" }
+  );
+  const storedEndedParty = await store.findOne("parties", { partyId: "party-002" });
+
+  assert.equal(ongoingResult.ok, false);
+  assert.equal(ongoingResult.code, "PARTY_NOT_RECRUITING");
+  assert.equal(storedOngoingParty.status, "ongoing");
+  assert.equal(endedResult.ok, false);
+  assert.equal(endedResult.code, "PARTY_NOT_RECRUITING");
+  assert.equal(storedEndedParty.status, "finished");
+});
+
 test("entry.join uses active entries instead of stale party count for capacity", async () => {
   const store = createMemoryStore(createSeedData());
   await store.updateOne("parties", { partyId: "party-002" }, () => ({
@@ -964,16 +1289,23 @@ test("entry.join uses active entries instead of stale party count for capacity",
   assert.equal(afterEntries.length, beforeEntries.length);
 });
 
-test("entry.waitlist creates waitlist entry for full party", async () => {
+test("entry.waitlist creates waitlist entry for full party with contact info", async () => {
   const store = createMemoryStore(createSeedData());
+  const contactInfo = {
+    method: "wechat",
+    value: "wait-user",
+    arrivalTime: "20:30",
+    note: "满员先候补"
+  };
   const result = await entryFunction.main(
-    { action: "waitlist", payload: { partyId: "party-003", userId: "user-guest-2" } },
+    { action: "waitlist", payload: { partyId: "party-003", userId: "user-guest-2", contactInfo } },
     { store, openid: "openid-guest-2" }
   );
 
   assert.equal(result.ok, true);
   assert.equal(result.data.entryType, "waitlist");
   assert.equal(result.data.waitlistNo, 2);
+  assert.deepEqual(result.data.contactInfo, contactInfo);
 });
 
 test("entry.quit reorders waitlist and refreshes waitlist count", async () => {
@@ -1018,6 +1350,97 @@ test("entry.quit promotes first waitlist entry after confirmed user quits", asyn
   assert.equal(result.ok, true);
   assert.equal(promoted.entryType, "confirmed");
   assert.equal(promoted.waitlistNo, null);
+});
+
+test("entry.quit rejects host quitting own party entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "quit", payload: { partyId: "party-001" } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "VALIDATION_ERROR");
+  assert.equal(result.message, "发起人不能退出自己的活动报名");
+});
+
+test("entry.remove lets host kick active member without auto promoting waitlist", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "remove", payload: { partyId: "party-001", entryId: "entry-002" } },
+    { store, openid: "openid-host", now: () => "2026-04-24T11:00:00.000Z" }
+  );
+  const removed = await store.findOne("entries", { entryId: "entry-002" });
+  const waitlist = await store.findOne("entries", { entryId: "entry-004" });
+  const party = await store.findOne("parties", { partyId: "party-001" });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.removedEntryId, "entry-002");
+  assert.equal(result.data.promotedEntry, null);
+  assert.equal(removed.entryType, "removed");
+  assert.equal(removed.removedAt, "2026-04-24T11:00:00.000Z");
+  assert.equal(waitlist.entryType, "waitlist");
+  assert.equal(waitlist.waitlistNo, 1);
+  assert.equal(party.confirmedCount, 2);
+  assert.equal(party.waitlistCount, 1);
+});
+
+test("entry.remove rejects non-host and host own entry", async () => {
+  const store = createMemoryStore(createSeedData());
+  const nonHostResult = await entryFunction.main(
+    { action: "remove", payload: { partyId: "party-001", entryId: "entry-002" } },
+    { store, openid: "openid-guest-1" }
+  );
+  const ownEntryResult = await entryFunction.main(
+    { action: "remove", payload: { partyId: "party-001", entryId: "entry-001" } },
+    { store, openid: "openid-host" }
+  );
+
+  assert.equal(nonHostResult.ok, false);
+  assert.equal(nonHostResult.code, "UNAUTHORIZED");
+  assert.equal(ownEntryResult.ok, false);
+  assert.equal(ownEntryResult.code, "VALIDATION_ERROR");
+});
+
+test("entry.promoteWaitlist lets host move selected waitlist entry into confirmed roster", async () => {
+  const store = createMemoryStore(createSeedData());
+  const result = await entryFunction.main(
+    { action: "promoteWaitlist", payload: { partyId: "party-001", entryId: "entry-004" } },
+    { store, openid: "openid-host", now: () => "2026-04-24T11:30:00.000Z" }
+  );
+  const promoted = await store.findOne("entries", { entryId: "entry-004" });
+  const party = await store.findOne("parties", { partyId: "party-001" });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data.promotedEntry.entryId, "entry-004");
+  assert.equal(promoted.entryType, "confirmed");
+  assert.equal(promoted.seqNo, 4);
+  assert.equal(promoted.waitlistNo, null);
+  assert.equal(promoted.confirmedAt, "2026-04-24T11:30:00.000Z");
+  assert.equal(party.confirmedCount, 4);
+  assert.equal(party.waitlistCount, 0);
+});
+
+test("entry.promoteWaitlist rejects full roster and non-host user", async () => {
+  const store = createMemoryStore(createSeedData());
+  await store.updateOne("parties", { partyId: "party-001" }, () => ({
+    maxCapacity: 3,
+    confirmedCount: 3,
+    status: "full"
+  }));
+  const fullResult = await entryFunction.main(
+    { action: "promoteWaitlist", payload: { partyId: "party-001", entryId: "entry-004" } },
+    { store, openid: "openid-host" }
+  );
+  const nonHostResult = await entryFunction.main(
+    { action: "promoteWaitlist", payload: { partyId: "party-001", entryId: "entry-004" } },
+    { store, openid: "openid-guest-2" }
+  );
+
+  assert.equal(fullResult.ok, false);
+  assert.equal(fullResult.code, "PARTY_FULL");
+  assert.equal(nonHostResult.ok, false);
+  assert.equal(nonHostResult.code, "UNAUTHORIZED");
 });
 
 test("entry.quit refreshes counts and status after waitlist promotion", async () => {

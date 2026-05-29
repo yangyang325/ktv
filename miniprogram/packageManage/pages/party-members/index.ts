@@ -1,4 +1,5 @@
-import { getPartyDetail } from "../../../services/api/party";
+import { getPartyDetail, promoteWaitlistEntry } from "../../../services/api/party";
+import { createSubmitGuard } from "../../../utils/submit-guard";
 
 type PartyDetail = Awaited<ReturnType<typeof getPartyDetail>>;
 type PartyEntry = PartyDetail["confirmedEntries"][number];
@@ -24,6 +25,8 @@ interface MemberItem {
   submittedAtText: string;
   submittedAtFullText: string;
   timeSortValue: number;
+  entryType: PartyEntry["entryType"];
+  waitlistNo: number | null;
 }
 
 interface MemberTapEvent extends WechatMiniprogram.BaseEvent {
@@ -34,6 +37,8 @@ interface MemberTapEvent extends WechatMiniprogram.BaseEvent {
   };
 }
 
+const runMemberPromoteSubmit = createSubmitGuard();
+
 Page({
   data: {
     partyId: "",
@@ -41,7 +46,8 @@ Page({
     memberList: [] as MemberItem[],
     selectedMember: null as MemberItem | null,
     sortAscending: true,
-    canViewContacts: false
+    canViewContacts: false,
+    promotingEntryId: ""
   },
 
   /**
@@ -74,10 +80,12 @@ Page({
     }
 
     const detail = await getPartyDetail(this.data.partyId);
+    const visibleConfirmedEntries = this.filterViewerEntries(detail.confirmedEntries, detail.viewerEntry);
+    const visibleWaitlistEntries = this.filterViewerEntries(detail.waitlistEntries, detail.viewerEntry);
     const memberList = this.sortMembersByTime(
       [
-        ...this.buildMemberItems(detail.confirmedEntries),
-        ...this.buildMemberItems(detail.waitlistEntries)
+        ...this.buildMemberItems(visibleConfirmedEntries),
+        ...this.buildMemberItems(visibleWaitlistEntries)
       ],
       this.data.sortAscending
     );
@@ -129,9 +137,25 @@ Page({
         note: entry.contactInfo?.note || "未填写",
         submittedAtText: this.formatDateTime(entry.createdAt, "short"),
         submittedAtFullText: this.formatDateTime(entry.createdAt, "full"),
-        timeSortValue: createdAt.getTime() || 0
+        timeSortValue: createdAt.getTime() || 0,
+        entryType: entry.entryType,
+        waitlistNo: entry.waitlistNo
       };
     });
+  },
+
+  /**
+   * 过滤当前查看者自己的报名记录。
+   * @param entries 报名记录列表
+   * @param viewerEntry 当前查看者的报名记录
+   * @returns 不包含当前查看者自己的报名记录列表
+   */
+  filterViewerEntries(entries: PartyEntry[], viewerEntry: PartyEntry | null): PartyEntry[] {
+    if (!viewerEntry) {
+      return entries;
+    }
+
+    return entries.filter((entry) => entry.userId !== viewerEntry.userId);
   },
 
   /**
@@ -171,16 +195,10 @@ Page({
   },
 
   /**
-   * 点击复制按钮时复制报名者联系方式。
-   * @param event 点击事件
+   * 返回报名者列表。
    */
-  handleMemberCopyTap(event: MemberTapEvent) {
-    const entryId = event.currentTarget.dataset.entryId || "";
-    const member = this.data.memberList.find((item) => item.entryId === entryId);
-
-    if (member) {
-      this.copyMemberContact(member);
-    }
+  handleBackToMemberList() {
+    this.setData({ selectedMember: null });
   },
 
   /**
@@ -190,6 +208,75 @@ Page({
     if (this.data.selectedMember) {
       this.copyMemberContact(this.data.selectedMember);
     }
+  },
+
+  /**
+   * 点击详情状态按钮时将候补报名者确认为正式成员。
+   */
+  handleSelectedMemberStatusTap() {
+    const member = this.data.selectedMember;
+    if (!member || member.entryType !== "waitlist") {
+      return;
+    }
+
+    this.confirmPromoteMember(member);
+  },
+
+  /**
+   * 确认是否将候补报名者调整为正式成员。
+   * @param member 报名者展示数据
+   */
+  confirmPromoteMember(member: MemberItem) {
+    if (!this.data.canViewContacts || member.entryType !== "waitlist") {
+      return;
+    }
+
+    wx.showModal({
+      title: "确认报名者",
+      content: `确认将「${member.userNickname}」设为正式成员吗？`,
+      confirmText: "确认",
+      confirmColor: "#18a861",
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+
+        void this.submitPromoteMember(member.entryId);
+      }
+    });
+  },
+
+  /**
+   * 提交候补转正式请求并刷新列表。
+   * @param entryId 候补报名记录 ID
+   */
+  async submitPromoteMember(entryId: string) {
+    if (!entryId || !this.data.partyId) {
+      return;
+    }
+
+    await runMemberPromoteSubmit.run(async () => {
+      if (this.data.promotingEntryId) {
+        return;
+      }
+
+      this.setData({ promotingEntryId: entryId });
+      try {
+        await promoteWaitlistEntry(this.data.partyId, entryId);
+        await this.loadEntryDetail();
+        wx.showToast({
+          title: "已确认报名者",
+          icon: "none"
+        });
+      } catch (error) {
+        wx.showToast({
+          title: error instanceof Error ? error.message : "调整失败",
+          icon: "none"
+        });
+      } finally {
+        this.setData({ promotingEntryId: "" });
+      }
+    });
   },
 
   /**

@@ -9,7 +9,7 @@ export interface ApiResult<T> {
 /**
  * 局状态枚举。
  */
-export type PartyStatus = "draft" | "recruiting" | "full" | "closed" | "cancelled" | "finished";
+export type PartyStatus = "draft" | "recruiting" | "ongoing" | "full" | "closed" | "cancelled" | "finished";
 
 /**
  * 报名状态枚举。

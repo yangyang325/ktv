@@ -11,71 +11,7 @@
 }
 
 .title-card {
-  display: flex;
-  gap: 22rpx;
-  padding: 24rpx;
-}
-
-.upload-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 150rpx;
-  height: 150rpx;
-  flex: 0 0 150rpx;
-  flex-direction: column;
-  border-radius: 18rpx;
-  background: linear-gradient(180deg, #f1efff 0%, #f7f8ff 100%);
-  color: var(--text-secondary);
-  overflow: hidden;
-}
-
-.upload-box__placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.upload-box__image {
-  width: 100%;
-  height: 100%;
-}
-
-.upload-box__plus {
-  color: var(--text-primary);
-  font-size: 46rpx;
-  font-weight: 500;
-}
-
-.upload-box__text {
-  margin-top: 6rpx;
-  font-size: 23rpx;
-}
-
-.upload-box__mask {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(32, 35, 51, 0.48);
-  color: #ffffff;
-  font-size: 24rpx;
-  font-weight: 800;
-}
-
-.upload-box__change {
-  position: absolute;
-  right: 8rpx;
-  bottom: 8rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 999rpx;
-  background: rgba(32, 35, 51, 0.68);
-  color: #ffffff;
-  font-size: 20rpx;
-  font-weight: 800;
+  padding: 28rpx 24rpx;
 }
 
 .title-card__body {

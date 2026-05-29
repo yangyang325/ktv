@@ -1,0 +1,22 @@
+<view class="page profile-achievements-page">
+  <scroll-view class="achievement-scroll" scroll-y enhanced>
+    <view class="achievement-content">
+      <view
+        class="achievement-card achievement-card--{{item.tone}} {{item.unlocked ? '' : 'achievement-card--locked'}}"
+        wx:for="{{achievements}}"
+        wx:key="key"
+      >
+        <view class="achievement-card__badge">
+          <image class="achievement-card__icon" src="{{item.iconUrl}}" mode="aspectFit" />
+        </view>
+        <view class="achievement-card__body">
+          <view class="achievement-card__header">
+            <text class="achievement-card__title">{{item.title}}</text>
+            <text class="achievement-card__state">{{item.unlocked ? '已获得' : item.progressText}}</text>
+          </view>
+          <text class="achievement-card__desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

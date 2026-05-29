@@ -1,6 +1,16 @@
-import { DISCOVER_TAB_ICONS, HOME_TAB_ICONS, PROFILE_TAB_ICONS } from "../../constants/assets";
+import {
+  DEFAULT_PROFILE_AVATAR_IMAGES,
+  DISCOVER_TAB_ICONS,
+  HOME_TAB_ICONS,
+  PROFILE_TAB_ICONS
+} from "../../constants/assets";
+import { ROUTES } from "../../constants/routes";
 import { getFavoriteParties } from "../../services/api/favorite";
+import { getFollowingUsers } from "../../services/api/follow";
 import type { Party } from "../../types/party";
+import type { User } from "../../types/user";
+
+type FavoritesTabKey = "activities" | "users";
 
 interface FavoriteStat {
   key: string;
@@ -8,6 +18,12 @@ interface FavoriteStat {
   value: number;
   icon: string;
   tone: string;
+}
+
+interface FavoritesTab {
+  key: FavoritesTabKey;
+  label: string;
+  active: boolean;
 }
 
 interface BottomNavItem {
@@ -24,6 +40,8 @@ interface FavoritesTapEvent extends WechatMiniprogram.BaseEvent {
   currentTarget: WechatMiniprogram.Target & {
     dataset: {
       path?: string;
+      tab?: FavoritesTabKey;
+      userId?: string;
     };
   };
 }
@@ -31,8 +49,13 @@ interface FavoritesTapEvent extends WechatMiniprogram.BaseEvent {
 Page({
   data: {
     bottomNav: createBottomNav(),
+    currentTab: "activities" as FavoritesTabKey,
+    defaultAvatarUrl: DEFAULT_PROFILE_AVATAR_IMAGES[0],
     favoriteParties: [] as Party[],
+    followedUsers: [] as User[],
     showFavoriteParties: false,
+    showFollowedUsers: false,
+    tabs: createTabs(),
     stats: createStats()
   },
 
@@ -44,15 +67,53 @@ Page({
   },
 
   /**
-   * 刷新收藏活动列表和统计。
+   * 刷新收藏活动、关注用户列表和统计。
    */
   async refreshFavorites() {
-    const favoriteParties = await getFavoriteParties();
+    const [favoriteParties, followedUsers] = await Promise.all([
+      getFavoriteParties(),
+      getFollowingUsers()
+    ]);
+    const { currentTab } = this.data;
 
     this.setData({
       favoriteParties,
+      followedUsers,
       showFavoriteParties: favoriteParties.length > 0,
-      stats: createStats(favoriteParties.length)
+      showFollowedUsers: followedUsers.length > 0,
+      tabs: createTabs(currentTab),
+      stats: createStats(favoriteParties.length, followedUsers.length)
+    });
+  },
+
+  /**
+   * 切换收藏内容标签。
+   * @param event 点击事件
+   */
+  handleTabTap(event: FavoritesTapEvent) {
+    const { tab } = event.currentTarget.dataset;
+    if (tab !== "activities" && tab !== "users") {
+      return;
+    }
+
+    this.setData({
+      currentTab: tab,
+      tabs: createTabs(tab)
+    });
+  },
+
+  /**
+   * 打开发起者资料页。
+   * @param event 点击事件
+   */
+  handleUserTap(event: FavoritesTapEvent) {
+    const { userId } = event.currentTarget.dataset;
+    if (!userId) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `${ROUTES.hostProfile}?userId=${userId}`
     });
   },
 
@@ -73,13 +134,39 @@ Page({
 });
 
 /**
- * 创建收藏活动统计数据。
+ * 创建收藏统计数据。
  * @param activityCount 收藏活动数量
+ * @param userCount 关注用户数量
  * @returns 收藏统计项
  */
-function createStats(activityCount = 0): FavoriteStat[] {
+function createStats(activityCount = 0, userCount = 0): FavoriteStat[] {
   return [
-    { key: "activities", label: "收藏活动", value: activityCount, icon: "书", tone: "purple" }
+    {
+      key: "activities",
+      label: "收藏活动",
+      value: activityCount,
+      icon: "/assets/images/ktv/collection-activity.svg",
+      tone: "purple"
+    },
+    {
+      key: "users",
+      label: "关注用户",
+      value: userCount,
+      icon: "/assets/images/ktv/follow-user.svg",
+      tone: "orange"
+    }
+  ];
+}
+
+/**
+ * 创建收藏页内容标签。
+ * @param activeKey 当前选中的标签
+ * @returns 收藏页标签项
+ */
+function createTabs(activeKey: FavoritesTabKey = "activities"): FavoritesTab[] {
+  return [
+    { key: "activities", label: "活动", active: activeKey === "activities" },
+    { key: "users", label: "用户", active: activeKey === "users" }
   ];
 }
 

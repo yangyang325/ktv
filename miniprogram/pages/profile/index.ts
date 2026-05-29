@@ -1,12 +1,16 @@
 import { DEFAULT_PROFILE_AVATAR_IMAGES } from "../../constants/assets";
+import { ROUTES } from "../../constants/routes";
 import { getFavoriteParties } from "../../services/api/favorite";
+import { getFollowStats } from "../../services/api/follow";
 import { getMyPartyTabs } from "../../services/api/party";
 import { getCurrentUserWithWechatProfile } from "../../services/api/user";
 import type { User } from "../../types/user";
+import { createProfileAchievements, type ProfileAchievement } from "../../utils/profile-achievements";
 
 interface ProfileStat {
   label: string;
   value: string;
+  target?: ProfileStatTarget;
 }
 
 interface ProfileView {
@@ -16,16 +20,26 @@ interface ProfileView {
   genderIconUrl: string;
   genderTone: ProfileGenderTone;
   intro: string;
+  userTags: ProfileTagView[];
   stats: ProfileStat[];
+  achievements: ProfileAchievement[];
 }
 
-type ProfileFields = Omit<ProfileView, "stats">;
+interface ProfileTagView {
+  label: string;
+  tone: ProfileTagTone;
+}
+
+type ProfileFields = Omit<ProfileView, "stats" | "achievements">;
 type ProfileGenderTone = "female" | "male" | "secret";
+type ProfileStatTarget = "myParties" | "favorites";
+type ProfileTagTone = "purple" | "blue" | "green" | "orange" | "pink";
 
 interface ProfileCounts {
   hosting: number;
   joined: number;
   favorites: number;
+  followers: number;
 }
 
 interface ProfileMenuItem {
@@ -42,12 +56,14 @@ interface ProfileTapEvent extends WechatMiniprogram.BaseEvent {
     dataset: {
       contact?: string;
       label?: string;
+      target?: ProfileStatTarget;
     };
   };
 }
 
 type UserProfileFields = User & {
   intro?: string;
+  tags?: string[];
 };
 
 const DEFAULT_PROFILE_AVATAR = DEFAULT_PROFILE_AVATAR_IMAGES[0];
@@ -60,6 +76,7 @@ const PROFILE_GENDER_ICON_URLS: Record<ProfileGenderTone, string> = {
   secret: "/assets/images/ktv/gender-secret.svg"
 };
 const PROFILE_CONTACT_WECHAT = "Hammy_Y";
+const PROFILE_TAG_TONES: ProfileTagTone[] = ["purple", "blue", "purple", "orange", "green", "pink"];
 const PROFILE_MENU: ProfileMenuItem[] = [
   {
     key: "contact",
@@ -95,18 +112,59 @@ Page({
   },
 
   /**
+   * 打开编辑标签入口。
+   */
+  handleEditTags() {
+    wx.navigateTo({
+      url: "/pages/profile-tags/index"
+    });
+  },
+
+  /**
+   * 打开全部成就页面。
+   */
+  handleViewAchievements() {
+    wx.navigateTo({
+      url: "/pages/profile-achievements/index"
+    });
+  },
+
+  /**
+   * 处理我的页统计项点击。
+   * @param event 点击事件
+   */
+  handleStatTap(event: ProfileTapEvent) {
+    const { target } = event.currentTarget.dataset;
+
+    if (target === "myParties") {
+      wx.navigateTo({
+        url: ROUTES.myParties
+      });
+      return;
+    }
+
+    if (target === "favorites") {
+      wx.navigateTo({
+        url: ROUTES.favorites
+      });
+    }
+  },
+
+  /**
    * 刷新我的资料和真实活动统计。
    */
   async refreshProfileData() {
-    const [currentUser, groupedParties, favoriteParties] = await Promise.all([
+    const [currentUser, groupedParties, favoriteParties, followStats] = await Promise.all([
       getCurrentUserWithWechatProfile(),
       getMyPartyTabs(),
-      getFavoriteParties()
+      getFavoriteParties(),
+      getFollowStats()
     ]);
     const profileCounts: ProfileCounts = {
       hosting: groupedParties.hosting.length,
       joined: groupedParties.joined.length + groupedParties.waitlist.length,
-      favorites: favoriteParties.length
+      favorites: favoriteParties.length,
+      followers: followStats.followerCount
     };
 
     this.setData({
@@ -127,7 +185,8 @@ Page({
       "profile.gender": profileFields.gender,
       "profile.genderIconUrl": profileFields.genderIconUrl,
       "profile.genderTone": profileFields.genderTone,
-      "profile.intro": profileFields.intro
+      "profile.intro": profileFields.intro,
+      "profile.userTags": profileFields.userTags
     });
   },
 
@@ -153,6 +212,28 @@ Page({
       title: `${label || "功能"}待开放`,
       icon: "none"
     });
+  },
+
+  /**
+   * 构建我的页分享给朋友的卡片信息。
+   * @returns 分享配置
+   */
+  onShareAppMessage() {
+    return {
+      title: "深圳K歌兴趣活动工具",
+      path: "/pages/profile/index"
+    };
+  },
+
+  /**
+   * 构建我的页分享到朋友圈的信息。
+   * @returns 分享配置
+   */
+  onShareTimeline() {
+    return {
+      title: "深圳K歌兴趣活动工具",
+      query: ""
+    };
   }
 });
 
@@ -164,7 +245,8 @@ function createEmptyProfileCounts(): ProfileCounts {
   return {
     hosting: 0,
     joined: 0,
-    favorites: 0
+    favorites: 0,
+    followers: 0
   };
 }
 
@@ -180,7 +262,8 @@ function createProfileView(
 ): ProfileView {
   return {
     ...createProfileFields(currentUser),
-    stats: createProfileStats(counts)
+    stats: createProfileStats(counts),
+    achievements: createProfileAchievements(counts).slice(0, 4)
   };
 }
 
@@ -203,8 +286,21 @@ function createProfileFields(currentUser: User | null): ProfileFields {
     gender,
     genderIconUrl: createGenderIconUrl(gender),
     genderTone: createGenderTone(gender),
-    intro: userProfile?.intro || DEFAULT_PROFILE_INTRO
+    intro: userProfile?.intro || DEFAULT_PROFILE_INTRO,
+    userTags: createProfileTags(userProfile?.tags)
   };
+}
+
+/**
+ * 创建我的页面标签展示。
+ * @param tags 云端保存的用户标签
+ * @returns 标签展示列表
+ */
+function createProfileTags(tags: string[] | undefined): ProfileTagView[] {
+  return (tags || []).slice(0, 6).map((label, index) => ({
+    label,
+    tone: PROFILE_TAG_TONES[index % PROFILE_TAG_TONES.length]
+  }));
 }
 
 /**
@@ -240,8 +336,9 @@ function createGenderTone(gender: string): ProfileGenderTone {
  */
 function createProfileStats(counts: ProfileCounts): ProfileStat[] {
   return [
-    { label: "发布活动", value: String(counts.hosting) },
+    { label: "发布活动", value: String(counts.hosting), target: "myParties" },
     { label: "参与次数", value: String(counts.joined) },
-    { label: "收藏", value: String(counts.favorites) }
+    { label: "收藏", value: String(counts.favorites), target: "favorites" },
+    { label: "粉丝", value: String(counts.followers) }
   ];
 }

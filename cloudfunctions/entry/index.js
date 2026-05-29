@@ -1,6 +1,7 @@
 const { AppError, ERROR_CODES, assertRequired } = require("./shared/errors");
 const { createRuntime } = require("./shared/runtime");
 const { runAction } = require("./shared/response");
+const { syncPartyTimedStatus } = require("./shared/party-status");
 
 const CONTACT_METHODS = new Set(["wechat", "phone"]);
 
@@ -89,7 +90,7 @@ async function getCurrentUser(runtime, userId) {
 
 /**
  * 获取组局数据。
- * @param {{ store: object }} runtime 云函数运行时
+ * @param {{ store: object, now: Function }} runtime 云函数运行时
  * @param {string} partyId 组局 ID
  * @returns {Promise<object>} 组局数据
  */
@@ -100,7 +101,7 @@ async function getParty(runtime, partyId) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "组局不存在");
   }
 
-  return party;
+  return syncPartyTimedStatus(runtime, party);
 }
 
 /**
@@ -268,7 +269,7 @@ async function join(payload, runtime) {
 
 /**
  * 创建候补报名。
- * @param {{ partyId?: string, userId?: string }} payload 候补参数
+ * @param {{ partyId?: string, userId?: string, contactInfo?: object }} payload 候补参数
  * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
  * @returns {Promise<object>} 候补报名记录
  */
@@ -285,6 +286,7 @@ async function waitlist(payload, runtime) {
   const entries = await listActiveEntries(runtime, party.partyId);
   assertNoActiveEntry(entries, currentUser.userId);
 
+  const contactInfo = normalizeContactInfo(payload.contactInfo);
   const waitlistEntries = entries.filter((entry) => entry.entryType === "waitlist");
   const nextWaitlistNo = Math.max(0, ...waitlistEntries.map((entry) => Number(entry.waitlistNo) || 0)) + 1;
   const entry = await runtime.store.insert("entries", {
@@ -296,12 +298,50 @@ async function waitlist(payload, runtime) {
     seqNo: null,
     waitlistNo: nextWaitlistNo,
     createdAt: runtime.now(),
-    confirmedAt: null
+    confirmedAt: null,
+    contactInfo
   });
 
   await refreshPartyCounts(runtime, party);
 
   return entry;
+}
+
+/**
+ * 将有效报名记录标记为退出或移除并在需要时晋升候补。
+ * @param {{ store: object, now: Function }} runtime 云函数运行时
+ * @param {object} party 组局数据
+ * @param {object[]} entries 有效报名记录
+ * @param {object} targetEntry 目标报名记录
+ * @param {{ entryType: "quit" | "removed", timeField: string, shouldPromoteWaitlist?: boolean }} options 标记选项
+ * @returns {Promise<object | null>} 被晋升的候补记录
+ */
+async function markEntryInactive(runtime, party, entries, targetEntry, options) {
+  const timestamp = runtime.now();
+  let promotedEntry = null;
+
+  await runtime.store.updateOne("entries", { entryId: targetEntry.entryId }, () => ({
+    entryType: options.entryType,
+    [options.timeField]: timestamp
+  }));
+
+  if (targetEntry.entryType === "confirmed" && options.shouldPromoteWaitlist !== false) {
+    const firstWaitlistEntry = entries.filter((entry) => entry.entryType === "waitlist").sort(sortWaitlist)[0];
+
+    if (firstWaitlistEntry) {
+      promotedEntry = await runtime.store.updateOne("entries", { entryId: firstWaitlistEntry.entryId }, () => ({
+        entryType: "confirmed",
+        seqNo: targetEntry.seqNo,
+        waitlistNo: null,
+        confirmedAt: timestamp
+      }));
+    }
+  }
+
+  await reorderWaitlist(runtime, party.partyId);
+  await refreshPartyCounts(runtime, party);
+
+  return promotedEntry;
 }
 
 /**
@@ -315,6 +355,11 @@ async function quit(payload, runtime) {
 
   const currentUser = await getCurrentUser(runtime, payload.userId);
   const party = await getParty(runtime, payload.partyId);
+
+  if (party.hostId === currentUser.userId) {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "发起人不能退出自己的活动报名");
+  }
+
   const entries = await listActiveEntries(runtime, party.partyId);
   const currentEntry = entries.find((entry) => entry.userId === currentUser.userId);
 
@@ -322,29 +367,10 @@ async function quit(payload, runtime) {
     throw new AppError(ERROR_CODES.NOT_FOUND, "报名记录不存在");
   }
 
-  const timestamp = runtime.now();
-  let promotedEntry = null;
-
-  await runtime.store.updateOne("entries", { entryId: currentEntry.entryId }, () => ({
+  const promotedEntry = await markEntryInactive(runtime, party, entries, currentEntry, {
     entryType: "quit",
-    quitAt: timestamp
-  }));
-
-  if (currentEntry.entryType === "confirmed") {
-    const firstWaitlistEntry = entries.filter((entry) => entry.entryType === "waitlist").sort(sortWaitlist)[0];
-
-    if (firstWaitlistEntry) {
-      promotedEntry = await runtime.store.updateOne("entries", { entryId: firstWaitlistEntry.entryId }, () => ({
-        entryType: "confirmed",
-        seqNo: currentEntry.seqNo,
-        waitlistNo: null,
-        confirmedAt: timestamp
-      }));
-    }
-  }
-
-  await reorderWaitlist(runtime, party.partyId);
-  await refreshPartyCounts(runtime, party);
+    timeField: "quitAt"
+  });
 
   return {
     quitEntryId: currentEntry.entryId,
@@ -352,10 +378,104 @@ async function quit(payload, runtime) {
   };
 }
 
+/**
+ * 发起人移除报名者并在需要时晋升候补。
+ * @param {{ partyId?: string, entryId?: string, userId?: string }} payload 移除参数
+ * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
+ * @returns {Promise<{ removedEntryId: string, promotedEntry: object | null }>} 移除结果
+ */
+async function remove(payload, runtime) {
+  assertRequired(payload.partyId, "partyId", "请选择组局");
+  assertRequired(payload.entryId, "entryId", "请选择报名者");
+
+  const currentUser = await getCurrentUser(runtime, payload.userId);
+  const party = await getParty(runtime, payload.partyId);
+
+  if (party.hostId !== currentUser.userId) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有发起人可以移除报名者");
+  }
+
+  const entries = await listActiveEntries(runtime, party.partyId);
+  const targetEntry = entries.find((entry) => entry.entryId === payload.entryId);
+
+  if (!targetEntry) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, "报名记录不存在");
+  }
+
+  if (targetEntry.userId === party.hostId) {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "不能移除发起人");
+  }
+
+  const promotedEntry = await markEntryInactive(runtime, party, entries, targetEntry, {
+    entryType: "removed",
+    timeField: "removedAt",
+    shouldPromoteWaitlist: false
+  });
+
+  return {
+    removedEntryId: targetEntry.entryId,
+    promotedEntry
+  };
+}
+
+/**
+ * 发起人将候补报名调整为正式成员。
+ * @param {{ partyId?: string, entryId?: string, userId?: string }} payload 转正参数
+ * @param {{ store: object, openid: string, now: Function }} runtime 云函数运行时
+ * @returns {Promise<{ promotedEntry: object }>} 转正结果
+ */
+async function promoteWaitlist(payload, runtime) {
+  assertRequired(payload.partyId, "partyId", "请选择组局");
+  assertRequired(payload.entryId, "entryId", "请选择候补报名者");
+
+  const currentUser = await getCurrentUser(runtime, payload.userId);
+  const party = await getParty(runtime, payload.partyId);
+
+  if (party.hostId !== currentUser.userId) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "只有发起人可以调整名单");
+  }
+
+  if (party.status !== "recruiting" && party.status !== "full") {
+    throw new AppError(ERROR_CODES.PARTY_NOT_RECRUITING, "组局暂不可调整名单");
+  }
+
+  const entries = await listActiveEntries(runtime, party.partyId);
+  const targetEntry = entries.find((entry) => entry.entryId === payload.entryId);
+
+  if (!targetEntry) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, "候补记录不存在");
+  }
+
+  if (targetEntry.entryType !== "waitlist") {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, "请选择候补报名者");
+  }
+
+  if (countConfirmedEntries(party, entries) >= Number(party.maxCapacity)) {
+    throw new AppError(ERROR_CODES.PARTY_FULL, "报名人数已满，请先移除一名正式报名者");
+  }
+
+  const timestamp = runtime.now();
+  const promotedEntry = await runtime.store.updateOne("entries", { entryId: targetEntry.entryId }, () => ({
+    entryType: "confirmed",
+    seqNo: getNextConfirmedSeqNo(party, entries),
+    waitlistNo: null,
+    confirmedAt: timestamp
+  }));
+
+  await reorderWaitlist(runtime, party.partyId);
+  await refreshPartyCounts(runtime, party);
+
+  return {
+    promotedEntry
+  };
+}
+
 const handlers = {
   join,
   waitlist,
-  quit
+  quit,
+  remove,
+  promoteWaitlist
 };
 
 /**

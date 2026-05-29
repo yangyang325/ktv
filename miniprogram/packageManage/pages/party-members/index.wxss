@@ -116,6 +116,7 @@
 
 .member-entry-card {
   display: flex;
+  align-items: center;
   gap: 24rpx;
   margin-top: 22rpx;
   padding: 26rpx 24rpx;
@@ -129,7 +130,7 @@
 .member-entry-card__profile {
   display: flex;
   min-width: 0;
-  flex: 1 1 0;
+  flex: 0 0 220rpx;
   gap: 18rpx;
 }
 
@@ -154,11 +155,13 @@
 .member-detail-card__name-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16rpx;
 }
 
 .member-entry-card__name,
 .member-detail-card__name {
+  flex: 1 1 120rpx;
   min-width: 0;
   overflow: hidden;
   color: #202436;
@@ -181,11 +184,14 @@
 
 .member-entry-card__sub {
   display: block;
+  overflow: hidden;
   margin-top: 5rpx;
   color: #7c8498;
   font-size: 24rpx;
   font-weight: 700;
   line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .member-entry-card__divider {
@@ -209,7 +215,6 @@
 
 .member-entry-card__detail-row:first-child {
   margin-top: 0;
-  padding-right: 56rpx;
 }
 
 .member-entry-card__detail-label,
@@ -287,8 +292,26 @@
   padding: 34rpx 28rpx 24rpx;
 }
 
+.member-detail-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
 .member-detail-card__title {
   display: block;
+}
+
+.member-detail-card__back {
+  flex: 0 0 auto;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: #f1efff;
+  color: #6048ff;
+  font-size: 24rpx;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .member-detail-card__profile {
@@ -310,6 +333,41 @@
 
 .member-detail-card__name {
   font-size: 34rpx;
+}
+
+.member-detail-card__status {
+  display: flex;
+  width: 154rpx;
+  height: 56rpx;
+  flex: 0 0 154rpx;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  border: 2rpx solid currentColor;
+  border-radius: 999rpx;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.member-detail-card__status--pending {
+  background: #ffffff;
+  color: #6048ff;
+}
+
+.member-detail-card__status--confirmed {
+  border-color: #9fe7bd;
+  background: #eefbf4;
+  color: #18a861;
+}
+
+.member-detail-card__status-arrow {
+  width: 0;
+  height: 0;
+  border-top: 10rpx solid currentColor;
+  border-right: 8rpx solid transparent;
+  border-left: 8rpx solid transparent;
 }
 
 .member-info-list {

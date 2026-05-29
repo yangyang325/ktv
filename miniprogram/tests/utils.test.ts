@@ -8,6 +8,8 @@ import type { Entry } from "../types/entry";
 import type { Party } from "../types/party";
 import type { User } from "../types/user";
 
+const VALIDATION_NOW = new Date("2026-05-23T10:00:00.000Z");
+
 test("金额格式化输出人民币文案", () => {
   assert.equal(formatCurrencyYuan(16800), "¥168");
 });
@@ -49,7 +51,7 @@ test("表单校验要求已选择活动地点位置", () => {
     durationMin: 180,
     roomFee: 240000,
     maxCapacity: 8
-  });
+  }, { now: VALIDATION_NOW });
 
   assert.equal(result.valid, false);
   assert.equal(result.errors[0].field, "venueSummary");
@@ -65,7 +67,7 @@ test("表单校验缺少场所 ID 时提示选择活动地点", () => {
     durationMin: 180,
     roomFee: 240000,
     maxCapacity: 8
-  });
+  }, { now: VALIDATION_NOW });
 
   assert.equal(result.valid, false);
   assert.equal(result.errors[0].field, "venueId");
@@ -84,7 +86,7 @@ test("表单校验允许选填项为空", () => {
     maxCapacity: 8,
     notes: "",
     tags: []
-  });
+  }, { now: VALIDATION_NOW });
 
   assert.equal(result.valid, true);
 });
@@ -101,11 +103,30 @@ test("表单校验拦截非法日期时间和时长", () => {
     maxCapacity: 8,
     notes: "",
     tags: []
-  });
+  }, { now: VALIDATION_NOW });
   const fields = result.errors.map((item) => item.field);
 
   assert.equal(result.valid, false);
   assert.deepEqual(fields, ["startDate", "startTime", "durationMin"]);
+});
+
+test("表单校验要求活动开始时间晚于当前时间 5 分钟", () => {
+  const result = validatePartyForm({
+    title: "测试活动",
+    venueId: "venue-001",
+    venueSummary: "测试门店",
+    startDate: "2026-05-23",
+    startTime: "18:05",
+    durationMin: 180,
+    roomFee: 240000,
+    maxCapacity: 8,
+    notes: "",
+    tags: []
+  }, { now: new Date("2026-05-23T10:00:00.000Z") });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors[0].field, "startTime");
+  assert.equal(result.errors[0].message, "活动开始时间需晚于当前时间 5 分钟");
 });
 
 test("活动时间文案按日期和时间组合", () => {

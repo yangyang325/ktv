@@ -105,6 +105,28 @@ Page({
     wx.navigateTo({
       url: `/pages/party-detail/index?partyId=${partyId}`
     });
+  },
+
+  /**
+   * 构建发现页分享给朋友的卡片信息。
+   * @returns 分享配置
+   */
+  onShareAppMessage() {
+    return {
+      title: "发现深圳K歌活动",
+      path: "/pages/discover/index"
+    };
+  },
+
+  /**
+   * 构建发现页分享到朋友圈的信息。
+   * @returns 分享配置
+   */
+  onShareTimeline() {
+    return {
+      title: "发现深圳K歌活动",
+      query: ""
+    };
   }
 });
 
