@@ -1,7 +1,7 @@
 <view class="page profile-page">
   <view class="profile-shell">
     <view class="profile-banner">
-      <image class="profile-banner__bg" src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/vvsru3mpgkr09p.png" mode="aspectFill" />
+      <image class="profile-banner__bg" src="https://wechatapppro-1252524126.cdn.xiaoeknow.com/appbtajnbm33436/image/b_u_616d1cc7eabb6_eanzXeE6/thucmfmpw0ley0.png" mode="aspectFill" />
       <view class="profile-banner__halo profile-banner__halo--left"></view>
       <view class="profile-banner__halo profile-banner__halo--right"></view>
       <view class="profile-banner__wave profile-banner__wave--one"></view>

@@ -1,4 +1,4 @@
-const { readdirSync } = require("node:fs");
+const { existsSync, readdirSync } = require("node:fs");
 const { join } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
@@ -8,6 +8,10 @@ const { spawnSync } = require("node:child_process");
  */
 function listTestFiles() {
   const testDir = join(__dirname, "..", "miniprogram", "tests");
+  if (!existsSync(testDir)) {
+    return [];
+  }
+
   return readdirSync(testDir)
     .filter((fileName) => fileName.endsWith(".test.js") || fileName.endsWith(".test.ts"))
     .sort()
@@ -19,7 +23,13 @@ function listTestFiles() {
  * @returns {number} 测试进程退出码
  */
 function runTests() {
-  const result = spawnSync("npx", ["tsx", "--test", ...listTestFiles()], {
+  const testFiles = listTestFiles();
+  if (!testFiles.length) {
+    console.log("No test files found.");
+    return 0;
+  }
+
+  const result = spawnSync("npx", ["tsx", "--test", ...testFiles], {
     cwd: join(__dirname, ".."),
     shell: true,
     stdio: "inherit"
